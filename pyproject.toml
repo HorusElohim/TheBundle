@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "thebundle"
+dynamic = ["version"]
+description = "Python TheBundle essential code."
+authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = ["jsonschema", "click"]
+
+[tool.setuptools_scm]
+version_file = "src/bundle/_version.py"
+
+[project.optional-dependencies]
+test = ["pytest"]
+dev = ["snakeviz"]
+pypi = ["build", "twine"]
+
+
+[tool.pytest.ini_options]
+addopts = ["--doctest-modules", "--capture=no"]
+testpaths = ["tests"]
+log_cli = true
+log_cli_level = "ERROR"
+
+[tool.black]
+line-length = 128
+target-version = ['py310']
+include = '\.pyi?$'
+
+[tool.flake8]
+max-line-length = 128
