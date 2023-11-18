@@ -176,3 +176,8 @@ logs/
 
 tmp/
 .vscode/
+
+src/bundle/_version.py
+
+
+wvenv
