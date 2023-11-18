@@ -181,7 +181,6 @@ src/bundle/_version.py
 
 external/
 
-wvenv
 torchenv
 
 .DS_Store
