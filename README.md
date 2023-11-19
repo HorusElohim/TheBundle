@@ -1,6 +1,7 @@
 [![ubuntu 🐧](https://github.com/HorusElohim/TheBundle/actions/workflows/python-ubuntu.yml/badge.svg?branch=main)](https://github.com/HorusElohim/TheBundle/actions/workflows/python-ubuntu.yml)
 [![macos 🍏](https://github.com/HorusElohim/TheBundle/actions/workflows/python-darwin.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/python-darwin.yml)
 [![windows 🪟](https://github.com/HorusElohim/TheBundle/actions/workflows/python-windows.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/python-windows.yml)
+[![PyPI Release 🐍](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml)
 
 # THE BUNDLE
 
