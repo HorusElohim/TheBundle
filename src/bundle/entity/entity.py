@@ -45,7 +45,7 @@ class Entity(data.JSONData):
     def __post_init__(self):
         super().__post_init__()  # Ensure any parent class post-init actions are performed
         self.name = self.name if self.name else "Default"
-        LOGGER.debug("❤️  %s.%s in %s", self.class_type, self.name, self.path)
+        LOGGER.debug("❤️  %s.%s path=%s", self.class_type, self.name, self.path)
 
     def __del__(self):
         if self.auto_save:
