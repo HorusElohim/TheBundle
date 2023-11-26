@@ -4,8 +4,6 @@ import bundle
 
 bundle.tests.LOGGER.debug("PROCESS_TESTS")
 
-def normalize_line_endings(s):
-    return s.replace(os.linesep, '\n')
 
 PROCESS_CLASSES_TO_TEST = [
     bundle.tests.TestProcess,
@@ -29,16 +27,16 @@ def test_process_initialization(reference_folder, cprofile_folder, process_class
 @pytest.mark.parametrize(
     "process_class, expected_stdout, expected_stderr",
     [
-        (bundle.tests.TestProcess(command='echo "Test"'), "Test\n", ""),
-        # (bundle.tests.TestAsyncProcess(command="echo AsyncTest"), "AsyncTest\n", ""),
-        # (bundle.tests.TestStreamingProcess(command="echo StreamingTest"),"StreamingTest\n","",),
-        # (bundle.tests.TestStreamingAsyncProcess(command="echo StreamingAsyncTest"),"StreamingAsyncTest\n","",),
+        (bundle.tests.TestProcess(command='printf "Test"'), "Test",  ""),
+        (bundle.tests.TestAsyncProcess(command="printf AsyncTest"), "AsyncTest",  ""),
+        (bundle.tests.TestStreamingProcess(command="printf StreamingTest"),"StreamingTest", "",),
+        (bundle.tests.TestStreamingAsyncProcess(command="printf StreamingAsyncTest"),"StreamingAsyncTest", "",),
     ],
 )
 def test_process_execution(cprofile_folder, process_class, expected_stdout, expected_stderr):
     @bundle.tests.process_decorator(
-        expected_stdout=normalize_line_endings(expected_stdout),
-        expected_stderr=normalize_line_endings(expected_stderr),
+        expected_stdout=expected_stdout,
+        expected_stderr=expected_stderr,
         cprofile_dump_dir=cprofile_folder,
     )
     def process_execution():
