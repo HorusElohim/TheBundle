@@ -33,7 +33,7 @@ from . import LOGGER
 @data.dataclass
 class Process(ProcessABC):
     def exec(self, **kwds) -> bool:
-        LOGGER.debug(f"running {self.command}")
+        LOGGER.debug(f"running: '{self.command}'")
         try:
             self._process = subprocess.run(shlex.split(self.command), **kwds)
             self.returncode = self._process.returncode
