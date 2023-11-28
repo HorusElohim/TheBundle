@@ -32,3 +32,11 @@ from .process import (
     TestStreamingProcess,
     process_decorator,
 )
+from .nodes import (
+    TestNodeTask,
+    TestNodeAsyncTask,
+    TestNodeProcess,
+    TestNodeAsyncProcess,
+    TestNodeStreamingProcess,
+    TestNodeStreamingAsyncProcess,
+)
