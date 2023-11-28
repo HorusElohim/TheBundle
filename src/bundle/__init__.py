@@ -33,6 +33,8 @@ from . import data
 from . import entity
 from . import tasks
 from . import process
+from . import nodes
+from . import graphs
 from . import testing as tests
 
 LOGGER.debug("bundle loaded")
