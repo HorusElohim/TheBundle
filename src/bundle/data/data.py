@@ -88,12 +88,16 @@ class Dataclass:
                     else:
                         initialized_fields[field] = source_dict[field]
                 else:
-                    # If the field is not in annotations of any base classes, log this information
-                    LOGGER.warning(
-                        f"Field '%s' is not expected according to the annotations in the MRO of '%s'",
-                        field,
-                        target_class.__name__,
-                    )
+                    if "dict" in field:
+                        initialized_fields[field] = source_dict[field]
+                    else:
+                        # If the field is not in annotations of any base classes, log this information
+                        LOGGER.warning(
+                            f"Field '%s' is not expected according to the annotations in the MRO of '%s'",
+                            field,
+                            target_class.__name__,
+                        )
+                        initialized_fields[field] = source_dict[field]
 
             # Log any missing fields
             missing_fields = expected_fields - actual_keys
