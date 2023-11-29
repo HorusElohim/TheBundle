@@ -1,0 +1,44 @@
+name: auto reference update 🔄
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_run:
+    workflows: ["macos 🍏", "ubuntu 🐧", "windows 🪟"]
+    types: [completed]
+
+jobs:
+  update_reference:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            ref_folder: 'references/linux'
+          - os: macos-latest
+            ref_folder: 'references/darwin'
+          - os: windows-latest
+            ref_folder: 'references/windows'
+    if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
+             (github.event_name == 'pull_request' && github.base_ref == 'main') ||
+             (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+      - name: Install dependencies and run tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .[test]
+          pytest
+      - name: Commit Reference Folder
+        run: |
+          git config --global user.name 'HorusElohim'
+          git config --global user.email 'horuselohim@gmail.com'
+          git add ${{ matrix.ref_folder }}
+          git commit -m "auto: update references for '${{ matrix.os }}'" 
+          git push 
