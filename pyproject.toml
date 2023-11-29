@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Python TheBundle essential code."
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = ["jsonschema", "click"]
+dependencies = ["jsonschema", "colorama"]
 
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"
