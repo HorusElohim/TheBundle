@@ -60,25 +60,17 @@ def task_decorator(
 
             @cprofile_decorator(cprofile_dump_dir=cprofile_dump_dir)
             async def task_execution_async():
-                await task()
-                return task
+                return await task()
 
             @cprofile_decorator(cprofile_dump_dir=cprofile_dump_dir)
             def task_execution_sync():
-                task()
-                return task
+                return task()
 
             # Execute task and assert based on task type
             if isinstance(task, tasks.AsyncTask):
-                executed_task = asyncio.run(task_execution_async())
+                result = asyncio.run(task_execution_async())
             else:
-                executed_task = task_execution_sync()
-
-            # Fetch and assert the task result
-            if isinstance(executed_task, tasks.AsyncTask):
-                result = asyncio.run(executed_task())
-            else:
-                result = executed_task()
+                result = task_execution_sync()
 
             assert_compare(expected_result, result)
 
