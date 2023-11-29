@@ -10,10 +10,10 @@ TASK_CLASSES_TO_TEST = [
 
 
 @pytest.mark.parametrize("task", TASK_CLASSES_TO_TEST)
-def test_task_initialization(task, tmp_path, reference_folder):
+def test_task_initialization(task, tmp_path, reference_folder, cprofile_folder):
     @bundle.tests.json_decorator(tmp_path, reference_folder)
     @bundle.tests.data_decorator()
-    @bundle.tests.cprofile_decorator(cprofile_dump_dir=reference_folder)
+    @bundle.tests.cprofile_decorator(cprofile_dump_dir=cprofile_folder)
     def task_initialization_default():
         return task()
 
