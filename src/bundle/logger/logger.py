@@ -73,7 +73,7 @@ class ColoredConsoleHandler(logging.StreamHandler):
             format_str = f"{color}%(levelname)-8s {Style.RESET_ALL}%(message)s"
         else:
             level_name = f"{color}%(levelname)-8s"
-            target_name = f"{Fore.MAGENTA}%(name)s:{Fore.WHITE}%(filename)s:%(lineno)d:{Fore.BLACK}%(funcName)s "
+            target_name = f"{Fore.MAGENTA}%(name)s\t{Fore.WHITE}%(pathname)s:%(lineno)d:{Fore.BLACK}%(funcName)s "
             format_str = f"{level_name} {target_name}{Style.RESET_ALL} {color}%(message)s{Style.RESET_ALL}"
         formatter = logging.Formatter(format_str)
         return formatter.format(record)
