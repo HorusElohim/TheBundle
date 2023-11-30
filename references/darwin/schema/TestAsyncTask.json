@@ -1,0 +1,54 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "TestAsyncTask",
+    "type": "object",
+    "properties": {
+        "class_type": {
+            "type": "string"
+        },
+        "name": {
+            "type": "string"
+        },
+        "path": {
+            "type": "object",
+            "properties": {
+                "_pickle_": {
+                    "type": "boolean",
+                    "const": true
+                },
+                "data": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "_pickle_",
+                "data"
+            ]
+        },
+        "born_time": {
+            "type": "integer"
+        },
+        "dead_time": {
+            "type": "integer"
+        },
+        "auto_save": {
+            "type": "boolean"
+        },
+        "exec_start_time": {
+            "type": "integer"
+        },
+        "exec_end_time": {
+            "type": "integer"
+        }
+    },
+    "required": [
+        "class_type",
+        "name",
+        "path",
+        "born_time",
+        "dead_time",
+        "auto_save",
+        "exec_start_time",
+        "exec_end_time"
+    ]
+}
