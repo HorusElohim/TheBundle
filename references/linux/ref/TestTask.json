@@ -1,0 +1,12 @@
+{
+    "class_type": "TestTask",
+    "name": "Default",
+    "path": {
+        "_path_": "."
+    },
+    "born_time": 1,
+    "dead_time": 0,
+    "auto_save": false,
+    "exec_start_time": 0,
+    "exec_end_time": 0
+}
