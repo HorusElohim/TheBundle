@@ -1,0 +1,9 @@
+{
+    "class_type": "NestedDatajson",
+    "nested": {
+        "class_type": "InnerDatajson",
+        "json_str": "",
+        "int_value": 1,
+        "float_value": 1.0
+    }
+}
