@@ -179,6 +179,7 @@ tmp/
 
 src/bundle/_version.py
 
+external/
 
 wvenv
 torchenv
