@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  ubuntu_tests:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -26,5 +26,5 @@ jobs:
             python -m pip install --upgrade pip
             pip install -e .[test]
       
-      - name: Run tests
+      - name: Run tests ubuntu
         run: pytest

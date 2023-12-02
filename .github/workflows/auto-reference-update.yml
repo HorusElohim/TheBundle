@@ -5,50 +5,200 @@ on:
     branches: [ main ]
   push:
     branches: [ main ]
-  workflow_run:
-    workflows: ["macos 🍏", "ubuntu 🐧", "windows 🪟"]
-    types: [completed]
 
 jobs:
-  update_reference:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        include:
-          - os: ubuntu-latest
-            ref_folder: 'references/linux'
-          - os: macos-latest
-            ref_folder: 'references/darwin'
-          - os: windows-latest
-            ref_folder: 'references/windows'
+  wait_for_crossplatforms-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Wait for Ubuntu tests
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          check-regexp: '^ubuntu_tests \(3\.\d{2}\)$'
+          repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
+          wait-interval: 3
+          allowed-conclusions: success
+
+      - name: Wait for macOS tests
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          check-regexp: '^macos_tests \(3\.\d{2}\)$'
+          repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
+          wait-interval: 3
+          allowed-conclusions: success
+  
+      - name: Wait for Windows tests
+        uses: lewagon/wait-on-check-action@v1.3.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          check-regexp: '^windows_tests \(3\.\d{2}\)$'
+          repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
+          wait-interval: 3
+          allowed-conclusions: success
+ 
+
+  update_reference_linux:
+    needs: [wait_for_crossplatforms-tests]
+    runs-on: ubuntu-latest          
+    outputs:
+      all-successful: ${{ steps.check-jobs.outputs.successful }}
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref || github.ref }}
+          fetch-depth: 0  # Fetches all history for all branches and tags
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.12'
+          python-version: '3.10'
 
-      - name: Install dependencies and run tests
+      - name: Install dependencies 
         run: |
-          python -m pip install --upgrade pip
-          pip install -e .[test]
-          pytest
+            python -m pip install --upgrade pip
+            pip install GitPython click
+            pip install -e .[test]
 
-      - name: Pull latest changes
+      - name: "Pull changes"
         run: |
           git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Run tests
+        run: |
+          pytest
                   
-      - name: Commit Reference
-        if: ${{ (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') ||
-                 (github.event_name == 'pull_request' && github.base_ref == 'main') ||
-                 (github.event_name == 'push' && github.ref == 'refs/heads/main') }}
+      - name: Commit References
         run: |
           git config --global user.name 'TheBundle'
           git config --global user.email 'noreply@github.com'
-          git add ${{ matrix.ref_folder }}
-          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references for '${{ matrix.os }}'"
+          git add references/linux
+          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [linux]"
+          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+
+  update_reference_darwin:
+    needs: [update_reference_linux]
+    runs-on: macos-latest            
+    outputs:
+      all-successful: ${{ steps.check-jobs.outputs.successful }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetches all history for all branches and tags
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies 
+        run: |
+            python -m pip install --upgrade pip
+            pip install GitPython click
+            pip install -e .[test]
+
+      - name: "Pull changes"
+        run: |
+          git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Run tests
+        run: |
+          pytest
+                  
+      - name: Commit References
+        run: |
+          git config --global user.name 'TheBundle'
+          git config --global user.email 'noreply@github.com'
+          git add references/darwin
+          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [darwin]"
+          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+
+
+  update_reference_windows:
+    needs: [update_reference_darwin]
+    runs-on: windows-latest
+    outputs:
+      all-successful: ${{ steps.check-jobs.outputs.successful }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetches all history for all branches and tags
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies 
+        run: |
+            python -m pip install --upgrade pip
+            pip install GitPython click
+            pip install -e .[test]
+
+      - name: "Pull changes"
+        run: |
+          git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Run tests
+        run: |
+          pytest
+                  
+      - name: Commit References
+        run: |
+          git config --global user.name 'TheBundle'
+          git config --global user.email 'noreply@github.com'
+          git add references/windows
+          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [windows]"
+          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+
+
+  remove_target_commit:
+    needs: ["update_reference_windows"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install GitPython click
+
+      - name: "Pull changes"
+        run: |
+          git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Remove Target Commits
+        run: |
+          git stash save --include-untracked
+          commits=$(git log --pretty=format:'%H %s' | grep "auto: \[drop reference\]" | cut -d ' ' -f1)
+          if [ -z "$commits" ]; then
+            echo "No commits found with the specified message."
+          else
+            for commit in $commits; do
+                git rebase --onto $commit^ $commit --strategy-option=theirs --committer-date-is-author-date || git rebase --abort
+            done
+          fi
+          git stash list | grep -q 'stash@{0}' && git stash pop
+
+          git config --global user.name 'TheBundle'
+          git config --global user.email 'noreply@github.com'
           git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
