@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
+  macos_tests:
     runs-on: macos-latest
     strategy:
       matrix:
@@ -26,5 +26,5 @@ jobs:
             python -m pip install --upgrade pip
             pip install -e .[test]
       
-      - name: Run tests
+      - name: Run tests macos
         run: pytest
