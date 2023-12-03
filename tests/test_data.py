@@ -1,12 +1,13 @@
 import pytest
 import bundle
+from bundle.testing import TestData
 
 bundle.tests.LOGGER.debug("DATA_TESTS")
 
 DATA_CLASSES_TO_TEST = [
-    bundle.data.Dataclass,
-    bundle.tests.OverrideDataclass,
-    bundle.tests.NestedDataclass,
+    bundle.Data,
+    TestData.Override,
+    TestData.Nested,
 ]
 
 
@@ -21,8 +22,9 @@ def test_dataclass(cprofile_folder, dataclass):
 
 
 JSONDATA_CLASSES_TO_TEST = [
-    bundle.data.JSONData,
-    bundle.tests.NestedDatajson,
+    bundle.Data.Json,
+    TestData.InnerJson,
+    TestData.NestedJson,
 ]
 
 

@@ -22,22 +22,22 @@ import logging
 from pathlib import Path
 from functools import wraps
 
-from ... import data
-from . import assert_instance_identity, assert_compare
+from ....core.data import Data, dataclass, field
+from .. import assert_instance_identity, assert_compare
 
 LOGGER = logging.getLogger(__name__)
 
 
-@data.dataclass
-class InnerDatajson(data.json.JSONData):
+@dataclass
+class InnerDataJson(Data.Json):
     json_str: str = ""
     int_value: int = 1
     float_value: float = 1.0
 
 
-@data.dataclass
-class NestedDatajson(data.json.JSONData):
-    nested: InnerDatajson = data.field(default_factory=InnerDatajson)
+@dataclass
+class NestedDatajson(Data.Json):
+    nested: InnerDataJson = field(default_factory=InnerDataJson)
 
 
 def json_decorator(tmp: Path, ref_dir: str | Path = None):
@@ -45,7 +45,7 @@ def json_decorator(tmp: Path, ref_dir: str | Path = None):
         @wraps(func)
         def wrapper(*args, **kwds):
             class_instance = func(*args, **kwds)
-            assert_instance_identity(class_instance, data.json.JSONData)
+            assert_instance_identity(class_instance, Data.Json)
 
             filename = f"{type(class_instance).__name__}.json"
 

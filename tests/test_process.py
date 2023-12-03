@@ -1,15 +1,15 @@
-import os
 import pytest
 import bundle
+from bundle.testing import TestProcess
 
 bundle.tests.LOGGER.debug("PROCESS_TESTS")
 
 
 PROCESS_CLASSES_TO_TEST = [
-    bundle.tests.TestProcess,
-    bundle.tests.TestAsyncProcess,
-    bundle.tests.TestStreamingProcess,
-    bundle.tests.TestStreamingAsyncProcess,
+    TestProcess.Sync,
+    TestProcess.Async,
+    TestProcess.Streaming,
+    TestProcess.StreamingAsync,
 ]
 
 
@@ -27,10 +27,10 @@ def test_process_initialization(reference_folder, cprofile_folder, process_class
 @pytest.mark.parametrize(
     "process_class, expected_stdout, expected_stderr",
     [
-        (bundle.tests.TestProcess(command='printf "Test"'), "Test",  ""),
-        (bundle.tests.TestAsyncProcess(command="printf AsyncTest"), "AsyncTest",  ""),
-        (bundle.tests.TestStreamingProcess(command="printf StreamingTest"),"StreamingTest", "",),
-        (bundle.tests.TestStreamingAsyncProcess(command="printf StreamingAsyncTest"),"StreamingAsyncTest", "",),
+        (TestProcess.Sync(command='printf "Test"'), "Test", ""),
+        (TestProcess.Async(command="printf AsyncTest"), "AsyncTest", ""),
+        (TestProcess.Streaming(command="printf StreamingTest"), "StreamingTest", ""),
+        (TestProcess.StreamingAsync(command="printf StreamingAsyncTest"), "StreamingAsyncTest", ""),
     ],
 )
 def test_process_execution(cprofile_folder, process_class, expected_stdout, expected_stderr):

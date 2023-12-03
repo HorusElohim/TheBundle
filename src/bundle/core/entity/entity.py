@@ -18,10 +18,8 @@
 # under the License.
 
 
-import logging
-from .. import data, Path, time, typing, logging, version
-
-LOGGER = logging.getLogger(__name__)
+from . import LOGGER
+from .. import data, Path, time, typing, version
 
 
 @data.dataclass

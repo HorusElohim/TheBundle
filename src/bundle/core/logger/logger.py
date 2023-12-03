@@ -117,6 +117,6 @@ def setup_logging(
     logger.setLevel(log_level)
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
-    logger.propagate = False
+    logger.propagate = True
     
     return logger
