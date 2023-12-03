@@ -29,7 +29,7 @@ from . import LOGGER
 
 
 @data.dataclass
-class AsyncProcess(ProcessABC, tasks.AsyncTask):
+class ProcessAsync(ProcessABC, tasks.Task.Async):
     async def exec(self, **kwds) -> bool:
         LOGGER.debug(f"running {self.command} asynchronously")
 
@@ -64,7 +64,7 @@ class AsyncProcess(ProcessABC, tasks.AsyncTask):
 
 
 @data.dataclass
-class StreamingAsyncProcess(StreamingProcessABC, AsyncProcess):
+class StreamingProcessAsync(StreamingProcessABC, ProcessAsync):
     async def exec(self, **kwds) -> int:
         self._process = await asyncio.create_subprocess_shell(
             self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwds

@@ -17,19 +17,15 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import asyncio
-from typing import Any
-from pathlib import Path
-from functools import wraps
 import logging
 
-from ... import data, nodes
+from ...core import data, nodes
 
 LOGGER = logging.getLogger(__name__)
 
 
 @data.dataclass
-class TestNodeTask(nodes.NodeTask):
+class TestNodeSync(nodes.Node):
     born_time: int = 1
     id: str = "test-id"
 
@@ -38,7 +34,7 @@ class TestNodeTask(nodes.NodeTask):
 
 
 @data.dataclass
-class TestNodeAsyncTask(nodes.NodeAsyncTask):
+class TestNodeAsync(nodes.Node.Async):
     born_time: int = 1
     id: str = "test-id"
 
@@ -47,7 +43,7 @@ class TestNodeAsyncTask(nodes.NodeAsyncTask):
 
 
 @data.dataclass
-class TestNodeProcess(nodes.NodeProcess):
+class TestNodeProcess(nodes.Node.Process):
     born_time: int = 1
     id: str = "test-id"
 
@@ -58,18 +54,27 @@ class TestNodeProcess(nodes.NodeProcess):
 
 
 @data.dataclass
-class TestNodeAsyncProcess(nodes.NodeAsyncProcess):
+class TestNodeProcessAsync(nodes.Node.ProcessAsync):
     born_time: int = 1
     id: str = "test-id"
 
 
 @data.dataclass
-class TestNodeStreamingProcess(nodes.NodeStreamingProcess):
+class TestNodeStreamingProcess(nodes.Node.StreamingProcess):
     born_time: int = 1
     id: str = "test-id"
 
 
 @data.dataclass
-class TestNodeStreamingAsyncProcess(nodes.NodeStreamingAsyncProcess):
+class TestNodeStreamingAsyncProcess(nodes.Node.StreamingProcessAsync):
     born_time: int = 1
     id: str = "test-id"
+
+
+class TestNode:
+    Sync: TestNodeSync = TestNodeSync
+    Process: TestNodeProcess = TestNodeProcess
+    StreamingProcess: TestNodeStreamingProcess = TestNodeStreamingProcess
+    Async: TestNodeAsync = TestNodeAsync
+    ProcessAsync: TestNodeProcessAsync = TestNodeProcessAsync
+    StreamingProcessAsync: TestNodeStreamingAsyncProcess = TestNodeStreamingAsyncProcess

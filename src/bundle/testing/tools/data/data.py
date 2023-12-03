@@ -17,23 +17,21 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 from functools import wraps
-
-from ... import data
-from . import assert_instance_identity, assert_compare
+from ....core import data
+from .. import assert_instance_identity, assert_compare
 
 
 @data.dataclass
-class OverrideDataclass(data.Dataclass):
+class OverrideData(data.Data):
     I: int = 1
     name: str = __name__
     version: float = 1.0
 
 
 @data.dataclass
-class NestedDataclass(data.Dataclass):
-    nested: OverrideDataclass = data.Dataclass.field(default_factory=OverrideDataclass)
+class NestedData(data.Data):
+    nested: OverrideData = data.Dataclass.field(default_factory=OverrideData)
 
 
 def data_decorator(*data_args, **data_kwargs):

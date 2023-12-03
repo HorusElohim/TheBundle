@@ -25,7 +25,7 @@ from pathlib import Path
 import logging
 import abc
 import jsonschema
-from typing import Any, Dict, Union, Type, Set, get_type_hints
+from typing import Any, Dict, Union, Type, Set, get_type_hints, Type
 import pickle
 import traceback
 import dataclasses
@@ -103,6 +103,7 @@ class JSONDataABC(abc.ABC):
 class JSONData(JSONDataABC, Dataclass):
     """A dataclass that can be serialized to and from JSON."""
 
+    Abc = JSONDataABC
     json_decoder = CustomJSONDecoder
     json_encoder = CustomJSONEncoder
 

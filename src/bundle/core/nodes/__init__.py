@@ -17,5 +17,22 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from .. import data
+from ..logger import getLogger
 
-from .entity import Entity
+LOGGER = getLogger(__name__)
+
+from ._abc import NodeABC
+from .synchronous import NodeSyncABC, NodeTask, NodeProcess, NodeStreamingProcess
+from .asynchronous import NodeAsyncABC, NodeAsyncTask, NodeProcessAsync, NodeProcessStreamingAsync
+
+
+@data.dataclass
+class Node(NodeTask):
+    Abc = NodeSyncABC
+    AbcAsync = NodeSyncABC
+    Async = NodeAsyncTask
+    Process = NodeProcess
+    StreamingProcess = NodeStreamingProcess
+    ProcessAsync = NodeProcessAsync
+    StreamingProcessAsync = NodeProcessStreamingAsync
