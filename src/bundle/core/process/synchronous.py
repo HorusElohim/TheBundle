@@ -31,7 +31,7 @@ from . import LOGGER
 
 
 @data.dataclass
-class Process(ProcessABC):
+class ProcessSync(ProcessABC):
     def exec(self, **kwds) -> bool:
         LOGGER.debug(f"running: '{self.command}'")
         try:
@@ -61,7 +61,7 @@ class Process(ProcessABC):
 
 
 @data.dataclass
-class StreamingProcess(StreamingProcessABC, Process):
+class StreamingProcessSync(StreamingProcessABC, ProcessSync):
     def exec(self, **kwds) -> bool:
         report = f"Process `{self.command}`"
         try:

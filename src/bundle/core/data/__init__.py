@@ -18,27 +18,26 @@
 # under the License.
 
 
-from __future__ import annotations
+from dataclasses import asdict, dataclass, field, fields
+from pathlib import Path
 
-from .. import data, tasks, process
-from . import NodeABC
+from .. import logger
 
-
-@data.dataclass(unsafe_hash=True)
-class NodeSyncABC(NodeABC):
-    pass
+LOGGER = logger.getLogger(__name__)
 
 
-@data.dataclass(unsafe_hash=True)
-class NodeTask(NodeSyncABC, tasks.Task):
-    pass
+def check_file_exist(path: str | Path, not_exist_raise=False) -> Path:
+    if not isinstance(path, Path | str):
+        raise ValueError(f"{type(path)=}, instead of [Path | str]")
+    path = Path(path)
+    if not_exist_raise and not path.exists():
+        raise ValueError(f"{path=}: {LOGGER.Emoji.failed} NOT EXIST")
+    return path
 
 
-@data.dataclass(unsafe_hash=True)
-class NodeProcess(NodeSyncABC, process.Process):
-    pass
+from .data import Dataclass
+from .json import JSONData
 
-
-@data.dataclass(unsafe_hash=True)
-class NodeStreamingProcess(NodeSyncABC, process.StreamingProcess):
-    pass
+@dataclass
+class Data(Dataclass):
+    Json = JSONData

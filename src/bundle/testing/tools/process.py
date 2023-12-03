@@ -19,21 +19,20 @@
 
 
 import logging
-import subprocess
 from pathlib import Path
 from functools import wraps
 import asyncio
 
-from ... import data, process
+from ...core import data, process
 from . import cprofile_decorator, assert_instance_identity, assert_compare
 
 LOGGER = logging.getLogger(__name__)
 
 
 @data.dataclass
-class TestProcess(process.Process):
+class TestProcessSync(process.Process):
     born_time: int = 1
-    
+
     def exec(self, **kwds) -> bool:
         kwds["capture_output"] = True
         kwds["text"] = True
@@ -41,18 +40,25 @@ class TestProcess(process.Process):
 
 
 @data.dataclass
-class TestAsyncProcess(process.AsyncProcess):
+class TestProcessAsync(process.Process.Async):
     born_time: int = 1
 
 
 @data.dataclass
-class TestStreamingProcess(process.StreamingProcess):
+class TestProcessStreaming(process.Process.Streaming):
     born_time: int = 1
 
 
 @data.dataclass
-class TestStreamingAsyncProcess(process.StreamingAsyncProcess):
+class TestProcessStreamingAsync(process.Process.StreamingAsync):
     born_time: int = 1
+
+
+class TestProcess:
+    Sync = TestProcessSync
+    Async = TestProcessAsync
+    Streaming = TestProcessStreaming
+    StreamingAsync = TestProcessStreamingAsync
 
 
 def process_decorator(
@@ -66,7 +72,7 @@ def process_decorator(
             proc = test_func(*args, **kwds)
             LOGGER.debug(f"testing {proc=}")
 
-            assert_instance_identity(proc, process.Process | process.AsyncProcess)
+            assert_instance_identity(proc, process.Process.Abc)
 
             @cprofile_decorator(cprofile_dump_dir=cprofile_dump_dir)
             async def process_execution_async():
@@ -79,7 +85,7 @@ def process_decorator(
                 return proc
 
             # Execute process and assert based on process type
-            if isinstance(proc, process.AsyncProcess):
+            if isinstance(proc, process.Process.Async):
                 executed_process = asyncio.run(process_execution_async())
             else:
                 executed_process = process_execution_sync()

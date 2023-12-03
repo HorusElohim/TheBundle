@@ -1,10 +1,12 @@
 import bundle
+from bundle import testing
+
 import pytest
 
 bundle.tests.LOGGER.debug("ENTITY_TESTS")
 
 ENTITY_CLASSES_TO_TEST = [
-    bundle.tests.TestEntity,
+    testing.TestEntity,
 ]
 
 

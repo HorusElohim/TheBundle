@@ -17,11 +17,20 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ..logger import getLogger
 
-LOGGER = getLogger(__name__)
+import logging
+from typing import Type
+from .. import data
+
+LOGGER = logging.getLogger(__name__)
+ns_to_ms = lambda ns: f"{ns * 1e-6:3f}"
+
+from ._abc import TaskABC
+from .synchronous import SyncTask
+from .asynchronous import AsyncTask
 
 
-from ._abc import GraphABC
-from .synchronous import GraphTask
-from .asynchronous import GraphAsyncTask
+@data.dataclass
+class Task(SyncTask):
+    Abc = TaskABC
+    Async = AsyncTask

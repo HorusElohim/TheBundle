@@ -17,22 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from dataclasses import asdict, dataclass, field, fields
-from pathlib import Path
+from ..logger import getLogger
 
-from .. import logger
-
-LOGGER = logger.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
-def check_file_exist(path: str | Path, not_exist_raise=False) -> Path:
-    if not isinstance(path, Path | str):
-        raise ValueError(f"{type(path)=}, instead of [Path | str]")
-    path = Path(path)
-    if not_exist_raise and not path.exists():
-        raise ValueError(f"{path=}: {logs.Emoji.failed} NOT EXIST")
-    return path
+from ._abc import GraphABC
+from .synchronous import GraphTask
+from .asynchronous import GraphAsyncTask
 
 
-from .data import Dataclass
-from .json import JSONData
+class Graph(GraphTask):
+    Abc = GraphABC
+    Async = GraphAsyncTask

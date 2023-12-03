@@ -1,11 +1,12 @@
 import pytest
 import bundle
+from bundle.testing import TestTask
 
 bundle.tests.LOGGER.debug("TASK_TESTS")
 
 TASK_CLASSES_TO_TEST = [
-    bundle.tests.TestTask,
-    bundle.tests.TestAsyncTask,
+    TestTask.Sync,
+    TestTask.Async,
 ]
 
 
@@ -23,8 +24,8 @@ def test_task_initialization(task, tmp_path, reference_folder, cprofile_folder):
 @pytest.mark.parametrize(
     "task, result",
     [
-        (bundle.tests.TestTask(name="Task"), "Task"),
-        (bundle.tests.TestAsyncTask(name="AsyncTask"), "AsyncTask"),
+        (TestTask.Sync(name="Task"), "Task"),
+        (TestTask.Async(name="AsyncTask"), "AsyncTask"),
     ],
 )
 def test_task_execution(cprofile_folder, task, result):

@@ -18,30 +18,24 @@
 # under the License.
 
 
-import logging
-
-from functools import wraps
+from __future__ import annotations
 
 
-LOGGER = logging.getLogger(__name__)
+import time
+
+from ._abc import TaskABC
+from . import LOGGER
+from .. import data
 
 
-def assert_instance_identity(instance, class_type):
-    assert not isinstance(instance, type), f"{instance} must be an Instance, not a Class"
-    assert issubclass(type(instance), class_type), f"The class {type(instance)=} must be a subclass of {class_type=}"
+@data.dataclass(unsafe_hash=True)
+class SyncTask(TaskABC):
+    def exec(self, *args, **kwds):
+        LOGGER.debug(self)
+        return None
 
-
-def assert_compare(ref: object, tmp: object) -> None:
-    """Compare the content of two files."""
-    assert (
-        ref == tmp
-    ), f"""        
-
-ASSERT COMPARE 
-
-REF: {ref.__class__=}:\n"{ref}" 
-
---
-TEST:  {tmp.__class__=}:\n"{tmp}"
-
-"""
+    def __call__(self, *args, **kwds):
+        self.exec_start_time = time.time_ns()
+        result = self.exec(*args, **kwds)
+        self.exec_end_time = time.time_ns()
+        return result

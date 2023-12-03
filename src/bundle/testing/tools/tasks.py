@@ -24,14 +24,14 @@ from functools import wraps
 import asyncio
 from typing import Any
 
-from ... import data, tasks
+from ...core import data, tasks
 from . import cprofile_decorator, assert_instance_identity, assert_compare
 
 LOGGER = logging.getLogger(__name__)
 
 
 @data.dataclass
-class TestTask(tasks.Task):
+class TestTaskSync(tasks.Task):
     born_time: int = 1
 
     def exec(self):
@@ -39,11 +39,16 @@ class TestTask(tasks.Task):
 
 
 @data.dataclass
-class TestAsyncTask(tasks.AsyncTask):
+class TestTaskAsync(tasks.Task.Async):
     born_time: int = 1
 
     async def exec(self):
         return self.name
+
+
+class TestTask:
+    Sync: TestTaskSync = TestTaskSync
+    Async: TestTaskAsync = TestTaskAsync
 
 
 def task_decorator(

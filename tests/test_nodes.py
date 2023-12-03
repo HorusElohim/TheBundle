@@ -1,13 +1,16 @@
 import pytest
 import bundle
+from bundle.testing import TestNode
 
-bundle.tests.LOGGER.debug("TASK_TESTS")
+bundle.tests.LOGGER.debug("TASK_NODES")
 
 NODES_CLASSES_TO_TEST = [
-    bundle.tests.TestNodeTask,
-    bundle.tests.TestNodeProcess,
-    bundle.tests.TestNodeAsyncTask,
-    bundle.tests.TestNodeAsyncProcess,
+    TestNode.Sync,
+    TestNode.Async,
+    TestNode.Process,
+    TestNode.ProcessAsync,
+    TestNode.StreamingProcess,
+    TestNode.StreamingProcessAsync,
 ]
 
 
@@ -25,8 +28,8 @@ def test_node_initialization(node, tmp_path, reference_folder, cprofile_folder):
 @pytest.mark.parametrize(
     "node, result",
     [
-        (bundle.tests.TestTask(name="Node"), "Node"),
-        (bundle.tests.TestAsyncTask(name="NodeAsyncTask"), "NodeAsyncTask"),
+        (TestNode.Sync(name="Node"), "Node"),
+        (TestNode.Async(name="NodeAsyncTask"), "NodeAsyncTask"),
     ],
 )
 def test_node_task_execution(cprofile_folder, node, result):
@@ -40,10 +43,10 @@ def test_node_task_execution(cprofile_folder, node, result):
 @pytest.mark.parametrize(
     "node, expected_stdout, expected_stderr",
     [
-        (bundle.tests.TestNodeProcess(command='printf "Test"'), "Test", ""),
-        (bundle.tests.TestNodeAsyncProcess(command="printf AsyncTest"), "AsyncTest", ""),
-        (bundle.tests.TestNodeStreamingProcess(command="printf StreamingTest"),"StreamingTest", "",),
-        (bundle.tests.TestNodeStreamingAsyncProcess(command="printf StreamingAsyncTest"),"StreamingAsyncTest", "",),
+        (TestNode.Process(command='printf "Test"'), "Test", ""),
+        (TestNode.ProcessAsync(command="printf AsyncTest"), "AsyncTest", ""),
+        (TestNode.StreamingProcess(command="printf StreamingTest"), "StreamingTest", ""),
+        (TestNode.StreamingProcessAsync(command="printf StreamingAsyncTest"), "StreamingAsyncTest", ""),
     ],
 )
 def test_process_execution(cprofile_folder, node, expected_stdout, expected_stderr):

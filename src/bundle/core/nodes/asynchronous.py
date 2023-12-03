@@ -18,10 +18,27 @@
 # under the License.
 
 
-from .. import logging, tasks, data
+from __future__ import annotations
 
-LOGGER = logging.getLogger(__name__)
+from .. import data, tasks, process
+from . import NodeABC
 
-from ._abc import ProcessABC
-from .synchronous import Process, StreamingProcess
-from .asynchronous import AsyncProcess, StreamingAsyncProcess
+
+@data.dataclass(unsafe_hash=True)
+class NodeAsyncABC(NodeABC):
+    pass
+
+
+@data.dataclass(unsafe_hash=True)
+class NodeAsyncTask(NodeAsyncABC, tasks.AsyncTask):
+    pass
+
+
+@data.dataclass(unsafe_hash=True)
+class NodeProcessAsync(NodeAsyncABC, process.Process.Async):
+    pass
+
+
+@data.dataclass(unsafe_hash=True)
+class NodeProcessStreamingAsync(NodeAsyncABC, process.Process.StreamingAsync):
+    pass

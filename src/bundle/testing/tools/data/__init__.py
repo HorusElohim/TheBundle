@@ -17,13 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from typing import Type
 
-import logging
-from .. import logging
+from .data import NestedData, OverrideData, data_decorator
+from .json import InnerDataJson, NestedDatajson, json_decorator
 
-LOGGER = logging.getLogger(__name__)
-ns_to_ms = lambda ns: f"{ns * 1e-6:3f}"
 
-from ._abc import TaskABC
-from .synchronous import Task
-from .asynchronous import AsyncTask
+class TestData:
+    Nested: Type = NestedData
+    Override: Type = OverrideData
+    InnerJson: Type = InnerDataJson
+    NestedJson: Type = NestedDatajson

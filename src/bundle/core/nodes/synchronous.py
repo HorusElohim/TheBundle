@@ -20,22 +20,26 @@
 
 from __future__ import annotations
 
-
-import time
-
-from ._abc import TaskABC
-from . import LOGGER
-from .. import data
+from .. import data, tasks, process
+from . import NodeABC
 
 
 @data.dataclass(unsafe_hash=True)
-class Task(TaskABC):
-    def exec(self, *args, **kwds):
-        LOGGER.debug(self)
-        return None
+class NodeSyncABC(NodeABC):
+    pass
 
-    def __call__(self, *args, **kwds):
-        self.exec_start_time = time.time_ns()
-        result = self.exec(*args, **kwds)
-        self.exec_end_time = time.time_ns()
-        return result
+
+@data.dataclass(unsafe_hash=True)
+class NodeTask(NodeSyncABC, tasks.Task):
+    pass
+
+
+@data.dataclass(unsafe_hash=True)
+class NodeProcess(NodeSyncABC, process.Process):
+    pass
+
+
+@data.dataclass(unsafe_hash=True)
+class NodeStreamingProcess(NodeSyncABC, process.Process.Streaming):
+    pass
+

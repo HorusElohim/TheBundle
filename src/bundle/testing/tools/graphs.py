@@ -24,42 +24,50 @@ from functools import wraps
 import asyncio
 from typing import Any
 
-from ... import data, graphs
-from . import TestNodeTask, TestNodeAsyncTask
+from ...core import data, graphs
+from . import TestNode
 from . import cprofile_decorator, assert_instance_identity, assert_compare
 
 LOGGER = logging.getLogger(__name__)
 
 
 @data.dataclass
-class TestGraphTask(graphs.GraphTask):
+class TestGraphSync(graphs.Graph):
     born_time: int = 1
-    root: TestNodeTask = data.field(default_factory=(TestNodeTask))
+    root: TestNode.Sync = data.field(default_factory=(TestNode.Sync))
 
 
 @data.dataclass
-class TestGraphAsyncTask(graphs.GraphAsyncTask):
+class TestGraphAsync(graphs.Graph.Async):
     born_time: int = 1
-    root: TestNodeTask = data.field(default_factory=(TestNodeTask))
+    root: TestNode.Async = data.field(default_factory=(TestNode.Async))
 
 
 @data.dataclass
-class TestGraphNodeTask(TestNodeTask):
+class TestGraphNodeSync(TestNode.Sync):
     def exec(self, *args, **kwargs):
         parent_node_name = "".join(args) + "->" if len(args) > 0 else ""
         return f"{parent_node_name}{self.name}"
 
 
 @data.dataclass
-class TestGraphNodeAsyncTask(TestNodeAsyncTask):
+class TestGraphNodeAsync(TestNode.Async):
     async def exec(self, *args, **kwargs):
         parent_node_name = "".join(args) + "->" if len(args) > 0 else ""
         return f"{parent_node_name}{self.name}"
 
 
 @data.dataclass
-class GraphResultTest(data.JSONData):
+class GraphResultTest(data.Data.Json):
     results: dict[str:Any] = data.field(default_factory=dict)
+
+
+class TestGraph:
+    Sync = TestGraphSync
+    Async = TestGraphAsync
+    TestNodeSync = TestGraphNodeSync
+    TestNodeAsync = TestGraphNodeAsync
+    Result = GraphResultTest
 
 
 def graph_decorator(ref_dir: Path, cprofile_dump_dir: Path | None = None):
@@ -69,7 +77,7 @@ def graph_decorator(ref_dir: Path, cprofile_dump_dir: Path | None = None):
             graph = test_func(*args, **kwds)
             LOGGER.debug(f"testing graph {graph.__class__.__name__}")
 
-            assert_instance_identity(graph, graphs.GraphABC)
+            assert_instance_identity(graph, graphs.Graph.Abc)
 
             filename = f"{type(graph).__name__}.expected_result.json"
             ref_json_path = ref_dir / "ref" / filename
