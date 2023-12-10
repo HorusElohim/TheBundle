@@ -1,0 +1,10 @@
+{
+    "class_type": "TestEntity",
+    "name": "Default",
+    "path": {
+        "_path_": "."
+    },
+    "born_time": 1,
+    "dead_time": 0,
+    "auto_save": false
+}
