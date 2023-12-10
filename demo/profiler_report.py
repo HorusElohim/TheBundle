@@ -3,10 +3,14 @@ import re
 import click
 import pstats
 import asyncio
+import logging
+from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
-from bundle import data, tasks, Path, LOGGER, logger
+import bundle 
 import latex
+
+LOGGER = logging.getLogger(__name__)
 
 LATEX_HEADER = r"""
     \documentclass{article}
@@ -66,8 +70,8 @@ def parse_function_name_plot(function: str):
     return f"{function_file}  {function_name}"
 
 
-@data.dataclass
-class ProfileFinder(tasks.Task):
+@bundle.Data.dataclass
+class ProfileFinder(bundle.Task):
     def exec(self, *args, **kwds):
         prof_files = []
         for root, dirs, files in os.walk(self.path):
@@ -77,10 +81,10 @@ class ProfileFinder(tasks.Task):
         return prof_files
 
 
-@data.dataclass
-class ProfileLoader(tasks.AsyncTask):
-    profile_data: list = data.field(default_factory=list)
-    total_calls: int = data.field(default_factory=int)
+@bundle.Data.dataclass
+class ProfileLoader(bundle.Task.Async):
+    profile_data: list = bundle.Data.field(default_factory=list)
+    total_calls: int = bundle.Data.field(default_factory=int)
 
     async def exec(self, *args, **kwds):
         self.stats = pstats.Stats(str(self.path))
@@ -94,8 +98,8 @@ class ProfileLoader(tasks.AsyncTask):
         return self.profile_data
 
 
-@data.dataclass
-class ProfilerPlot(tasks.AsyncTask):
+@bundle.Data.dataclass
+class ProfilerPlot(bundle.Task.Async):
     plot_color_hex: str = "#D3D3D3"
 
     def setup_plot(self):
@@ -161,11 +165,11 @@ class ProfilerPlot(tasks.AsyncTask):
         return super().__del__()
 
 
-@data.dataclass
-class ProfilerReportLatex(tasks.Task):
-    main_folder: str = data.field(default_factory=str)
-    output_path: str = data.field(default_factory=str)
-    latex_content: str = data.field(default_factory=str)
+@bundle.Data.dataclass
+class ProfilerReportLatex(bundle.Task):
+    main_folder: str = bundle.Data.field(default_factory=str)
+    output_path: str = bundle.Data.field(default_factory=str)
+    latex_content: str = bundle.Data.field(default_factory=str)
 
     def generate_table(self, profile_data):
         table_content = (
@@ -238,13 +242,13 @@ class ProfilerReportLatex(tasks.Task):
             )
 
         self.latex_content += r"\end{document}"
-        LOGGER.info(f"LateX generation {logger.Emoji.success}")
+        LOGGER.info(f"LateX generation {bundle.core.logger.Emoji.success}")
 
     def build(self):
         # Generate PDF from LaTeX content
         LOGGER.info(f"LateX building ...")
         pdf = latex.build_pdf(self.latex_content)
-        LOGGER.info(f"LateX build {logger.Emoji.success}")
+        LOGGER.info(f"LateX build {bundle.core.logger.Emoji.success}")
         pdf.save_to(self.output_path)
         LOGGER.info(f"LateX saved to {self.output_path}")
 
@@ -253,10 +257,10 @@ class ProfilerReportLatex(tasks.Task):
         self.build()
 
 
-@data.dataclass
-class MainProfilerReport(tasks.Task):
-    input_path: str = data.field(default_factory=str)
-    output_path: str = data.field(default_factory=str)
+@bundle.Data.dataclass
+class MainProfilerReport(bundle.Task):
+    input_path: str = bundle.Data.field(default_factory=str)
+    output_path: str = bundle.Data.field(default_factory=str)
 
     async def run_loader_and_plot_generator(self, loader, plot_generator):
         await loader()
@@ -294,7 +298,7 @@ def main(input_path, output_path):
     LOGGER.info("Program start")
     task = MainProfilerReport(input_path=input_path, output_path=output_path)
     task()
-    LOGGER.info(f"Run {logger.Emoji.success} in {task.duration * 1e-9:.2f} seconds")
+    LOGGER.info(f"Run {bundle.core.logger.Emoji.success} in {task.duration * 1e-9:.2f} seconds")
 
 
 if __name__ == "__main__":
