@@ -1,0 +1,36 @@
+{
+    "class_type": "GraphResultTest",
+    "results": {
+        "TestGraphNodeSync.RootNode.test-id": "RootNode",
+        "TestGraphNodeSync.ChildNode1.test-id": {
+            "TestGraphNodeSync.ChildNode1.test-id": "RootNode->ChildNode1",
+            "TestGraphNodeSync.ChildNode1Child1.test-id": {
+                "TestGraphNodeSync.ChildNode1Child1.test-id": "RootNode->ChildNode1->ChildNode1Child1"
+            },
+            "TestGraphNodeAsync.ChildNode1Child2.test-id": {
+                "TestGraphNodeAsync.ChildNode1Child2.test-id": "RootNode->ChildNode1->ChildNode1Child2",
+                "TestGraphNodeSync.ChildNode1Child2Child1.test-id": {
+                    "TestGraphNodeSync.ChildNode1Child2Child1.test-id": "RootNode->ChildNode1->ChildNode1Child2->ChildNode1Child2Child1"
+                },
+                "TestGraphNodeAsync.ChildNode1Child2Child2.test-id": {
+                    "TestGraphNodeAsync.ChildNode1Child2Child2.test-id": "RootNode->ChildNode1->ChildNode1Child2->ChildNode1Child2Child2"
+                }
+            }
+        },
+        "TestGraphNodeAsync.ChildNode2.test-id": {
+            "TestGraphNodeAsync.ChildNode2.test-id": "RootNode->ChildNode2",
+            "TestGraphNodeSync.ChildNode2Child1.test-id": {
+                "TestGraphNodeSync.ChildNode2Child1.test-id": "RootNode->ChildNode2->ChildNode2Child1"
+            },
+            "TestGraphNodeAsync.ChildNode2Child2.test-id": {
+                "TestGraphNodeAsync.ChildNode2Child2.test-id": "RootNode->ChildNode2->ChildNode2Child2",
+                "TestGraphNodeSync.ChildNode1Child1Child1.test-id": {
+                    "TestGraphNodeSync.ChildNode1Child1Child1.test-id": "RootNode->ChildNode2->ChildNode2Child2->ChildNode1Child1Child1"
+                },
+                "TestGraphNodeAsync.ChildNode1Child2Child2.test-id": {
+                    "TestGraphNodeAsync.ChildNode1Child2Child2.test-id": "RootNode->ChildNode2->ChildNode2Child2->ChildNode1Child2Child2"
+                }
+            }
+        }
+    }
+}
