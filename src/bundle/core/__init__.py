@@ -19,15 +19,16 @@
 
 
 import time
-from datetime import datetime
 import logging
-from pathlib import Path
 import typing
+from pathlib import Path
+from datetime import datetime
 
 from .. import version
-from . import logger
+from .logger import setup_logging
 
-LOGGER = logger.setup_logging(log_level=logger.LOGGING_LEVEL, to_json=True)
+LOGGER = logger.setup_logging()
+
 
 from . import data
 from . import entity

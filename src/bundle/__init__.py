@@ -17,11 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
 from pathlib import Path
 
 from ._version import version
 
+from .core import setup_logging
 from .core.data import Data, dataclass, field
 from .core.entity import Entity
 from .core.tasks import Task
