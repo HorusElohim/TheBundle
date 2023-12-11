@@ -18,11 +18,11 @@
 # under the License.
 
 
-import logging
-from typing import Type
-from .. import data
 
-LOGGER = logging.getLogger(__name__)
+from typing import Type
+from .. import data, getLogger
+
+LOGGER = getLogger(__name__)
 ns_to_ms = lambda ns: f"{ns * 1e-6:3f}"
 
 from .base import TaskBase

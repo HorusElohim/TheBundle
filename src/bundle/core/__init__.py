@@ -19,13 +19,13 @@
 
 
 import time
-import logging
+
 import typing
 from pathlib import Path
 from datetime import datetime
 
 from .. import version
-from .logger import setup_logging
+from .logger import setup_logging, getLogger, Emoji
 
 LOGGER = logger.setup_logging()
 

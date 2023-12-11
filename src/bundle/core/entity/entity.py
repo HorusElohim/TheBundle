@@ -19,7 +19,7 @@
 
 
 from . import LOGGER
-from .. import data, Path, time, typing, version
+from .. import data, Path, time, typing, version, Emoji
 
 
 @data.dataclass
@@ -43,7 +43,7 @@ class Entity(data.JSONData):
     def __post_init__(self):
         super().__post_init__()  # Ensure any parent class post-init actions are performed
         self.name = self.name if self.name else "Default"
-        LOGGER.debug("❤️  %s.%s path=%s", self.class_type, self.name, self.path)
+        LOGGER.debug("%s  %s.%s path=%s", Emoji.born, self.class_type, self.name, self.path)
 
     def __del__(self):
         if self.auto_save:
@@ -54,7 +54,7 @@ class Entity(data.JSONData):
                 if LOGGER:
                     LOGGER.error(f"Exception: {ex}")
         if LOGGER:
-            LOGGER.debug("%s.%s age=%d 💀", self.class_type, self.name, self.age)
+            LOGGER.debug("%s  %s.%s age=%d", Emoji.dead, self.class_type, self.name, self.age)
 
     def move(self, new_path: typing.Union[Path, str]):
         """

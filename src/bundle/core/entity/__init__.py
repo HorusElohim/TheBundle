@@ -17,8 +17,8 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import logging
+from .. import getLogger
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 from .entity import Entity
