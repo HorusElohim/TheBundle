@@ -18,9 +18,9 @@
 # under the License.
 
 
-from .. import logging, tasks, data
+from .. import tasks, data, getLogger
 
-LOGGER = logging.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 from .base import ProcessBase
 from .synchronous import ProcessSync, StreamingProcessSync
@@ -29,7 +29,7 @@ from .asynchronous import ProcessAsync, StreamingProcessAsync
 
 @data.dataclass
 class Process(ProcessSync):
-    Abc = ProcessBase
+    Base = ProcessBase
     Streaming = StreamingProcessSync
     Async = ProcessAsync
     StreamingAsync = StreamingProcessAsync

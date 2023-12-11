@@ -23,8 +23,8 @@ from __future__ import annotations
 
 import time
 
-from .. import data
-from . import TaskBase
+from .. import data, Emoji
+from . import TaskBase, LOGGER
 
 
 @data.dataclass(unsafe_hash=True)
@@ -33,4 +33,5 @@ class SyncTask(TaskBase):
         self.exec_start_time = time.time_ns()
         result = self.exec(*args, **kwds)
         self.exec_end_time = time.time_ns()
+        LOGGER.debug(f"{Emoji.success} {self.elapsed=}")
         return result

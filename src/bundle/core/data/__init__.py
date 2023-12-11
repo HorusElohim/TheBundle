@@ -21,9 +21,9 @@
 from dataclasses import asdict, dataclass, field, fields
 from pathlib import Path
 
-from .. import logger
+from .. import getLogger
 
-LOGGER = logger.getLogger(__name__)
+LOGGER = getLogger(__name__)
 
 
 def check_file_exist(path: str | Path, not_exist_raise=False) -> Path:
@@ -31,7 +31,7 @@ def check_file_exist(path: str | Path, not_exist_raise=False) -> Path:
         raise ValueError(f"{type(path)=}, instead of [Path | str]")
     path = Path(path)
     if not_exist_raise and not path.exists():
-        raise ValueError(f"{path=}: {LOGGER.Emoji.failed} NOT EXIST")
+        raise ValueError(f" {LOGGER.Emoji.failed} {path=} DO NOT EXIST")
     return path
 
 

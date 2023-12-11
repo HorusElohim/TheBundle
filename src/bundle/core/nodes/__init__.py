@@ -18,7 +18,7 @@
 # under the License.
 
 from .. import data
-from ..logger import getLogger
+from .. import getLogger
 
 LOGGER = getLogger(__name__)
 
