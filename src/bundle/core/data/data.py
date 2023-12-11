@@ -24,7 +24,8 @@ from typing import List
 from typing import Any, Dict, List, Type, TypeVar, Union
 from pprint import pformat
 
-from . import dataclass, field, asdict, LOGGER, logger
+from .. import Emoji
+from . import dataclass, field, asdict, LOGGER
 
 
 @dataclass
@@ -69,12 +70,11 @@ class Dataclass:
 
             actual_keys = set(source_dict.keys())
             LOGGER.debug(f"{target_class=} MRO: {(expected_fields)}")
-            
+
             LOGGER.debug(f"{sorted(actual_keys)=}")
 
             initialized_fields = {}
             for field_name in source_dict:
-                LOGGER.debug(f"{field_name=}")
                 if Dataclass._is_annotation_present_in_mro(target_class, field_name):
                     field_type = next(
                         (
@@ -84,29 +84,27 @@ class Dataclass:
                         ),
                         None,
                     )
-                    LOGGER.debug(f"{field_type}")
+                    LOGGER.debug(f"{field_name=} {field_type=}")
                     if isinstance(source_dict[field_name], dict):
-                        initialized_fields[field_name] = Dataclass._recursive_dataclass_from_dict(field_type, source_dict[field_name])
+                        initialized_fields[field_name] = Dataclass._recursive_dataclass_from_dict(
+                            field_type, source_dict[field_name]
+                        )
                     else:
                         initialized_fields[field_name] = source_dict[field_name]
                 else:
                     if isinstance(target_class, dict):
+                        LOGGER.debug(f"{field_name=} field_type=dict")
                         initialized_fields[field_name] = source_dict[field_name]
                     else:
                         # If the field is not in annotations of any base classes, log this information
-                        LOGGER.warning(
-                            f"Field '%s' is not expected according to the annotations in the MRO of '%s'",
-                            field_name,
-                            target_class.__name__,
-                        )
+                        LOGGER.warning(f"{field_name=} field_type={type(source_dict)} not in MRO {target_class.__name__=}")
                         initialized_fields[field_name] = source_dict[field_name]
 
             # Log any missing fields
             missing_fields = expected_fields - actual_keys
             if missing_fields:
                 msg = f"Missing fields in source_dict that are expected in MRO of target_class: {missing_fields}"
-                LOGGER.error(msg)
-                raise ValueError(msg)
+                LOGGER.warning(msg)
 
             return target_class(**initialized_fields)
         except KeyError as e:
@@ -130,7 +128,7 @@ class Dataclass:
             TypeError: If there's a type mismatch or unexpected structure in the dictionary.
         """
         data_class = Dataclass._recursive_dataclass_from_dict(cls, d)
-        LOGGER.debug(logger.Emoji.success)
+        LOGGER.debug(Emoji.success)
         return data_class
 
     def as_dict(self) -> Dict[str, Any]:
@@ -141,7 +139,7 @@ class Dataclass:
             A dictionary representation of the dataclass instance.
         """
         data_dict = asdict(self)
-        LOGGER.debug(logger.Emoji.success)
+        LOGGER.debug(Emoji.success)
         return data_dict
 
     def __str__(self) -> str:

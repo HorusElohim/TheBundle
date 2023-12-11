@@ -29,7 +29,9 @@ from typing import Any, Dict, Union, Type, Set, get_type_hints, Type
 import pickle
 import traceback
 import dataclasses
-from . import Dataclass, dataclass, fields, check_file_exist, logger
+
+from .. import Emoji
+from . import Dataclass, dataclass, fields, check_file_exist
 
 
 def is_json_serializable(value: Any) -> bool:
@@ -113,10 +115,10 @@ class JSONData(JSONDataABC, Dataclass):
         try:
             with Path(json_path).open("r") as file:
                 obj_dict = js.load(file, cls=decoder)
-                LOGGER.debug(f"{json_path=} {logger.Emoji.success}")
+                LOGGER.debug(f"{Emoji.success} {json_path=} ")
                 return obj_dict
         except jsonschema.ValidationError:
-            LOGGER.error(f"{json_path=} {logger.Emoji.failed} \n{traceback.format_exc()}")
+            LOGGER.error(f"{Emoji.failed} {json_path=} \n{traceback.format_exc()}")
             return None
 
     @staticmethod
@@ -129,23 +131,23 @@ class JSONData(JSONDataABC, Dataclass):
         try:
             with Path(path).open("w") as file:
                 js.dump(obj_dict, file, indent=4, cls=encoder)
-                LOGGER.debug(f"{path=} {logger.Emoji.success}")
+                LOGGER.debug(f"{Emoji.success} {path=} ")
                 return obj_dict
         except jsonschema.ValidationError:
-            LOGGER.error(f"{path=} {logger.Emoji.failed} \n{traceback.format_exc()}")
+            LOGGER.error(f" {Emoji.failed} {path=}\n{traceback.format_exc()}")
             return None
 
     @classmethod
     def from_json(cls: Type[JSONData], path: Union[str, Path]) -> JSONData:
         """Load the dataclass from a JSON file."""
         obj_dict = JSONData.load_json_file(json_path=path, decoder=cls.json_decoder)
-        LOGGER.debug(f"{path=}{logger.Emoji.success}{obj_dict}")
+        LOGGER.debug(f"{Emoji.success} {path=}{obj_dict}")
         return cls.from_dict(obj_dict)
 
     def dump_json(self, path: Union[str, Path]) -> None:
         """Save the dataclass to a JSON file."""
         self.dump_json_file(obj_dict=self.as_dict(), path=path, encoder=self.json_encoder)
-        LOGGER.debug(f"{path=}{logger.Emoji.success}")
+        LOGGER.debug(f"{Emoji.success} {path=}")
 
     def as_json(self) -> None:
         """Convert the dataclass to a JSON string."""
@@ -223,9 +225,9 @@ class JSONData(JSONDataABC, Dataclass):
         try:
             with Path(path).open("w") as file:
                 js.dump(cls.generate_jsonschema(), file, indent=4)
-                LOGGER.debug(f"{report}{logger.Emoji.success} ")
+                LOGGER.debug(f"{Emoji.success} {report} ")
         except Exception:
-            LOGGER.error(f"{report} {logger.Emoji.failed} \n{traceback.format_exc()}")
+            LOGGER.error(f"{Emoji.failed} {report}\n{traceback.format_exc()}")
 
     @classmethod
     def schema_validation(
@@ -252,10 +254,10 @@ class JSONData(JSONDataABC, Dataclass):
         # Validate the data against the schema
         try:
             jsonschema.validate(data, schema)
-            LOGGER.debug(f"{report} {logger.Emoji.success}")
+            LOGGER.debug(f"{Emoji.success} {report} ")
             return True
         except jsonschema.ValidationError:
-            LOGGER.error(f"{report} {logger.Emoji.failed} \n{traceback.format_exc()}")
+            LOGGER.error(f"{Emoji.failed} {report} \n{traceback.format_exc()}")
             return False
 
     def is_valid_by_jsonschema(self, jsonschema_path: Union[Path, str, None] = None) -> bool:
@@ -267,8 +269,8 @@ class JSONData(JSONDataABC, Dataclass):
             jsonschema_dict = JSONData.load_json_file(jsonschema_path) if jsonschema_path else self.generate_jsonschema()
             # Validate the data against the schema
             jsonschema.validate(data, jsonschema_dict)
-            LOGGER.debug(f"{jsonschema_path=} {logger.Emoji.success}")
+            LOGGER.debug(f"{Emoji.success} {jsonschema_path=}")
             return True
         except jsonschema.ValidationError:
-            LOGGER.error(f"{jsonschema_path=} {logger.Emoji.failed} \n{traceback.format_exc()}")
+            LOGGER.error(f"{Emoji.failed} {jsonschema_path=}\n{traceback.format_exc()}")
             return False

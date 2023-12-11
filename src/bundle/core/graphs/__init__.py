@@ -17,7 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
-from ..logger import getLogger
+from .. import getLogger
 
 LOGGER = getLogger(__name__)
 

@@ -47,10 +47,10 @@ class ProcessSync(ProcessBase):
         finally:
             self._reset_process()
             if self.returncode == 0:
-                LOGGER.debug(f"ran {logger.Emoji.success}")
+                LOGGER.debug(f"{logger.Emoji.success}")
                 return True
             else:
-                LOGGER.error(f"ran {logger.Emoji.failed}")
+                LOGGER.error(f"{logger.Emoji.failed}")
                 LOGGER.error(f"{self}")
                 return False
 
@@ -111,10 +111,10 @@ class StreamingProcessSync(StreamingProcessBase, ProcessSync):
             self._reset_process()
 
             if self.returncode == 0:
-                LOGGER.debug(f"{report}: {logger.Emoji.success}")
+                LOGGER.debug(f" {logger.Emoji.success} {report}")
                 return True
             else:
-                LOGGER.error(f"{report}: {logger.Emoji.failed}")
+                LOGGER.error(f"{logger.Emoji.failed} {report}")
                 if self.stderr:
                     LOGGER.error(f"stderr: {self.stderr}")
                 return False
