@@ -80,29 +80,38 @@ class ColoredConsoleHandler(logging.StreamHandler):
 
 
 def setup_logging(
-    log_path: Path = Path("logs"),
-    log_level=logging.INFO,
+    level=LOGGING_LEVEL,
+    log_path: Path | None = None,
     colored_output=True,
     to_json=False,
 ):
     """
     Set up logging with both file and console handlers.
     """
-    log_path.mkdir(parents=True, exist_ok=True)
-    log_file = log_path / f"bundle-{time.strftime('%y.%m.%d.%H.%M.%S')}.json"
+    
+    # Logger setup
+    logger = logging.getLogger("bundle")
+    logger.setLevel(level)
+    
+    
+    if log_path:
+        log_path.mkdir(parents=True, exist_ok=True)
+        log_file = log_path / f"bundle-{time.strftime('%y.%m.%d.%H.%M.%S')}.json"
 
-    # File handler with JSON formatting
-    file_handler = logging.FileHandler(log_file, encoding="utf-8")
-    # Format
-    if to_json:
-        formatter = JsonFormatter()
-    else:
-        formatter = logging.Formatter(
-            "%(asctime)s.%(mssecs)03d - %(levelname)s - [%(name)s] - %(filename)s:%(funcName)s:%(lineno)d: - %(message)s"
-        )
+        # File handler with JSON formatting
+        file_handler = logging.FileHandler(log_file, encoding="utf-8")
+        # Format
+        if to_json:
+            formatter = JsonFormatter()
+        else:
+            formatter = logging.Formatter(
+                "%(asctime)s.%(mssecs)03d - %(levelname)s - [%(name)s] - %(filename)s:%(funcName)s:%(lineno)d: - %(message)s"
+            )
 
-    file_handler.setFormatter(formatter)
-    file_handler.encoding = "utf-8"
+        file_handler.setFormatter(formatter)
+        file_handler.encoding = "utf-8"
+        # Add File Handler
+        logger.addHandler(file_handler)
 
     # Console handler with optional colored output
     console_handler = ColoredConsoleHandler()
@@ -112,11 +121,9 @@ def setup_logging(
             logging.Formatter("%(levelname)s- [%(name)s]: %(message)s")
         )
 
-    # Logger setup
-    logger = logging.getLogger("bundle")
-    logger.setLevel(log_level)
-    logger.addHandler(file_handler)
+    # Add Console Handler
     logger.addHandler(console_handler)
+    # Propagate 
     logger.propagate = True
     
     return logger
