@@ -2,15 +2,16 @@ import os
 import re
 import click
 import pstats
-import bundle 
+import bundle
 import asyncio
-import logging
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
+import bundle
 import latex
 
-LOGGER = logging.getLogger(__name__)
+
+LOGGER = bundle.setup_logging(name=__name__, level=10)
 
 LATEX_HEADER = r"""
     \documentclass{article}
@@ -102,17 +103,6 @@ class ProfileLoader(bundle.Task.Async):
 class ProfilerPlot(bundle.Task.Async):
     plot_color_hex: str = "#D3D3D3"
 
-    def setup_plot(self):
-        fig, ax = plt.subplots()
-        ax.set_facecolor("#2d2d2d")  # Dark gray background
-        ax.grid(True, linestyle=":", color="#555555")  # Dotted grid lines
-        return fig, ax
-
-    def prepare_data_for_plot(self, profile_data):
-        cumulative_times = [int(x["cumulative_time"] * 1e9) for x in profile_data[:10]]
-        function_names = [parse_function_name_plot(x["function"]) for x in profile_data[:10]]
-        return cumulative_times, function_names
-
     def create_barchart(self, ax, function_names, cumulative_times):
         return ax.barh(function_names, cumulative_times, color="skyblue")
 
@@ -151,17 +141,24 @@ class ProfilerPlot(bundle.Task.Async):
         return label_x_pos, ha
 
     async def exec(self, profile_data, *args, **kwds):
-        fig, ax = self.setup_plot()
-        cumulative_times, function_names = self.prepare_data_for_plot(profile_data)
+        fig, ax = plt.subplots()
+        ax.set_facecolor("#2d2d2d")  # Dark gray background
+        ax.grid(True, linestyle=":", color="#555555")  # Dotted grid lines
+        LOGGER.debug("subplots created")
+        cumulative_times = [int(x["cumulative_time"] * 1e9) for x in profile_data[:10]]
+        function_names = [parse_function_name_plot(x["function"]) for x in profile_data[:10]]
+        LOGGER.debug("data processed")
         bars = self.create_barchart(ax, function_names, cumulative_times)
         self.configure_axes(ax, cumulative_times)
         self.annotate_bars(ax, bars)
+        LOGGER.debug("plot built")
         fig.savefig(self.path, transparent=True, bbox_inches="tight", pad_inches=0, dpi=300)
+        LOGGER.debug(f"plot saved {self.path=}")
         plt.clf()
 
     def __del__(self):
         LOGGER.debug(f"cleaning plot: {self.path}")
-        os.remove(self.path)
+        # os.remove(self.path)
         return super().__del__()
 
 
@@ -205,6 +202,12 @@ class ProfilerReportLatex(bundle.Task):
         return table_content
 
     async def generate_plots(self):
+        semaphore = asyncio.Semaphore(5)
+
+        async def run_task(plot_task):
+            async with semaphore:
+                return await plot_task()
+
         plot_tasks = [
             ProfilerPlot(
                 profile_data=loader.profile_data,
@@ -212,7 +215,8 @@ class ProfilerReportLatex(bundle.Task):
             )
             for loader in self.profile_loaders
         ]
-        return await asyncio.gather(*(plot_task() for plot_task in plot_tasks))
+        LOGGER.debug("starting ProfilerPlots")
+        return await asyncio.gather(*(run_task(plot_task) for plot_task in plot_tasks))
 
     def generate(self, prof_loaders: list[ProfileLoader], prof_plots: list[ProfilerPlot]):
         LOGGER.info(f"LateX generation ...")
