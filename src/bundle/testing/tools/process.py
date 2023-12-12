@@ -72,7 +72,7 @@ def process_decorator(
             proc = test_func(*args, **kwds)
             LOGGER.debug(f"testing {proc=}")
 
-            assert_instance_identity(proc, process.Process.Abc)
+            assert_instance_identity(proc, process.Process.Base)
 
             @cprofile_decorator(cprofile_dump_dir=cprofile_dump_dir)
             async def process_execution_async():

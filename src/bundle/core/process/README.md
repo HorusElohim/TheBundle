@@ -1,12 +1,12 @@
 # process
 The process subpackage within BUNDLE offers sophisticated process handling capabilities, ideal for managing and interacting with system processes in both synchronous and asynchronous contexts. It includes classes for executing and managing standard and streaming processes, extending these functionalities for asynchronous operations as well.
 
-* *_abc.py*: Defines the abstract base class ProcessABC for process-related classes.
+* *_abc.py*: Defines the abstract base class ProcessBase for process-related classes.
 * *synchronous.py*: Contains the synchronous Process and StreamingProcess classes.
 * *asynchronous.py*: Houses the asynchronous counterparts AsyncProcess and StreamingAsyncProcess.
 
 
-## ProcessABC
+## ProcessBase
 The abstract base class for all process classes. It sets the groundwork for defining common process-related functionalities.
 
 ## Process

@@ -2,12 +2,12 @@ import os
 import re
 import click
 import pstats
+import bundle 
 import asyncio
 import logging
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
-import bundle 
 import latex
 
 LOGGER = logging.getLogger(__name__)
