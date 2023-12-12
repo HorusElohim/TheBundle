@@ -29,7 +29,7 @@ from . import LOGGER
 
 
 @data.json.JSONData.dataclass
-class ProcessABC(tasks.Task):
+class ProcessBase(tasks.Task):
     command: str = data.field(default_factory=str)
     returncode: int = data.field(default_factory=int)
     stdout: str = data.field(default_factory=str)
@@ -48,7 +48,7 @@ class ProcessABC(tasks.Task):
 
 
 @data.dataclass
-class StreamingProcessABC(ProcessABC):
+class StreamingProcessBase(ProcessBase):
     def __post_init__(self):
         self.stdout_callback: Callable[[str], None] | None = None
         self.stderr_callback: Callable[[str], None] | None = None

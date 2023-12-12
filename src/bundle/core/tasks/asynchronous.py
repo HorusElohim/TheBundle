@@ -22,17 +22,12 @@ from __future__ import annotations
 
 import time
 
-from ._abc import TaskABC
-from . import LOGGER
 from .. import data
+from . import TaskBase
 
 
 @data.dataclass(unsafe_hash=True)
-class AsyncTask(TaskABC):
-    async def exec(self, *args, **kwds):
-        LOGGER.debug(self)
-        return None
-
+class AsyncTask(TaskBase):
     async def __call__(self, *args, **kwds):
         """Asynchronous call method"""
         self.exec_start_time = time.time_ns()

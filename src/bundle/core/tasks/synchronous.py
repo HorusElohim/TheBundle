@@ -23,17 +23,12 @@ from __future__ import annotations
 
 import time
 
-from ._abc import TaskABC
-from . import LOGGER
 from .. import data
+from . import TaskBase
 
 
 @data.dataclass(unsafe_hash=True)
-class SyncTask(TaskABC):
-    def exec(self, *args, **kwds):
-        LOGGER.debug(self)
-        return None
-
+class SyncTask(TaskBase):
     def __call__(self, *args, **kwds):
         self.exec_start_time = time.time_ns()
         result = self.exec(*args, **kwds)

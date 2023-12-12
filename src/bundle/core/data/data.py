@@ -68,36 +68,38 @@ class Dataclass:
                 expected_fields.update(getattr(base_class, "__annotations__", {}).keys())
 
             actual_keys = set(source_dict.keys())
-            LOGGER.debug(f"Expected fields for {target_class} from MRO: {sorted(expected_fields)}")
-            LOGGER.debug(f"Actual keys in source_dict: {sorted(actual_keys)}")
+            LOGGER.debug(f"{target_class=} MRO: {(expected_fields)}")
+            
+            LOGGER.debug(f"{sorted(actual_keys)=}")
 
             initialized_fields = {}
-            for field in source_dict:
-                LOGGER.debug(f"working on field {field}")
-                if Dataclass._is_annotation_present_in_mro(target_class, field):
+            for field_name in source_dict:
+                LOGGER.debug(f"{field_name=}")
+                if Dataclass._is_annotation_present_in_mro(target_class, field_name):
                     field_type = next(
                         (
-                            getattr(base_class, "__annotations__", {}).get(field)
+                            getattr(base_class, "__annotations__", {}).get(field_name)
                             for base_class in target_class.__mro__
-                            if field in getattr(base_class, "__annotations__", {})
+                            if field_name in getattr(base_class, "__annotations__", {})
                         ),
                         None,
                     )
-                    if isinstance(source_dict[field], dict):
-                        initialized_fields[field] = Dataclass._recursive_dataclass_from_dict(field_type, source_dict[field])
+                    LOGGER.debug(f"{field_type}")
+                    if isinstance(source_dict[field_name], dict):
+                        initialized_fields[field_name] = Dataclass._recursive_dataclass_from_dict(field_type, source_dict[field_name])
                     else:
-                        initialized_fields[field] = source_dict[field]
+                        initialized_fields[field_name] = source_dict[field_name]
                 else:
-                    if "dict" in field:
-                        initialized_fields[field] = source_dict[field]
+                    if isinstance(target_class, dict):
+                        initialized_fields[field_name] = source_dict[field_name]
                     else:
                         # If the field is not in annotations of any base classes, log this information
                         LOGGER.warning(
                             f"Field '%s' is not expected according to the annotations in the MRO of '%s'",
-                            field,
+                            field_name,
                             target_class.__name__,
                         )
-                        initialized_fields[field] = source_dict[field]
+                        initialized_fields[field_name] = source_dict[field_name]
 
             # Log any missing fields
             missing_fields = expected_fields - actual_keys

@@ -19,24 +19,24 @@
 
 from typing import Any
 from .. import data, tasks, nodes
-from . import LOGGER, GraphABC
+from . import LOGGER, GraphBase
 
 
 @data.dataclass(unsafe_hash=True)
-class GraphAsyncTask(GraphABC, tasks.AsyncTask):
+class GraphAsyncTask(GraphBase, tasks.AsyncTask):
     @classmethod
-    async def run_node(cls, node: nodes.NodeABC, *args, **kwds) -> dict[str, Any]:
-        assert isinstance(node, nodes.NodeABC)
+    async def run_node(cls, node: nodes.NodeBase, *args, **kwds) -> dict[str, Any]:
+        assert isinstance(node, nodes.NodeBase)
         LOGGER.debug(f"run node: {node.tag}")
         results = {}
 
         match node:
-            case nodes.NodeSyncABC():
+            case nodes.Node.Base():
                 node_output = cls.run_sync_node(node, *args, **kwds)
-            case nodes.NodeAsyncABC():
+            case nodes.Node.Async.Base():
                 node_output = await cls.run_async_node(node, *args, **kwds)
-            case nodes.NodeABC():
-                LOGGER.warn(f"running NodeABC node: {node.tag}")
+            case nodes.NodeBase():
+                LOGGER.warn(f"running NodeBase node: {node.tag}")
                 node_output = None
             case _ as unsupported_type:
                 raise TypeError(f"Unsupported type for root_node: {unsupported_type}")
