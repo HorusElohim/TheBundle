@@ -22,17 +22,15 @@ from ..logger import getLogger
 
 LOGGER = getLogger(__name__)
 
-from ._abc import NodeABC
-from .synchronous import NodeSyncABC, NodeTask, NodeProcess, NodeStreamingProcess
-from .asynchronous import NodeAsyncABC, NodeAsyncTask, NodeProcessAsync, NodeProcessStreamingAsync
-
+from .base import NodeBase
+from .synchronous import NodeSync, NodeProcess, NodeStreamingProcess
+from .asynchronous import NodeAsyncTask, NodeProcessAsync, NodeProcessStreamingAsync
 
 @data.dataclass
-class Node(NodeTask):
-    Abc = NodeSyncABC
-    AbcAsync = NodeSyncABC
+class Node(NodeSync):
+    Sync = NodeSync
     Async = NodeAsyncTask
     Process = NodeProcess
-    StreamingProcess = NodeStreamingProcess
     ProcessAsync = NodeProcessAsync
+    StreamingProcess = NodeStreamingProcess
     StreamingProcessAsync = NodeProcessStreamingAsync

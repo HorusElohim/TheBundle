@@ -77,7 +77,7 @@ def graph_decorator(ref_dir: Path, cprofile_dump_dir: Path | None = None):
             graph = test_func(*args, **kwds)
             LOGGER.debug(f"testing graph {graph.__class__.__name__}")
 
-            assert_instance_identity(graph, graphs.Graph.Abc)
+            assert_instance_identity(graph, graphs.Graph.Base)
 
             filename = f"{type(graph).__name__}.expected_result.json"
             ref_json_path = ref_dir / "ref" / filename

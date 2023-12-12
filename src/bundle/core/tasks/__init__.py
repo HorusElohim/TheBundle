@@ -25,12 +25,12 @@ from .. import data
 LOGGER = logging.getLogger(__name__)
 ns_to_ms = lambda ns: f"{ns * 1e-6:3f}"
 
-from ._abc import TaskABC
+from .base import TaskBase
 from .synchronous import SyncTask
 from .asynchronous import AsyncTask
 
 
 @data.dataclass
 class Task(SyncTask):
-    Abc = TaskABC
+    Base = TaskBase
     Async = AsyncTask

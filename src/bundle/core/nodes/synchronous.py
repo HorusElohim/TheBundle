@@ -21,25 +21,25 @@
 from __future__ import annotations
 
 from .. import data, tasks, process
-from . import NodeABC
+from . import NodeBase
 
 
 @data.dataclass(unsafe_hash=True)
-class NodeSyncABC(NodeABC):
-    pass
+class NodeSyncBase(NodeBase):
+    Base = NodeBase
 
 
 @data.dataclass(unsafe_hash=True)
-class NodeTask(NodeSyncABC, tasks.Task):
-    pass
+class NodeSync(NodeSyncBase, tasks.Task):
+    Base = NodeSyncBase
 
 
 @data.dataclass(unsafe_hash=True)
-class NodeProcess(NodeSyncABC, process.Process):
-    pass
+class NodeProcess(NodeSyncBase, process.Process):
+    Base = NodeSyncBase
 
 
 @data.dataclass(unsafe_hash=True)
-class NodeStreamingProcess(NodeSyncABC, process.Process.Streaming):
-    pass
+class NodeStreamingProcess(NodeSyncBase, process.Process.Streaming):
+    Base = NodeSyncBase
 

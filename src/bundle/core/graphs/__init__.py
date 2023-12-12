@@ -22,11 +22,11 @@ from ..logger import getLogger
 LOGGER = getLogger(__name__)
 
 
-from ._abc import GraphABC
+from .base import GraphBase
 from .synchronous import GraphTask
 from .asynchronous import GraphAsyncTask
 
 
 class Graph(GraphTask):
-    Abc = GraphABC
+    Base = GraphBase
     Async = GraphAsyncTask

@@ -24,14 +24,13 @@ import os
 from typing import Callable
 import shlex
 
-from ._abc import ProcessABC, StreamingProcessABC
 from .. import logger
 from . import data
-from . import LOGGER
+from .base import ProcessBase, StreamingProcessBase, data, LOGGER
 
 
 @data.dataclass
-class ProcessSync(ProcessABC):
+class ProcessSync(ProcessBase):
     def exec(self, **kwds) -> bool:
         LOGGER.debug(f"running: '{self.command}'")
         try:
@@ -61,7 +60,7 @@ class ProcessSync(ProcessABC):
 
 
 @data.dataclass
-class StreamingProcessSync(StreamingProcessABC, ProcessSync):
+class StreamingProcessSync(StreamingProcessBase, ProcessSync):
     def exec(self, **kwds) -> bool:
         report = f"Process `{self.command}`"
         try:

@@ -103,7 +103,7 @@ class JSONDataABC(abc.ABC):
 class JSONData(JSONDataABC, Dataclass):
     """A dataclass that can be serialized to and from JSON."""
 
-    Abc = JSONDataABC
+    Base = JSONDataABC
     json_decoder = CustomJSONDecoder
     json_encoder = CustomJSONEncoder
 
@@ -190,7 +190,7 @@ class JSONData(JSONDataABC, Dataclass):
             }
 
         def get_schema_for_type(type_hint: Type) -> Dict[str, Any]:
-            LOGGER.debug(f"Working on {type_hint=}")
+            LOGGER.debug(f"{type_hint=}")
             if type_hint in type_to_schema:
                 return {"type": type_to_schema[type_hint]}
             elif getattr(type_hint, "__origin__", None) == list:

@@ -20,15 +20,14 @@
 
 from __future__ import annotations
 
-import abc
+
 import time
 
-from . import LOGGER
 from .. import data, entity
 
 
 @data.dataclass(unsafe_hash=True)
-class TaskABC(entity.Entity):
+class TaskBase(entity.Entity):
     exec_start_time: int = data.field(default_factory=int)
     exec_end_time: int = data.field(default_factory=int)
 
@@ -44,6 +43,5 @@ class TaskABC(entity.Entity):
     def elapsed(self) -> int:
         return time.time_ns() - self.exec_start_time if self.executed else -1
 
-    @abc.abstractmethod
     def exec(self, *args, **kwds):
-        pass
+        return self

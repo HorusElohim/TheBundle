@@ -17,26 +17,27 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import abc
-from typing import Any
+
+from __future__ import annotations
+from uuid import uuid4
+
 from . import LOGGER
-from .. import data, entity, nodes
+from .. import data, entity
 
 
 @data.dataclass(unsafe_hash=True)
-class GraphABC(entity.Entity):
-    root: nodes.NodeABC = data.field(default_factory=nodes.NodeABC)
+class NodeBase(entity.Entity):
+    id: str = data.field(default_factory=lambda: str(uuid4()))
+    children: list[NodeBase] = data.field(default_factory=list)
 
-    @classmethod
-    def run_sync_node(cls, node: nodes.NodeSyncABC, *args, **kwargs):
-        LOGGER.debug(f"run node sync: {node.tag}")
-        return node(*args, **kwargs)
+    @property
+    def tag(self):
+        return f"{self.class_type}.{self.name}.{self.id}"
 
-    @classmethod
-    async def run_async_node(cls, node: nodes.NodeAsyncABC, *args, **kwargs):
-        LOGGER.debug(f"run node async: {node.tag}")
-        return await node(*args, **kwargs)
-
-    @abc.abstractclassmethod
-    def run_node(cls, node: nodes.NodeABC) -> dict[str, Any]:
-        pass
+    def add_child(self, node: NodeBase):
+        if not isinstance(node, NodeBase):
+            raise ValueError("node must be an instance of NodeBase")
+        self.children.append(node)
+        LOGGER.debug(f"added child node: {node.tag}")
+    
+    

@@ -22,14 +22,14 @@ from .. import logging, tasks, data
 
 LOGGER = logging.getLogger(__name__)
 
-from ._abc import ProcessABC
+from .base import ProcessBase
 from .synchronous import ProcessSync, StreamingProcessSync
 from .asynchronous import ProcessAsync, StreamingProcessAsync
 
 
 @data.dataclass
 class Process(ProcessSync):
-    Abc = ProcessABC
+    Abc = ProcessBase
     Streaming = StreamingProcessSync
     Async = ProcessAsync
     StreamingAsync = StreamingProcessAsync

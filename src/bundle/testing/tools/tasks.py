@@ -61,7 +61,7 @@ def task_decorator(
             task = test_func(*args, **kwds)
             LOGGER.debug(f"testing {task=}")
 
-            assert_instance_identity(task, tasks.Task | tasks.AsyncTask)
+            assert_instance_identity(task, tasks.Task.Base)
 
             @cprofile_decorator(cprofile_dump_dir=cprofile_dump_dir)
             async def task_execution_async():

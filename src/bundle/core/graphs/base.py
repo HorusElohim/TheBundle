@@ -17,27 +17,26 @@
 # specific language governing permissions and limitations
 # under the License.
 
-
-from __future__ import annotations
-from uuid import uuid4
-
+import abc
+from typing import Any
 from . import LOGGER
-from .. import data, entity
+from .. import data, entity, nodes
 
 
 @data.dataclass(unsafe_hash=True)
-class NodeABC(entity.Entity):
-    id: str = data.field(default_factory=lambda: str(uuid4()))
-    children: list[NodeABC] = data.field(default_factory=list)
+class GraphBase(entity.Entity):
+    root: nodes.NodeBase = data.field(default_factory=nodes.NodeBase)
 
-    @property
-    def tag(self):
-        return f"{self.class_type}.{self.name}.{self.id}"
+    @classmethod
+    def run_sync_node(cls, node: nodes.Node.Sync, *args, **kwargs):
+        LOGGER.debug(f"run node sync: {node.tag}")
+        return node(*args, **kwargs)
 
-    def add_child(self, node: NodeABC):
-        if not isinstance(node, NodeABC):
-            raise ValueError("node must be an instance of NodeABC")
-        self.children.append(node)
-        LOGGER.debug(f"added child node: {node.tag}")
-    
-    
+    @classmethod
+    async def run_async_node(cls, node: nodes.Node.Async, *args, **kwargs):
+        LOGGER.debug(f"run node async: {node.tag}")
+        return await node(*args, **kwargs)
+
+    @abc.abstractclassmethod
+    def run_node(cls, node: nodes.NodeBase) -> dict[str, Any]:
+        pass

@@ -21,15 +21,15 @@
 import subprocess
 import asyncio
 
-from ._abc import ProcessABC, StreamingProcessABC
 
-from . import tasks
-from . import data
-from . import LOGGER
+from . import LOGGER, data, tasks
+
+
+from .base import ProcessBase, StreamingProcessBase
 
 
 @data.dataclass
-class ProcessAsync(ProcessABC, tasks.Task.Async):
+class ProcessAsync(ProcessBase, tasks.Task.Async):
     async def exec(self, **kwds) -> bool:
         LOGGER.debug(f"running {self.command} asynchronously")
 
@@ -64,7 +64,7 @@ class ProcessAsync(ProcessABC, tasks.Task.Async):
 
 
 @data.dataclass
-class StreamingProcessAsync(StreamingProcessABC, ProcessAsync):
+class StreamingProcessAsync(StreamingProcessBase, ProcessAsync):
     async def exec(self, **kwds) -> int:
         self._process = await asyncio.create_subprocess_shell(
             self.command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, **kwds
