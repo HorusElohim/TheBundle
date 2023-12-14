@@ -17,7 +17,10 @@ version_file = "src/bundle/_version.py"
 test = ["pytest"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
+player = ["pyside6", "youtube_dl"]
 
+[project.scripts]
+bundle_player = "bundle.player.player:main"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]
