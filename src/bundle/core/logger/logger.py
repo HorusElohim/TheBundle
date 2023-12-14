@@ -89,13 +89,12 @@ def setup_logging(
     """
     Set up logging with both file and console handlers.
     """
-    
+
     # Logger setup
     logger_name = name if name else "bundle"
     logger = logging.getLogger(logger_name)
     logger.setLevel(level)
-    
-    
+
     if log_path:
         log_path.mkdir(parents=True, exist_ok=True)
         log_file = log_path / f"bundle-{time.strftime('%y.%m.%d.%H.%M.%S')}.json"
@@ -119,13 +118,11 @@ def setup_logging(
     console_handler = ColoredConsoleHandler()
     console_handler.encoding = "utf-8"
     if not colored_output:
-        console_handler.setFormatter(
-            logging.Formatter("%(levelname)s- [%(name)s]: %(message)s")
-        )
+        console_handler.setFormatter(logging.Formatter("%(levelname)s- [%(name)s]: %(message)s"))
 
     # Add Console Handler
     logger.addHandler(console_handler)
-    # Propagate 
-    logger.propagate = True
-    
+    # Propagate
+    logger.propagate = False
+
     return logger
