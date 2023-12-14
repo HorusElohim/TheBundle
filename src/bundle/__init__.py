@@ -31,3 +31,5 @@ from .core.nodes import Node
 from .core.graphs import Graph
 
 from . import testing as tests
+
+from . import player
