@@ -19,7 +19,12 @@ from enum import Enum
 import bundle
 import sys
 
+
+player_path = bundle.Path(__file__).parent
 logger = bundle.setup_logging(name="bundle_player", level=10)
+IMAGE_PATH = player_path / "thebundleplayer.png"
+ICON_PATH = player_path / "thebundle_icon.png"
+
 
 BUTTON_STYLE = """
 QPushButton {
@@ -181,7 +186,7 @@ class PlayerEngine(QWidget):
         self.player.setVideoOutput(self.video)
 
         self.imageLabel = QLabel(self)
-        self.imageLabel.setPixmap(QPixmap(r"src\bundle\player\thebundleplayer.png"))
+        self.imageLabel.setPixmap(QPixmap(str(IMAGE_PATH.absolute())))
         self.imageLabel.setScaledContents(True)
         self.imageLabel.setAlignment(Qt.AlignCenter)
 
@@ -256,7 +261,7 @@ class BundlePlayer(QWidget):
         self.setGeometry(600, 180, 666, 666)
         self.resize(QSize(666, 666))
         self.setAcceptDrops(True)
-        self.setWindowIcon(QIcon(r"src\bundle\player\thebundle_icon.png"))
+        self.setWindowIcon(QIcon(str(ICON_PATH.absolute())))
         self.engine = PlayerEngine(self)
         self.engine.player.durationChanged.connect(self.duration_changed)
 
