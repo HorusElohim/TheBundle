@@ -84,13 +84,15 @@ def setup_logging(
     log_path: Path | None = None,
     colored_output=True,
     to_json=False,
+    name: str | None = None
 ):
     """
     Set up logging with both file and console handlers.
     """
     
     # Logger setup
-    logger = logging.getLogger("bundle")
+    logger_name = name if name else "bundle"
+    logger = logging.getLogger(logger_name)
     logger.setLevel(level)
     
     
