@@ -8,12 +8,13 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QMessageBox,
     QPushButton,
+    QStackedLayout,
 )
 from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtCore import QUrl, Qt, QTimer, QSize
-from PySide6.QtGui import QPainter, QPixmap, QIcon
+from PySide6.QtGui import QPixmap, QIcon
 from pytube import YouTube
 from enum import Enum
 import bundle
@@ -191,14 +192,16 @@ class PlayerEngine(QWidget):
         self.imageLabel.setAlignment(Qt.AlignCenter)
 
         # Set up the layout
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.video)
-        layout.addWidget(self.imageLabel)
-        self.setLayout(layout)
+        self._layout = QStackedLayout(self)
+        self._layout.addWidget(self.video)
+        self._layout.addWidget(self.imageLabel)
+
+        self.setLayout(self._layout)
 
         # Remove margins and spacing
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        self._layout.setContentsMargins(0, 0, 0, 0)
+        self._layout.setSpacing(0)
+        self._layout.setCurrentWidget(self.imageLabel)
 
         self.player.mediaStatusChanged.connect(self.handle_status_change)
         logger.debug(f"constructed {bundle.core.Emoji.success}")
@@ -209,11 +212,11 @@ class PlayerEngine(QWidget):
 
     def handle_status_change(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
-            logger.debug(f"loaded media {bundle.core.Emoji.success}")
-            self.imageLabel.hide()
-        elif status == QMediaPlayer.MediaStatus.NoMedia:
-            logger.debug(f"no media {bundle.core.Emoji.success}")
-            self.imageLabel.show()
+            logger.debug("show player")
+            self._layout.setCurrentWidget(self.video)
+        elif status in [QMediaPlayer.MediaStatus.NoMedia, QMediaPlayer.MediaStatus.EndOfMedia]:
+            self._layout.setCurrentWidget(self.imageLabel)
+            logger.debug("show image")
 
     def _url_resolver(self, url: str | QUrl) -> UrlType:
         match url:
