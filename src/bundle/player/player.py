@@ -327,13 +327,6 @@ class BundlePlayer(QWidget):
         self.url = url
         logger.debug(f"set {url=}")
 
-    def dragEnterEvent(self, event):
-        logger.debug("drag")
-        if event.mimeData().hasUrls():
-            event.accept()
-        else:
-            event.ignore()
-
     def resolve_youtube_url(self, url):
         _, video_url = BundleParseYoutubeMusicURL(url=url)()
         return video_url
