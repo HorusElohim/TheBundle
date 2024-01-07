@@ -1,8 +1,4 @@
-import os
-import platform
-import sys
 from enum import Enum
-from pathlib import Path
 
 from PySide6.QtCore import QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QIcon, QPixmap
@@ -20,78 +16,15 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from pytube import YouTube
 
 import bundle
 
-APP_NAME = "TheBundlePlayer"
+from . import config
+from . import styles
 
+from .url_resolvers import UrlType, UrlResolved, resolve_url_type, get_url_resolved
 
-def get_app_data_path(app_name=APP_NAME):
-    if platform.system() == "Windows":
-        app_data_dir = Path(os.environ["APPDATA"]) / app_name
-    elif platform.system() == "Darwin":  # macOS
-        app_data_dir = Path.home() / "Library/Application Support" / app_name
-    else:  # Linux and other Unix-like OSes
-        app_data_dir = Path.home() / ".local/share" / app_name
-
-    app_data_dir.mkdir(parents=True, exist_ok=True)
-    return app_data_dir
-
-
-player_path = bundle.Path(__file__).parent
-logger = bundle.setup_logging(name="bundle_player", level=10)
-
-IMAGE_PATH = player_path / "thebundleplayer.png"
-ICON_PATH = player_path / "thebundle_icon.png"
-DATA_PATH = get_app_data_path()
-
-
-BUTTON_STYLE = """
-QPushButton {
-    color: white;
-    background-color: rgba(0, 0, 0, 0); /* No background */
-    border: none;
-    font-size: 16px;
-    font-weight: bold;
-    font-family: 'Arial';
-}
-QPushButton:hover {
-    color: #AAAAAA; /* Light grey on hover */
-}
-"""
-
-SLIDER_STYLE = """
-QSlider::groove:horizontal {
-    height: 8px;
-    background: rgba(255, 255, 255, 50);
-    margin: 2px 0;
-}
-QSlider::handle:horizontal {
-    background: qlineargradient(x1:0, y1:0, x2:1, y2:1,
-        stop:0 #5e81ac, stop:1 #88c0d0);
-    border: 1px solid #5e81ac;
-    width: 18px;
-    margin: -2px 0;
-    border-radius: 9px;
-    opacity: 0.7;
-}
-QSlider::add-page:horizontal {
-    background: rgba(255, 255, 255, 28);
-}
-QSlider::sub-page:horizontal {
-    background: rgba(0, 120, 215, 100);
-}
-"""
-
-LABEL_STYLE = """
-QLabel {
-    color: white;
-    font-size: 12px;
-    font-family: 'Arial';
-    background-color: rgba(0, 0, 0, 0); /* No background */
-}
-"""
+logger = bundle.getLogger(__name__)
 
 
 def warning_popup(parent, title, message):
@@ -114,34 +47,6 @@ def critical_popup(parent, title, message):
     )
 
 
-@bundle.Data.dataclass
-class BundleParseYoutubeURL(bundle.Task):
-    url: str = bundle.Data.field(default_factory=str)
-
-    def exec(self, url=None, *args, **kwds):
-        try:
-            if url:
-                self.url = url
-            yt = YouTube(self.url)
-            audio_stream = yt.streams.filter(only_audio=True).first()
-            audio_url = audio_stream.url if audio_stream else None
-            video_stream = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc().first()
-            video_url = video_stream.url if video_stream else None
-            if video_url:
-                logger.debug(f"{bundle.core.Emoji.success}")
-            else:
-                logger.error(f"{bundle.core.Emoji.failed}")
-        except Exception as e:
-            logger.error(f"{bundle.core.Emoji.failed} Error {e}")
-        return audio_url, video_url
-
-
-class UrlType(Enum):
-    remote = "remote"
-    local = "local"
-    unknown = "unknown"
-
-
 class ControlButton(Enum):
     play = "▶"
     pause = "="
@@ -158,18 +63,18 @@ class PlayerControls(QWidget):
         self.setStyleSheet("background-color: black;")
 
         self.button = QPushButton(ControlButton.play.value)
-        self.button.setStyleSheet(BUTTON_STYLE)
+        self.button.setStyleSheet(styles.BUTTON_STYLE)
 
         self.timeline = QSlider(Qt.Horizontal)
-        self.timeline.setStyleSheet(SLIDER_STYLE)
+        self.timeline.setStyleSheet(styles.SLIDER_STYLE)
 
         self.label = QLabel("00:00 / 00:00")
-        self.label.setStyleSheet(LABEL_STYLE)
+        self.label.setStyleSheet(styles.LABEL_STYLE)
 
         # Speaker button
         self.speakerButton = QPushButton("🔊")
         self.speakerButton.clicked.connect(self.toggle_volume_slider)
-        self.speakerButton.setStyleSheet(BUTTON_STYLE)
+        self.speakerButton.setStyleSheet(styles.BUTTON_STYLE)
         # Volume slider (initially hidden)
         self.volumeSlider = QSlider(Qt.Horizontal)
         self.volumeSlider.setRange(0, 100)
@@ -207,7 +112,7 @@ class PlayerEngine(QWidget):
         self.player.setVideoOutput(self.video)
 
         self.imageLabel = QLabel(self)
-        self.imageLabel.setPixmap(QPixmap(str(IMAGE_PATH.absolute())))
+        self.imageLabel.setPixmap(QPixmap(str(config.IMAGE_PATH.absolute())))
         self.imageLabel.setScaledContents(True)
         self.imageLabel.setAlignment(Qt.AlignCenter)
 
@@ -238,18 +143,6 @@ class PlayerEngine(QWidget):
             self._layout.setCurrentWidget(self.imageLabel)
             logger.debug("show image")
 
-    def _url_resolver(self, url: str | QUrl) -> UrlType:
-        match url:
-            case str():
-                if url.startswith("http://") or url.startswith("https://"):
-                    return UrlType.remote
-                else:
-                    return UrlType.local
-            case QUrl():
-                return UrlType.local
-            case _:
-                return UrlType.unknown
-
     def _url_remote_request(self, url: QUrl):
         req = QNetworkRequest(QUrl(url))
         sslConfig = QSslConfiguration.defaultConfiguration()
@@ -257,17 +150,16 @@ class PlayerEngine(QWidget):
         req.setSslConfiguration(sslConfig)
         logger.debug(f"ssl {bundle.core.Emoji.success}")
 
-    def play_url(self, url: str | QUrl):
-        url_type = self._url_resolver(url)
+    def play_url(self, url: UrlResolved):
         should_play = True
-        match url_type:
+        match url.url_type:
             case UrlType.remote:
-                url = QUrl(url)
+                url = QUrl(url.video_url)
                 self._url_remote_request(url)
                 self.player.setSource(url)
                 logger.debug(f"remote {bundle.core.Emoji.success}")
             case UrlType.local:
-                self.mediaPlayer.setSource(QUrl.fromLocalFile(self.url))
+                self.mediaPlayer.setSource(QUrl.fromLocalFile(url.video_url))
                 logger.debug(f"local {bundle.core.Emoji.success}")
             case _:
                 critical_popup(self, "Unknown URL", f"{url=}")
@@ -280,11 +172,11 @@ class PlayerEngine(QWidget):
 class BundlePlayer(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle(APP_NAME)
+        self.setWindowTitle(config.APP_NAME)
         self.setGeometry(600, 180, 666, 666)
         self.resize(QSize(666, 666))
         self.setAcceptDrops(True)
-        self.setWindowIcon(QIcon(str(ICON_PATH.absolute())))
+        self.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))
         self.engine = PlayerEngine(self)
         self.engine.player.durationChanged.connect(self.duration_changed)
 
@@ -294,7 +186,7 @@ class BundlePlayer(QWidget):
         self.controls.timer.timeout.connect(self.update_timeline)
         self.controls.volumeSlider.valueChanged.connect(self.set_volume)
         self.setup_ui()
-        self.url = None
+        self.url_resolved = None
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def setup_ui(self):
@@ -322,8 +214,8 @@ class BundlePlayer(QWidget):
         self.controls.timer.start()
 
     def play(self):
-        if self.url is not None:
-            if self.engine.play_url(self.url):
+        if self.url_resolved is not None:
+            if self.engine.play_url(self.url_resolved):
                 button_label = ControlButton.pause.value
                 self.controls.timer.start()
             else:
@@ -342,14 +234,9 @@ class BundlePlayer(QWidget):
         self.engine.audio.setVolume(value / 100)
 
     def set_url(self, url):
-        if "yout" in url:
-            url = self.resolve_youtube_url(url)
-        self.url = url
         logger.debug(f"set {url=}")
-
-    def resolve_youtube_url(self, url):
-        _, video_url = BundleParseYoutubeURL(url=url)()
-        return video_url
+        self.url_resolved = get_url_resolved(url)
+        logger.debug(f"resolved\n{self.url_resolved}")
 
     def dropEvent(self, event):
         logger.debug("drop")
@@ -395,15 +282,3 @@ class BundlePlayer(QWidget):
             if clipboard_url:
                 self.set_url(clipboard_url)
                 self.play()
-
-
-def main():
-    app = QApplication(sys.argv)
-    app.setStyle("fusion")
-    window = BundlePlayer()
-    window.show()
-    sys.exit(app.exec())
-
-
-if __name__ == "__main__":
-    main()
