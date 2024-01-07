@@ -57,8 +57,7 @@ def get_url_resolved(url: str | QUrl) -> UrlResolved:
                 return YoutubeURL()(url)
             return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.local:
-            url_str = str(url)
-            return UrlResolved(source_url=url_str, audio_url=url_str, video_url=url_str, url_type=url_type)
+            return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.unknown:
             logger.warning("unknown url source")
             return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
