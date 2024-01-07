@@ -16,6 +16,11 @@ class UrlResolved(bundle.Data.Json):
     source_url: str = bundle.Data.field(default_factory=str)
     audio_url: str = bundle.Data.field(default_factory=str)
     video_url: str = bundle.Data.field(default_factory=str)
+    thumbnail_url: str = bundle.Data.field(default_factory=str)
+    title: str = bundle.Data.field(default_factory=str) 
+    duration: str = bundle.Data.field(default_factory=str)
+    artist: str = bundle.Data.field(default_factory=str)
+
 
     def log_status(self):
         def _url_status(message: str, url: str):
@@ -27,6 +32,7 @@ class UrlResolved(bundle.Data.Json):
         _url_status("source", self.source_url)
         _url_status("audio", self.audio_url)
         _url_status("video", self.video_url)
+        _url_status("thumbnail", self.video_url)
 
 
 logger = bundle.getLogger(__name__)
@@ -57,8 +63,7 @@ def get_url_resolved(url: str | QUrl) -> UrlResolved:
                 return YoutubeURL()(url)
             return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.local:
-            url_str = str(url)
-            return UrlResolved(source_url=url_str, audio_url=url_str, video_url=url_str, url_type=url_type)
+            return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.unknown:
             logger.warning("unknown url source")
             return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
