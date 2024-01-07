@@ -1,30 +1,50 @@
+import os
+import platform
+import sys
+from enum import Enum
+from pathlib import Path
+
+from PySide6.QtCore import QSize, Qt, QTimer, QUrl
+from PySide6.QtGui import QIcon, QPixmap
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimediaWidgets import QVideoWidget
+from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
 from PySide6.QtWidgets import (
     QApplication,
-    QWidget,
-    QVBoxLayout,
-    QPushButton,
-    QSlider,
-    QLabel,
     QHBoxLayout,
+    QLabel,
     QMessageBox,
     QPushButton,
+    QSlider,
     QStackedLayout,
+    QVBoxLayout,
+    QWidget,
 )
-from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
-from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput
-from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtCore import QUrl, Qt, QTimer, QSize
-from PySide6.QtGui import QPixmap, QIcon
 from pytube import YouTube
-from enum import Enum
+
 import bundle
-import sys
+
+APP_NAME = "TheBundlePlayer"
+
+
+def get_app_data_path(app_name=APP_NAME):
+    if platform.system() == "Windows":
+        app_data_dir = Path(os.environ["APPDATA"]) / app_name
+    elif platform.system() == "Darwin":  # macOS
+        app_data_dir = Path.home() / "Library/Application Support" / app_name
+    else:  # Linux and other Unix-like OSes
+        app_data_dir = Path.home() / ".local/share" / app_name
+
+    app_data_dir.mkdir(parents=True, exist_ok=True)
+    return app_data_dir
 
 
 player_path = bundle.Path(__file__).parent
 logger = bundle.setup_logging(name="bundle_player", level=10)
+
 IMAGE_PATH = player_path / "thebundleplayer.png"
 ICON_PATH = player_path / "thebundle_icon.png"
+DATA_PATH = get_app_data_path()
 
 
 BUTTON_STYLE = """
@@ -95,7 +115,7 @@ def critical_popup(parent, title, message):
 
 
 @bundle.Data.dataclass
-class BundleParseYoutubeMusicURL(bundle.Task):
+class BundleParseYoutubeURL(bundle.Task):
     url: str = bundle.Data.field(default_factory=str)
 
     def exec(self, url=None, *args, **kwds):
@@ -260,7 +280,7 @@ class PlayerEngine(QWidget):
 class BundlePlayer(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("TheBundle Player")
+        self.setWindowTitle(APP_NAME)
         self.setGeometry(600, 180, 666, 666)
         self.resize(QSize(666, 666))
         self.setAcceptDrops(True)
@@ -328,7 +348,7 @@ class BundlePlayer(QWidget):
         logger.debug(f"set {url=}")
 
     def resolve_youtube_url(self, url):
-        _, video_url = BundleParseYoutubeMusicURL(url=url)()
+        _, video_url = BundleParseYoutubeURL(url=url)()
         return video_url
 
     def dropEvent(self, event):
