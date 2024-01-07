@@ -20,7 +20,7 @@ pypi = ["build", "twine"]
 player = ["pyside6", "pytube"]
 
 [project.scripts]
-bundle_player = "bundle.player.player:main"
+bundle_player = "bundle.player:main"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]
