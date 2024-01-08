@@ -44,6 +44,9 @@ class BundlePlayer(QWidget):
         self.controls.volumeSlider.valueChanged.connect(self.set_volume)
 
         self.queue = PlayerQueue(self)
+        self.queue.queueList.itemRemoved.connect(self.remove_track)
+        self.queue.queueList.itemDoubleClicked.connect(self.play_track_at)
+
         self.queue.show()
 
         self.setup_ui()
@@ -76,6 +79,14 @@ class BundlePlayer(QWidget):
         self.setLayout(mainLayout)
 
         logger.debug(f"constructed {bundle.core.Emoji.success}")
+
+
+    def remove_track(self, row: int):
+        pass
+
+    def play_track_at(self, row: int):
+        pass
+
 
     def handle_media_status_changed(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
@@ -121,6 +132,19 @@ class BundlePlayer(QWidget):
             warning_popup(self, "Queue is empty", "No more URLs to play")
             self.controls.button.setText(ControlButton.play.value)
 
+    def play_track(self):
+        logger.debug("play_track")
+        current_track = self.queue.get_current_track()
+        logger.debug(f"{current_track=}")
+        if current_track:
+            if self.engine.play_url(current_track):
+                self.controls.button.setText(ControlButton.pause.value)
+                self.controls.timer.start()
+            else:
+                warning_popup(self, "Playback Error", "Cannot play the selected URL")
+        else:
+            warning_popup(self, "Queue is empty", "No more URLs to play")
+
     def pause(self):
         self.engine.player.pause()
         self.controls.button.setText(ControlButton.play.value)
@@ -130,13 +154,23 @@ class BundlePlayer(QWidget):
     def set_volume(self, value):
         self.engine.audio.setVolume(value / 100)
 
-    def set_url(self, url):
-        logger.debug(f"set {url=}")
-        self.url_resolved = get_url_resolved(url)
-        self.queue.add_url(self.url_resolved)
-        if self.queue.isEmpty():
-            self.queue.highlight_next_item()
-        logger.debug(f"resolved\n{self.url_resolved}")
+    def play_next_track(self):
+        self.queue.next_track()
+        self.play_track()
+
+    def play_previous_track(self):
+        self.queue.previous_track()
+        self.play_track()
+
+    def add_track(self, url):
+        logger.debug(f"add_track {url=}")
+        url_resolved = get_url_resolved(url)
+        if url_resolved:
+            self.queue.add_track(url_resolved)
+        logger.debug(f"{self.get_current_player_status()=}")
+        if self.get_current_player_status() is QMediaPlayer.PlaybackState.StoppedState:
+            self.play_track()
+        
 
     def dropEvent(self, event):
         logger.debug("drop")
@@ -144,8 +178,7 @@ class BundlePlayer(QWidget):
         if mimeData.hasUrls():
             logger.debug("drop has url")
             url = mimeData.urls()[0]
-            self.set_url(url)
-            self.play()
+            self.add_track(url)
 
     def set_position(self, position):
         self.engine.player.setPosition(position)
@@ -180,5 +213,7 @@ class BundlePlayer(QWidget):
             clipboard = QApplication.clipboard()
             clipboard_url = clipboard.text()
             if clipboard_url:
-                self.set_url(clipboard_url)
-                self.play()
+                self.add_track(clipboard_url)
+
+    def get_current_player_status(self) -> QMediaPlayer.PlaybackState:
+        return self.engine.player.playbackState()

@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QListWidgetItem
 from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
 from PySide6.QtGui import QPixmap, QColor, QMouseEvent
 from PySide6.QtWidgets import QListWidgetItem
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 import bundle
 from .url_resolvers import UrlResolved
 from .styles import THUMBNAIL_LABEL_STYLE, TITLE_LABEL_STYLE, ARTIST_LABEL_STYLE, DURATION_LABEL_STYLE
@@ -91,6 +91,9 @@ class PlayerQueueItem(QWidget):
 
 
 class CustomListWidget(QListWidget):
+    itemRemoved = Signal(int)  # Signal to indicate item removal with row index
+    itemDoubleClicked = Signal(int)  # Signal to indicate item double-click with row index
+    
     def __init__(self, parent=None):
         super().__init__(parent)
         self._startPos = None
@@ -110,7 +113,7 @@ class CustomListWidget(QListWidget):
             if self._currentItem:
                 self._originalBgColor = self._currentItem.background()  # Store original color
                 self._currentItem.setSelected(False)  # Disable default selection highlight
-        
+
         self._isSwiping = True
         super().mousePressEvent(event)
 
@@ -135,18 +138,24 @@ class CustomListWidget(QListWidget):
                 item = self.itemAt(self._startPos)
                 if item:
                     row = self.row(item)
-                    self.takeItem(row)  # Remove the item from the list
-        
+                    # self.takeItem(row)  # Remove the item from the list
+                    self.itemRemoved.emit(row)  # Emit the itemRemoved signal
 
         if self._currentItem:
             self._currentItem.setBackground(self._originalBgColor if self._originalBgColor else Qt.transparent)
         self._startPos = None
         self._currentItem = None
         super().mouseReleaseEvent(event)
-        
+
         self._isSwiping = False
         self.clearSelection()
 
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        item = self.itemAt(event.pos())
+        if item:
+            row = self.row(item)
+            self.itemDoubleClicked.emit(row)  # Emit the itemDoubleClicked signal
+        super().mouseDoubleClickEvent(event)
 
 class PlayerQueue(QWidget):
     def __init__(self, parent=None):
@@ -221,3 +230,45 @@ class PlayerQueue(QWidget):
                 logger.debug(f"Current URL: {itemWidget.urlResolved.source_url}")
                 return itemWidget.urlResolved
         return None
+
+    def get_current_track(self) -> UrlResolved | None:
+        if 0 <= self.currentlyPlayingIndex < self.queueList.count():
+            itemWidget = self.queueList.itemWidget(self.queueList.item(self.currentlyPlayingIndex))
+            if isinstance(itemWidget, PlayerQueueItem):
+                return itemWidget.urlResolved
+        return None
+
+    def add_track(self, url: UrlResolved):
+        logger.debug("add_track")
+        itemWidget = PlayerQueueItem(url)
+        listItem = QListWidgetItem(self.queueList)
+        listItem.setSizeHint(itemWidget.sizeHint())
+        self.queueList.addItem(listItem)
+        self.queueList.setItemWidget(listItem, itemWidget)
+        if self.queueList.count() == 1:
+            self.highlight_next_item()
+
+    def next_track(self):
+        if self.queueList.count() > 0 and self.currentlyPlayingIndex < self.queueList.count() - 1:
+            self.highlight_next_item()
+
+    def previous_track(self):
+        if self.currentlyPlayingIndex > 0:
+            self.reset_highlight()
+            self.currentlyPlayingIndex -= 2  # Move back two steps, one for previous, one for highlight
+            self.highlight_next_item()
+
+    def remove_track(self, index: int):
+        if 0 <= index < self.queueList.count():
+            self.queueList.takeItem(index)
+            if self.currentlyPlayingIndex >= index:
+                self.currentlyPlayingIndex -= 1
+
+    def highlight_next_item(self):
+        self.reset_highlight()
+        self.currentlyPlayingIndex = (self.currentlyPlayingIndex + 1) % self.queueList.count()
+        self.queueList.item(self.currentlyPlayingIndex).setBackground(Qt.lightGray)
+
+    def reset_highlight(self):
+        if self.currentlyPlayingIndex >= 0:
+            self.queueList.item(self.currentlyPlayingIndex).setBackground(Qt.white)
