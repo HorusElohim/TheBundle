@@ -3,7 +3,7 @@ from PySide6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 from PySide6.QtCore import QUrl, QObject, Signal
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QLabel, QListWidgetItem
 from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
-from PySide6.QtGui import QPixmap
+from PySide6.QtGui import QPixmap, QColor, QMouseEvent
 from PySide6.QtWidgets import QListWidgetItem
 from PySide6.QtCore import Qt
 import bundle
@@ -90,6 +90,64 @@ class PlayerQueueItem(QWidget):
         logger.debug("PlayerQueueItem constructed")
 
 
+class CustomListWidget(QListWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._startPos = None
+        self._currentItem = None
+        self._originalBgColor = None  # Store the original background color
+        self.itemSelectionChanged.connect(self.onSelectionChanged)
+
+    def onSelectionChanged(self):
+        if self._isSwiping:
+            # Clear selection during swiping
+            self.clearSelection()
+
+    def mousePressEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton:
+            self._startPos = event.pos()
+            self._currentItem = self.itemAt(event.pos())
+            if self._currentItem:
+                self._originalBgColor = self._currentItem.background()  # Store original color
+                self._currentItem.setSelected(False)  # Disable default selection highlight
+        
+        self._isSwiping = True
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent):
+        if event.buttons() & Qt.LeftButton and self._startPos is not None:
+            endPos = event.pos()
+            dx = endPos.x() - self._startPos.x()
+
+            if self._currentItem:
+                fraction = min(abs(dx) / self.width(), 1)  # Fraction of the width
+                color = QColor(255, 0, 0, int(255 * fraction))  # Adjust the alpha value
+                self._currentItem.setBackground(color)
+
+        super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent):
+        if event.button() == Qt.LeftButton and self._startPos is not None:
+            endPos = event.pos()
+            dx = endPos.x() - self._startPos.x()
+
+            if abs(dx) > 100:  # Threshold for swipe distance
+                item = self.itemAt(self._startPos)
+                if item:
+                    row = self.row(item)
+                    self.takeItem(row)  # Remove the item from the list
+        
+
+        if self._currentItem:
+            self._currentItem.setBackground(self._originalBgColor if self._originalBgColor else Qt.transparent)
+        self._startPos = None
+        self._currentItem = None
+        super().mouseReleaseEvent(event)
+        
+        self._isSwiping = False
+        self.clearSelection()
+
+
 class PlayerQueue(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -97,7 +155,7 @@ class PlayerQueue(QWidget):
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 5, 0)
         self.setLayout(self.layout)
-        self.queueList = QListWidget()
+        self.queueList = CustomListWidget()
         self.layout.addWidget(self.queueList)
         self.currentlyPlayingIndex = -1
 

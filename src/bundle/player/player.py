@@ -28,7 +28,7 @@ class BundlePlayer(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle(config.APP_NAME)
-        self.setGeometry(600, 180, 666, 666)
+        self.setGeometry(800, 180, 666, 666)
         self.resize(QSize(666, 666))
         self.setAcceptDrops(True)
         self.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))
@@ -74,9 +74,6 @@ class BundlePlayer(QWidget):
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.addWidget(splitter)
         self.setLayout(mainLayout)
-
-        # Optional: Set the initial sizes or proportion of the splitter
-        splitter.setSizes([400, 200])  # Adjust these values as needed
 
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
