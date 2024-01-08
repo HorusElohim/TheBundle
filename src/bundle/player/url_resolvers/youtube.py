@@ -1,6 +1,6 @@
 import bundle
 from pytube import YouTube
-from . import UrlResolved, UrlType
+from . import Track, UrlType
 
 logger = bundle.getLogger(__name__)
 
@@ -19,8 +19,8 @@ class YoutubeURL(bundle.Task):
                 logger.error("url is None")
                 raise ValueError(f"Please provide a valid {url=}")
             yt = YouTube(url)
-            
-            url_resolved = UrlResolved(source_url=url)
+
+            url_resolved = Track(source_url=url)
             url_resolved.url_type = UrlType.remote
             url_resolved.title = yt.title
             url_resolved.thumbnail_url = yt.thumbnail_url
