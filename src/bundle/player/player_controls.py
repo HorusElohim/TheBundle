@@ -43,6 +43,9 @@ class PlayerControls(QWidget):
         self.volumeSlider.setValue(100)
         self.volumeSlider.setMaximumWidth(self.parent().width() * 0.3)
         self.volumeSlider.hide()
+        
+        self.toggleQueueButton = QPushButton(">")
+        self.toggleQueueButton.setMaximumWidth(28)
 
         layout = QHBoxLayout()
         layout.addWidget(self.button)
@@ -50,6 +53,7 @@ class PlayerControls(QWidget):
         layout.addWidget(self.label)
         layout.addWidget(self.speakerButton)
         layout.addWidget(self.volumeSlider)
+        layout.addWidget(self.toggleQueueButton)
         self.setLayout(layout)
 
         self.timer = QTimer(self)

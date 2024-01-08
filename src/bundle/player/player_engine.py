@@ -28,31 +28,20 @@ class PlayerEngine(QWidget):
         self.imageLabel.setAlignment(Qt.AlignCenter)
 
         # Set up the layout
-        self._layout = QStackedLayout(self)
-        self._layout.addWidget(self.video)
-        self._layout.addWidget(self.imageLabel)
-
-        self.setLayout(self._layout)
-
+        self.stackedLayout = QStackedLayout(self)
+        self.stackedLayout.addWidget(self.video)
+        self.stackedLayout.addWidget(self.imageLabel)
         # Remove margins and spacing
-        self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(0)
-        self._layout.setCurrentWidget(self.imageLabel)
-
-        self.player.mediaStatusChanged.connect(self.handle_status_change)
+        self.stackedLayout.setContentsMargins(0, 0, 0, 0)
+        self.stackedLayout.setSpacing(0)
+        self.stackedLayout.setCurrentWidget(self.imageLabel)
+        
+        self.setLayout(self.stackedLayout)
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def minimumSizeHint(self):
         # Provide a sensible minimum size
         return QSize(280, 260)  # Adjust as needed
-
-    def handle_status_change(self, status):
-        if status == QMediaPlayer.MediaStatus.LoadedMedia:
-            logger.debug("show player")
-            self._layout.setCurrentWidget(self.video)
-        elif status in [QMediaPlayer.MediaStatus.NoMedia, QMediaPlayer.MediaStatus.EndOfMedia]:
-            self._layout.setCurrentWidget(self.imageLabel)
-            logger.debug("show image")
 
     def _url_remote_request(self, url: QUrl):
         req = QNetworkRequest(QUrl(url))

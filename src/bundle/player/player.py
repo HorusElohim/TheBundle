@@ -1,18 +1,11 @@
 from enum import Enum
 
-from PySide6.QtCore import QSize, Qt, QTimer, QUrl
-from PySide6.QtGui import QIcon, QPixmap
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
-from PySide6.QtMultimediaWidgets import QVideoWidget
-from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QIcon
+from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import (
     QApplication,
     QHBoxLayout,
-    QLabel,
-    QMessageBox,
-    QPushButton,
-    QSlider,
-    QStackedLayout,
     QVBoxLayout,
     QWidget,
 )
@@ -23,6 +16,7 @@ from . import config
 from .player_popup import warning_popup
 from .player_controls import PlayerControls, ControlButton
 from .player_engine import PlayerEngine
+from .player_queue import PlayerQueue
 
 from .url_resolvers import get_url_resolved
 
@@ -37,27 +31,66 @@ class BundlePlayer(QWidget):
         self.resize(QSize(666, 666))
         self.setAcceptDrops(True)
         self.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))
+
         self.engine = PlayerEngine(self)
         self.engine.player.durationChanged.connect(self.duration_changed)
+        self.engine.player.mediaStatusChanged.connect(self.handle_media_status_changed)
 
         self.controls = PlayerControls(self)
         self.controls.button.clicked.connect(self.toggle_play_pause)
         self.controls.timeline.sliderMoved.connect(self.set_position)
         self.controls.timer.timeout.connect(self.update_timeline)
         self.controls.volumeSlider.valueChanged.connect(self.set_volume)
+        self.controls.toggleQueueButton.clicked.connect(self.toggle_queue_visibility)
+
+        self.queue = PlayerQueue(self)
+        self.queue.hide()
+
         self.setup_ui()
         self.url_resolved = None
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.addWidget(self.engine)
-        layout.addWidget(self.controls)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setStretch(0, 1)  # Give video widget more space
-        layout.setStretch(1, 0)  # Minimal space for controls
-        layout.setSpacing(0)
-        self.setLayout(layout)
+        mainLayout = QHBoxLayout(self)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+
+        playerLayout = QVBoxLayout(self)
+        playerLayout.addWidget(self.engine)
+        playerLayout.addWidget(self.controls)
+        playerLayout.addWidget(self.queue)
+        playerLayout.setContentsMargins(0, 0, 0, 0)
+        playerLayout.setStretch(0, 1)  # Give video widget more space
+        playerLayout.setStretch(1, 0)  # Minimal space for controls
+        playerLayout.setSpacing(0)
+
+        # Add playerLayout and PlayerQueue to the main layout
+        mainLayout.addLayout(playerLayout)
+        mainLayout.addWidget(self.queue, alignment=Qt.AlignRight)  # Align to the right
+        self.setLayout(playerLayout)
+
+    def handle_media_status_changed(self, status):
+        if status == QMediaPlayer.MediaStatus.LoadedMedia:
+            logger.debug("show player")
+            self.engine.stackedLayout.setCurrentWidget(self.engine.video)
+        elif status in [QMediaPlayer.MediaStatus.NoMedia, QMediaPlayer.MediaStatus.EndOfMedia]:
+            self.engine.stackedLayout.setCurrentWidget(self.engine.imageLabel)
+            logger.debug("show image")
+
+        self.check_next_in_queue(status)
+
+    def toggle_queue_visibility(self):
+        if self.queue.isVisible():
+            self.queue.hide()
+            self.controls.toggleQueueButton.setText(">")
+        else:
+            self.queue.show()
+            self.controls.toggleQueueButton.setText("<")
+
+    def check_next_in_queue(self, status):
+        if status == QMediaPlayer.MediaStatus.EndOfMedia:
+            if self.queue.currentlyPlayingIndex < self.queue.queueList.count() - 1:
+                self.queue.highlight_next_item()
+                self.play()
 
     def toggle_play_pause(self):
         match self.engine.player.playbackState():
@@ -74,15 +107,18 @@ class BundlePlayer(QWidget):
         self.controls.timer.start()
 
     def play(self):
-        if self.url_resolved is not None:
-            if self.engine.play_url(self.url_resolved):
-                button_label = ControlButton.pause.value
+        # Check if there is a URL to play in the queue
+        if self.queue.currentlyPlayingIndex < self.queue.queueList.count():
+            current_url = self.queue.get_current_url()
+            if current_url and self.engine.play_url(current_url):
+                self.controls.button.setText(ControlButton.pause.value)
                 self.controls.timer.start()
             else:
-                button_label = ControlButton.play.value
-            self.controls.button.setText(button_label)
+                self.controls.button.setText(ControlButton.play.value)
+                warning_popup(self, "Playback Error", "Cannot play the selected URL")
         else:
-            warning_popup(self, "URL is not set", "Please drop a URL before playing")
+            warning_popup(self, "Queue is empty", "No more URLs to play")
+            self.controls.button.setText(ControlButton.play.value)
 
     def pause(self):
         self.engine.player.pause()
@@ -96,6 +132,9 @@ class BundlePlayer(QWidget):
     def set_url(self, url):
         logger.debug(f"set {url=}")
         self.url_resolved = get_url_resolved(url)
+        self.queue.add_url(self.url_resolved)
+        if self.queue.isEmpty():
+            self.queue.highlight_next_item()
         logger.debug(f"resolved\n{self.url_resolved}")
 
     def dropEvent(self, event):
