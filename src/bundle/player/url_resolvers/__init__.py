@@ -11,16 +11,15 @@ class UrlType(Enum):
 
 
 @bundle.Data.dataclass
-class UrlResolved(bundle.Data.Json):
+class Track(bundle.Data.Json):
     url_type: UrlType = UrlType.unknown
     source_url: str = bundle.Data.field(default_factory=str)
     audio_url: str = bundle.Data.field(default_factory=str)
     video_url: str = bundle.Data.field(default_factory=str)
     thumbnail_url: str = bundle.Data.field(default_factory=str)
-    title: str = bundle.Data.field(default_factory=str) 
+    title: str = bundle.Data.field(default_factory=str)
     duration: str = bundle.Data.field(default_factory=str)
     artist: str = bundle.Data.field(default_factory=str)
-
 
     def log_status(self):
         def _url_status(message: str, url: str):
@@ -53,7 +52,7 @@ def resolve_url_type(url: str | QUrl) -> UrlType:
             return UrlType.unknown
 
 
-def get_url_resolved(url: str | QUrl) -> UrlResolved:
+def get_url_resolved(url: str | QUrl) -> Track:
     logger.debug("resolving: %s", url)
     url_type = resolve_url_type(url)
     logger.debug("url type '%s'", url_type.value)
@@ -61,9 +60,9 @@ def get_url_resolved(url: str | QUrl) -> UrlResolved:
         case UrlType.remote:
             if "yout" in url:
                 return YoutubeURL()(url)
-            return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
+            return Track(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.local:
-            return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
+            return Track(source_url=url, audio_url=url, video_url=url, url_type=url_type)
         case UrlType.unknown:
             logger.warning("unknown url source")
-            return UrlResolved(source_url=url, audio_url=url, video_url=url, url_type=url_type)
+            return Track(source_url=url, audio_url=url, video_url=url, url_type=url_type)
