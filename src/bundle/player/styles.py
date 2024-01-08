@@ -43,3 +43,32 @@ QLabel {
     background-color: rgba(0, 0, 0, 0); /* No background */
 }
 """
+
+
+THUMBNAIL_LABEL_STYLE = """
+    QLabel {
+        background-color: #f0f0f0;
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+    }
+"""
+
+TITLE_LABEL_STYLE = """
+    QLabel {
+        font-weight: bold;
+        color: #6e6d6d;
+    }
+"""
+
+ARTIST_LABEL_STYLE = """
+    QLabel {
+        color: #666666;
+    }
+"""
+
+DURATION_LABEL_STYLE = """
+    QLabel {
+        font-style: italic;
+        color: #999999;
+    }
+"""

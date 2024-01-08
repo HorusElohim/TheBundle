@@ -8,6 +8,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QWidget,
+    QSplitter,
 )
 
 import bundle
@@ -41,32 +42,43 @@ class BundlePlayer(QWidget):
         self.controls.timeline.sliderMoved.connect(self.set_position)
         self.controls.timer.timeout.connect(self.update_timeline)
         self.controls.volumeSlider.valueChanged.connect(self.set_volume)
-        self.controls.toggleQueueButton.clicked.connect(self.toggle_queue_visibility)
 
         self.queue = PlayerQueue(self)
-        self.queue.hide()
+        self.queue.show()
 
         self.setup_ui()
         self.url_resolved = None
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def setup_ui(self):
-        mainLayout = QHBoxLayout(self)
-        mainLayout.setContentsMargins(0, 0, 0, 0)
+        # Create a horizontal splitter
+        splitter = QSplitter(Qt.Horizontal, self)
+        splitter.setContentsMargins(0, 0, 0, 0)
 
-        playerLayout = QVBoxLayout(self)
+        # Create a widget to hold the player layout
+        playerWidget = QWidget()
+        playerLayout = QVBoxLayout(playerWidget)
         playerLayout.addWidget(self.engine)
         playerLayout.addWidget(self.controls)
-        playerLayout.addWidget(self.queue)
         playerLayout.setContentsMargins(0, 0, 0, 0)
         playerLayout.setStretch(0, 1)  # Give video widget more space
         playerLayout.setStretch(1, 0)  # Minimal space for controls
         playerLayout.setSpacing(0)
 
-        # Add playerLayout and PlayerQueue to the main layout
-        mainLayout.addLayout(playerLayout)
-        mainLayout.addWidget(self.queue, alignment=Qt.AlignRight)  # Align to the right
-        self.setLayout(playerLayout)
+        # Add playerWidget and PlayerQueue to the splitter
+        splitter.addWidget(playerWidget)
+        splitter.addWidget(self.queue)
+
+        # Set the main layout of the window to contain the splitter
+        mainLayout = QHBoxLayout(self)
+        mainLayout.setContentsMargins(0, 0, 0, 0)
+        mainLayout.addWidget(splitter)
+        self.setLayout(mainLayout)
+
+        # Optional: Set the initial sizes or proportion of the splitter
+        splitter.setSizes([400, 200])  # Adjust these values as needed
+
+        logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def handle_media_status_changed(self, status):
         if status == QMediaPlayer.MediaStatus.LoadedMedia:
@@ -77,14 +89,6 @@ class BundlePlayer(QWidget):
             logger.debug("show image")
 
         self.check_next_in_queue(status)
-
-    def toggle_queue_visibility(self):
-        if self.queue.isVisible():
-            self.queue.hide()
-            self.controls.toggleQueueButton.setText(">")
-        else:
-            self.queue.show()
-            self.controls.toggleQueueButton.setText("<")
 
     def check_next_in_queue(self, status):
         if status == QMediaPlayer.MediaStatus.EndOfMedia:

@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QListWidgetItem
 from PySide6.QtCore import Qt
 import bundle
 from .url_resolvers import UrlResolved
+from .styles import THUMBNAIL_LABEL_STYLE, TITLE_LABEL_STYLE, ARTIST_LABEL_STYLE, DURATION_LABEL_STYLE
 
 logger = bundle.getLogger(__name__)
 
@@ -27,11 +28,11 @@ class ImageDownloader(QObject):
         req.setSslConfiguration(sslConfig)
         self.manager.get(req)
         logger.debug("ImageDownloader constructed for URL: " + url)
-    
+
     def on_ssl_errors(self, reply, errors):
         for error in errors:
             logger.error(f"SSL error: {error.errorString()}")
-            
+
     def on_download_finished(self, reply):
         logger.debug("ImageDownloader on_download_finished triggered")
         status_code = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
@@ -45,7 +46,7 @@ class ImageDownloader(QObject):
         if pixmap.loadFromData(data):
             logger.debug("Image thumbnail downloaded successfully")
             self.downloaded.emit(pixmap)
-            self.label.setPixmap(pixmap.scaled(50, 50, Qt.KeepAspectRatio))
+            self.label.setPixmap(pixmap.scaled(80, 80, Qt.KeepAspectRatio))
         else:
             logger.debug("Failed to download image thumbnail")
 
@@ -60,6 +61,7 @@ class PlayerQueueItem(QWidget):
 
         # Thumbnail
         self.thumbnailLabel = QLabel()
+        self.thumbnailLabel.setStyleSheet(THUMBNAIL_LABEL_STYLE)
         layout.addWidget(self.thumbnailLabel)
         self.imageDownloader = ImageDownloader(urlResolved.thumbnail_url, self.thumbnailLabel)
 
@@ -68,14 +70,17 @@ class PlayerQueueItem(QWidget):
 
         # Title
         self.titleLabel = QLabel(urlResolved.title)
+        self.titleLabel.setStyleSheet(TITLE_LABEL_STYLE)
         detailsLayout.addWidget(self.titleLabel)
 
         # Artist
         self.artistLabel = QLabel(urlResolved.artist)
+        self.artistLabel.setStyleSheet(ARTIST_LABEL_STYLE)
         detailsLayout.addWidget(self.artistLabel)
-        
+
         # Duration
         self.durationLabel = QLabel(urlResolved.duration)
+        self.durationLabel.setStyleSheet(DURATION_LABEL_STYLE)
         detailsLayout.addWidget(self.durationLabel)
 
         # Add the details layout to the main horizontal layout
@@ -84,14 +89,11 @@ class PlayerQueueItem(QWidget):
         self.setLayout(layout)
         logger.debug("PlayerQueueItem constructed")
 
-    def set_thumbnail(self, pixmap: QPixmap):
-        self.thumbnailLabel.setPixmap(pixmap.scaled(50, 50, Qt.KeepAspectRatio))
-
 
 class PlayerQueue(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumWidth(160)
+        self.setMinimumWidth(170)
         self.layout = QVBoxLayout()
         self.layout.setContentsMargins(0, 0, 5, 0)
         self.setLayout(self.layout)
