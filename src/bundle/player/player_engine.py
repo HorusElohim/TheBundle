@@ -8,7 +8,7 @@ from PySide6.QtWidgets import QLabel, QStackedLayout, QWidget
 
 from . import config
 from .player_popup import critical_popup
-from .url_resolvers import UrlResolved, UrlType
+from .url_resolvers import Track, UrlType
 
 logger = bundle.getLogger(__name__)
 
@@ -35,7 +35,7 @@ class PlayerEngine(QWidget):
         self.stackedLayout.setContentsMargins(0, 0, 0, 0)
         self.stackedLayout.setSpacing(0)
         self.stackedLayout.setCurrentWidget(self.imageLabel)
-        
+
         self.setLayout(self.stackedLayout)
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
@@ -44,18 +44,21 @@ class PlayerEngine(QWidget):
         return QSize(280, 260)  # Adjust as needed
 
     def _url_remote_request(self, url: QUrl):
+        logger.debug("ssl request ...")
         req = QNetworkRequest(QUrl(url))
         sslConfig = QSslConfiguration.defaultConfiguration()
-        sslConfig.setPeerVerifyMode(QSslSocket.VerifyNone)
+        sslConfig.setPeerVerifyMode(QSslSocket.PeerVerifyMode.AutoVerifyPeer)
         req.setSslConfiguration(sslConfig)
         logger.debug(f"ssl {bundle.core.Emoji.success}")
 
-    def play_url(self, url: UrlResolved):
+    def play_track(self, url: Track):
+        logger.debug("play_track")
         should_play = True
         match url.url_type:
             case UrlType.remote:
                 url = QUrl(url.video_url)
                 self._url_remote_request(url)
+                logger.debug(f"setting source {url}")
                 self.player.setSource(url)
                 logger.debug(f"remote {bundle.core.Emoji.success}")
             case UrlType.local:

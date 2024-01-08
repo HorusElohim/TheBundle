@@ -2,12 +2,12 @@ from enum import Enum
 
 import bundle
 from PySide6.QtCore import Qt, QTimer
-from PySide6.QtWidgets import (QHBoxLayout, QLabel, QPushButton, QSlider,
-                               QWidget)
+from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSlider, QWidget
 
 from . import styles
 
 logger = bundle.getLogger(__name__)
+
 
 class ControlButton(Enum):
     play = "▶"
