@@ -1,6 +1,4 @@
-from enum import Enum
-
-from PySide6.QtCore import QSize, Qt
+from PySide6.QtCore import QSize, Qt, QUrl
 from PySide6.QtGui import QIcon
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import (
@@ -12,6 +10,7 @@ from PySide6.QtWidgets import (
 )
 
 import bundle
+import time
 
 from . import config
 from .player_popup import warning_popup
@@ -29,7 +28,7 @@ class BundlePlayer(QWidget):
         super().__init__()
         self.setWindowTitle(config.APP_NAME)
         self.setGeometry(800, 180, 666, 666)
-        self.resize(QSize(666, 666))
+        self.resize(QSize(800, 666))
         self.setAcceptDrops(True)
         self.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))
 
@@ -80,56 +79,90 @@ class BundlePlayer(QWidget):
 
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
+    def remove_track(self, index: int):
+        current_index = self.queue.get_current_track_index()
+        logger.debug(f"remove_track {index=} with {current_index=}")
+        self.queue.remove_track(index)
+        if current_index == index:
+            self.stop()
 
-    def remove_track(self, row: int):
-        pass
-
-    def play_track_at(self, row: int):
-        pass
-
+    def play_track_at(self, index: int):
+        logger.debug(f"play_track_at: {index}")
+        self.queue.select_track(index)
+        self.stop()
 
     def handle_media_status_changed(self, status):
-        if status == QMediaPlayer.MediaStatus.LoadedMedia:
+        logger.debug(f"handle_media_status_changed with {status=}")
+        if (
+            status
+            in [
+                QMediaPlayer.MediaStatus.LoadingMedia,
+                QMediaPlayer.MediaStatus.LoadedMedia,
+                QMediaPlayer.MediaStatus.BufferedMedia,
+                QMediaPlayer.MediaStatus.BufferingMedia,
+            ]
+            and not self.engine.video.isVisible()
+        ):
             logger.debug("show player")
             self.engine.stackedLayout.setCurrentWidget(self.engine.video)
-        elif status in [QMediaPlayer.MediaStatus.NoMedia, QMediaPlayer.MediaStatus.EndOfMedia]:
+            self.engine.imageLabel.hide()
+            self.engine.video.show()
+        elif (
+            status in [QMediaPlayer.MediaStatus.NoMedia, QMediaPlayer.MediaStatus.EndOfMedia]
+            and not self.engine.imageLabel.isVisible()
+        ):
+            self.engine.video.hide()
+            self.engine.imageLabel.show()
             self.engine.stackedLayout.setCurrentWidget(self.engine.imageLabel)
-            logger.debug("show image")
+            self.controls.button.setText(ControlButton.play.value)
+            logger.debug("show logo")
 
+        time.sleep(0.1)
         self.check_next_in_queue(status)
 
     def check_next_in_queue(self, status):
+        logger.debug(f"check_next_in_queue with {status=}")
         if status == QMediaPlayer.MediaStatus.EndOfMedia:
-            if self.queue.currentlyPlayingIndex < self.queue.queueList.count() - 1:
-                self.queue.highlight_next_item()
+            if self.queue.has_next():
                 self.play()
+            else:
+                warning_popup(self, "Queue is empty", "No more URLs to play")
+                self.controls.button.setText(ControlButton.play.value)
+        if self.engine.player.playbackState() is QMediaPlayer.PlaybackState.StoppedState:
+            logger.debug("check_next_in_queue need to play")
+            self.play()
 
     def toggle_play_pause(self):
-        match self.engine.player.playbackState():
+        state = self.engine.player.playbackState()
+        logger.debug(f"toggle_play_pause {state=}")
+        match state:
             case QMediaPlayer.PlaybackState.PlayingState:
                 self.pause()
             case QMediaPlayer.PlaybackState.PausedState:
                 self.resume()
-            case _:
+            case QMediaPlayer.PlaybackState.StoppedState:
                 self.play()
 
     def resume(self):
+        logger.debug("resume")
         self.engine.player.play()
         self.controls.button.setText(ControlButton.pause.value)
         self.controls.timer.start()
 
+    def stop(self):
+        logger.debug("stop")
+        self.controls.timer.stop()
+        self.engine.player.stop()
+        self.engine.player.setSource(QUrl())
+        self.controls.button.setText(ControlButton.play.value)
+
     def play(self):
-        # Check if there is a URL to play in the queue
-        if self.queue.currentlyPlayingIndex < self.queue.queueList.count():
-            current_url = self.queue.get_current_url()
-            if current_url and self.engine.play_url(current_url):
-                self.controls.button.setText(ControlButton.pause.value)
-                self.controls.timer.start()
-            else:
-                self.controls.button.setText(ControlButton.play.value)
-                warning_popup(self, "Playback Error", "Cannot play the selected URL")
+        logger.debug("play")
+        current_track = self.queue.get_current_track()
+        if current_track and self.engine.play_track(current_track):
+            self.controls.button.setText(ControlButton.pause.value)
+            self.controls.timer.start()
         else:
-            warning_popup(self, "Queue is empty", "No more URLs to play")
             self.controls.button.setText(ControlButton.play.value)
 
     def play_track(self):
@@ -137,11 +170,12 @@ class BundlePlayer(QWidget):
         current_track = self.queue.get_current_track()
         logger.debug(f"{current_track=}")
         if current_track:
-            if self.engine.play_url(current_track):
+            if self.engine.play_track(current_track):
                 self.controls.button.setText(ControlButton.pause.value)
                 self.controls.timer.start()
             else:
                 warning_popup(self, "Playback Error", "Cannot play the selected URL")
+                self.controls.button.setText(ControlButton.play.value)
         else:
             warning_popup(self, "Queue is empty", "No more URLs to play")
 
@@ -170,7 +204,6 @@ class BundlePlayer(QWidget):
         logger.debug(f"{self.get_current_player_status()=}")
         if self.get_current_player_status() is QMediaPlayer.PlaybackState.StoppedState:
             self.play_track()
-        
 
     def dropEvent(self, event):
         logger.debug("drop")

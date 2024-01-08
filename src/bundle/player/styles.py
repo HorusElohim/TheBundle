@@ -47,9 +47,9 @@ QLabel {
 
 THUMBNAIL_LABEL_STYLE = """
     QLabel {
-        background-color: #f0f0f0;
+        background-color: #3b0909;
         border: 1px solid #cccccc;
-        border-radius: 5px;
+        border-radius: 1px;
     }
 """
 
