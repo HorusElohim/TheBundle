@@ -16,8 +16,8 @@ logger = bundle.getLogger(__name__)
 class PlayerEngine(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.player = QMediaPlayer()
-        self.audio = QAudioOutput()
+        self.player = QMediaPlayer(self)
+        self.audio = QAudioOutput(self)
         self.video = QVideoWidget(self)
         self.player.setAudioOutput(self.audio)
         self.player.setVideoOutput(self.video)

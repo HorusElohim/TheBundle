@@ -48,9 +48,9 @@ class ImageDownloader(QObject):
 
 
 class PlayerQueueItem(QWidget):
-    def __init__(self, track: Track):
-        super().__init__()
-        self.track = track        
+    def __init__(self, parent=None, track: Track | None = None):
+        super().__init__(parent)
+        self.track = track
         self.setStyleSheet("background-color: black;")
         # Top-level horizontal layout
         layout = QHBoxLayout(self)
@@ -162,7 +162,7 @@ class CustomListWidget(QListWidget):
 class PlayerQueue(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumWidth(120)
+        self.setMinimumWidth(55)
         self.setStyleSheet("background-color: black;")
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setContentsMargins(0, 0, 5, 0)
@@ -170,16 +170,6 @@ class PlayerQueue(QWidget):
         self.queueList = CustomListWidget()
         self.mainLayout.addWidget(self.queueList)
         self.currentlyPlayingIndex = -1
-
-    def add_url(self, url: Track):
-        logger.debug("add_url")
-        itemWidget = PlayerQueueItem(url)
-        listItem = QListWidgetItem(self.queueList)
-        listItem.setSizeHint(itemWidget.sizeHint())
-        self.queueList.addItem(listItem)
-        self.queueList.setItemWidget(listItem, itemWidget)
-        if self.queueList.count() == 1:
-            self.queueList.setItemWidget(listItem, itemWidget)
 
     def clear(self):
         self.queueList.clear()
@@ -201,7 +191,7 @@ class PlayerQueue(QWidget):
 
     def add_track(self, track: Track):
         logger.debug("add_track")
-        itemWidget = PlayerQueueItem(track)
+        itemWidget = PlayerQueueItem(self, track)
         listItem = QListWidgetItem(self.queueList)
         listItem.setSizeHint(itemWidget.sizeHint())
         self.queueList.addItem(listItem)
