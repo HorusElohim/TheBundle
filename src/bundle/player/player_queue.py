@@ -50,11 +50,10 @@ class ImageDownloader(QObject):
 class PlayerQueueItem(QWidget):
     def __init__(self, track: Track):
         super().__init__()
-        self.track = track
-
+        self.track = track        
+        self.setStyleSheet("background-color: black;")
         # Top-level horizontal layout
         layout = QHBoxLayout(self)
-
         # Thumbnail
         self.thumbnailLabel = QLabel()
         self.thumbnailLabel.setFixedSize(QSize(50, 50))
@@ -101,6 +100,7 @@ class CustomListWidget(QListWidget):
         self._currentItem = None
         self._originalBgColor = None  # Store the original background color
         self.itemSelectionChanged.connect(self.onSelectionChanged)
+        self.setStyleSheet("background-color: black;")
 
     def onSelectionChanged(self):
         if self._isSwiping:
@@ -163,6 +163,7 @@ class PlayerQueue(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumWidth(120)
+        self.setStyleSheet("background-color: black;")
         self.mainLayout = QVBoxLayout()
         self.mainLayout.setContentsMargins(0, 0, 5, 0)
         self.setLayout(self.mainLayout)
@@ -239,8 +240,8 @@ class PlayerQueue(QWidget):
         if index > self.queueList.count():
             logger.error(f"{index=} out of range")
         self.currentlyPlayingIndex = index
-        self.queueList.item(index).setBackground(QColor(94, 129, 172, 80))
+        self.queueList.item(index).setBackground(QColor(0, 0, 50, 10))
 
     def reset_selection(self):
         if self.currentlyPlayingIndex >= 0:
-            self.queueList.item(self.currentlyPlayingIndex).setBackground(QColor(94, 129, 172, 10))
+            self.queueList.item(self.currentlyPlayingIndex).setBackground(QColor(0, 0, 0, 0))

@@ -93,6 +93,7 @@ class BundlePlayer(QWidget):
 
     def handle_media_status_changed(self, status):
         logger.debug(f"handle_media_status_changed with {status=}")
+        time.sleep(0.1)
         if (
             status
             in [
@@ -115,22 +116,11 @@ class BundlePlayer(QWidget):
             self.engine.imageLabel.show()
             self.engine.stackedLayout.setCurrentWidget(self.engine.imageLabel)
             self.controls.button.setText(ControlButton.play.value)
-            logger.debug("show logo")
-
-        time.sleep(0.1)
-        self.check_next_in_queue(status)
-
-    def check_next_in_queue(self, status):
-        logger.debug(f"check_next_in_queue with {status=}")
-        if status == QMediaPlayer.MediaStatus.EndOfMedia:
             if self.queue.has_next():
+                self.queue.next_track()
                 self.play()
-            else:
-                warning_popup(self, "Queue is empty", "No more URLs to play")
-                self.controls.button.setText(ControlButton.play.value)
-        if self.engine.player.playbackState() is QMediaPlayer.PlaybackState.StoppedState:
-            logger.debug("check_next_in_queue need to play")
-            self.play()
+            logger.debug("show logo")
+        
 
     def toggle_play_pause(self):
         state = self.engine.player.playbackState()
