@@ -47,8 +47,8 @@ QLabel {
 
 THUMBNAIL_LABEL_STYLE = """
     QLabel {
-        background-color: #3b0909;
-        border: 1px solid #cccccc;
+        background-color: rgba(0, 0, 0, 0);
+        border: 1px solid #000000;
         border-radius: 1px;
     }
 """
@@ -56,19 +56,22 @@ THUMBNAIL_LABEL_STYLE = """
 TITLE_LABEL_STYLE = """
     QLabel {
         font-weight: bold;
-        color: #6e6d6d;
+        color: #ffffff;
+        background-color: rgba(0, 0, 0, 0);
     }
 """
 
 ARTIST_LABEL_STYLE = """
     QLabel {
-        color: #666666;
+        color: #ffffff;
+        background-color: rgba(0, 0, 0, 0);
     }
 """
 
 DURATION_LABEL_STYLE = """
     QLabel {
         font-style: italic;
-        color: #999999;
+        color: #ffffff;
+        background-color: rgba(0, 0, 0, 0);
     }
 """
