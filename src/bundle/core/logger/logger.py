@@ -31,6 +31,10 @@ class Emoji:
     failed = "❌"
     dead = "💀"
 
+    @classmethod
+    def status(cls, val: bool) -> str:
+        return cls.success if val else cls.failed
+
 
 LOGGING_LEVEL = logging.DEBUG
 
@@ -80,11 +84,7 @@ class ColoredConsoleHandler(logging.StreamHandler):
 
 
 def setup_logging(
-    level=LOGGING_LEVEL,
-    log_path: Path | None = None,
-    colored_output=True,
-    to_json=False,
-    name: str | None = None
+    level=LOGGING_LEVEL, log_path: Path | None = None, colored_output=True, to_json=False, name: str | None = None
 ):
     """
     Set up logging with both file and console handlers.

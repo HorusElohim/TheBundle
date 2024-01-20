@@ -1,14 +1,13 @@
 import bundle
-from PySide6.QtCore import QSize, Qt, QUrl
+from PySide6.QtCore import QSize, Qt, QUrl, QTimer
 from PySide6.QtGui import QPixmap
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer, QAudioDevice, QMediaDevices
 from PySide6.QtMultimediaWidgets import QVideoWidget
 from PySide6.QtNetwork import QNetworkRequest, QSslConfiguration, QSslSocket
 from PySide6.QtWidgets import QLabel, QStackedLayout, QWidget
 
-from . import config
-from .player_popup import critical_popup
-from .url_resolvers import Track, UrlType
+from .. import config
+from ..track import TrackBase
 
 logger = bundle.getLogger(__name__)
 
@@ -37,6 +36,13 @@ class PlayerEngine(QWidget):
         self.stackedLayout.setCurrentWidget(self.imageLabel)
 
         self.setLayout(self.stackedLayout)
+        self.player.errorOccurred.connect(self.handle_player_error)
+
+        self.current_audio_device = QMediaDevices.defaultAudioOutput()
+        self.audio_device_check_timer = QTimer(self)
+        self.audio_device_check_timer.timeout.connect(self.check_audio_device)
+        self.audio_device_check_timer.start(1250)  # Check every 5 seconds
+
         logger.debug(f"constructed {bundle.core.Emoji.success}")
 
     def minimumSizeHint(self):
@@ -51,23 +57,27 @@ class PlayerEngine(QWidget):
         req.setSslConfiguration(sslConfig)
         logger.debug(f"ssl {bundle.core.Emoji.success}")
 
-    def play_track(self, url: Track):
-        logger.debug("play_track")
-        should_play = True
-        match url.url_type:
-            case UrlType.remote:
-                url = QUrl(url.video_url)
-                self._url_remote_request(url)
-                logger.debug(f"setting source {url}")
-                self.player.setSource(url)
-                logger.debug(f"remote {bundle.core.Emoji.success}")
-            case UrlType.local:
-                url = QUrl(url.video_url)
-                self.player.setSource(url)
-                logger.debug(f"local {bundle.core.Emoji.success}")
-            case _:
-                critical_popup(self, "Unknown URL", f"{url=}")
-                should_play = False
-        if should_play:
-            self.player.play()
-        return should_play
+    def play_track(self, track: TrackBase):
+        url = QUrl.fromLocalFile(str(track.track.path))
+        logger.debug(f"play_track {url=}")
+        self.player.setSource(url)
+        self.player.play()
+
+    def handle_player_error(self, error):
+        if str(error) not in ["Error.FormatError"]:
+            logger.error(f"Playback error: {error}")
+
+    def check_audio_device(self):
+        new_device = QMediaDevices.defaultAudioOutput()
+        if new_device.description() != self.current_audio_device.description():
+            logger.debug(
+                f"Audio output device changed,\n{self.current_audio_device.description()} -> {new_device.description()}"
+            )
+            self.current_audio_device = new_device
+            self.update_audio_output()
+
+    def update_audio_output(self):
+        logger.debug("update_audio_output")
+        new_audio_output = QAudioOutput(self.current_audio_device, self)
+        self.player.setAudioOutput(new_audio_output)
+        self.audio = new_audio_output

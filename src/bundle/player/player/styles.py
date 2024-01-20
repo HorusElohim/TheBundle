@@ -56,22 +56,47 @@ THUMBNAIL_LABEL_STYLE = """
 TITLE_LABEL_STYLE = """
     QLabel {
         font-weight: bold;
-        color: #ffffff;
+        color: #808080;
         background-color: rgba(0, 0, 0, 0);
     }
 """
 
 ARTIST_LABEL_STYLE = """
     QLabel {
-        color: #ffffff;
+        color: #808080;
         background-color: rgba(0, 0, 0, 0);
     }
 """
 
+
 DURATION_LABEL_STYLE = """
     QLabel {
         font-style: italic;
-        color: #ffffff;
+        color: #808080;
+        background-color: rgba(0, 0, 0, 0);
+    }
+"""
+
+
+TITLE_LABEL_SELECTED_STYLE = """
+    QLabel {
+        font-weight: bold;
+        color: white;
+        background-color: rgba(0, 0, 0, 0);
+    }
+"""
+
+ARTIST_LABEL_SELECTED_STYLE = """
+    QLabel {
+        color: white;
+        background-color: rgba(0, 0, 0, 0);
+    }
+"""
+
+DURATION_LABEL_SELECTED_STYLE = """
+    QLabel {
+        font-style: italic;
+        color: white;
         background-color: rgba(0, 0, 0, 0);
     }
 """

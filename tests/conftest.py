@@ -59,3 +59,8 @@ def cprofile_folder(reference_folder):
     cprof_folder = reference_folder / "cprofile"
     cprof_folder.mkdir(exist_ok=True)
     return cprof_folder
+
+
+@pytest.fixture(scope="session")
+def assets_folder(bundle_folder):
+    return bundle_folder / "src" / "bundle" / "testing" / "assets"
