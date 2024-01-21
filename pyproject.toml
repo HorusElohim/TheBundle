@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Python TheBundle essential code."
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = ["jsonschema", "colorama"]
+dependencies = ["jsonschema", "colorama", "wheel"]
 
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"
@@ -17,7 +17,15 @@ version_file = "src/bundle/_version.py"
 test = ["pytest"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
-player = ["pyside6", "pytube"]
+player = [
+    "pyside6",
+    "pytube",
+    "tqdm",
+    "ffmpeg-python",
+    "pynput",
+    "mutagen",
+    "requests",
+]
 
 [project.scripts]
 bundle_player = "bundle.player:main"
