@@ -32,10 +32,15 @@ class PlayerControls(QWidget):
 
         self.play_button = QPushButton(ControlButton.play.value)
         self.play_button.setStyleSheet(styles.BUTTON_STYLE)
+        self.play_button.setToolTip("Play/Pause")
+
         self.next_button = QPushButton(ControlButton.next.value)
         self.next_button.setStyleSheet(styles.BUTTON_STYLE)
+        self.next_button.setToolTip("Next track")
+
         self.previous_button = QPushButton(ControlButton.previous.value)
         self.previous_button.setStyleSheet(styles.BUTTON_STYLE)
+        self.previous_button.setToolTip("Previous track")
 
         self.timeline = QSlider(Qt.Horizontal)
         self.timeline.setStyleSheet(styles.SLIDER_STYLE)
@@ -46,7 +51,9 @@ class PlayerControls(QWidget):
         # Speaker button
         self.speakerButton = QPushButton(ControlButton.audio.value)
         self.speakerButton.setStyleSheet(styles.BUTTON_STYLE)
+        self.speakerButton.setToolTip("Open volume")
         self.speakerButton.clicked.connect(self.toggle_volume_slider)
+
         # Volume slider (initially hidden)
         self.volumeSlider = QSlider(Qt.Horizontal)
         self.volumeSlider.setRange(0, 100)
@@ -58,7 +65,7 @@ class PlayerControls(QWidget):
         self.shuffle_button = QPushButton(ControlButton.shuffle.value)
         self.shuffle_button.setStyleSheet(styles.BUTTON_STYLE)
         self.shuffle_button.setToolTip("Shuffle the order of the tracks")
-        
+
         # Open Directory button
         self.open_directory_button = QPushButton(ControlButton.open_directory.value)
         self.open_directory_button.setStyleSheet(styles.BUTTON_STYLE)

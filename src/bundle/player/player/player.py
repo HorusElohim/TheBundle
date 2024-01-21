@@ -81,8 +81,8 @@ class Player(QWidget):
         mainLayout = QVBoxLayout(self)
         mainLayout.setContentsMargins(0, 0, 0, 0)
         mainLayout.setSpacing(0)
-        mainLayout.addWidget(splitter)
-        mainLayout.addWidget(self.controls)
+        mainLayout.addWidget(splitter, 1)  # The splitter takes the remaining space
+        mainLayout.addWidget(self.controls, 0)  # The controls have a fixed size
 
         self.setLayout(mainLayout)
 
