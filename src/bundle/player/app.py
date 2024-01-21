@@ -66,11 +66,10 @@ class ThreadURLResolver(QThread):
                     if "playlist" in self.url:
                         for url in track.resolve_youtube__playlist_urls(self.url):
                             self.track_url.emit(url)
-                    return self.track_resolved.emit(track.TrackYoutube(url=self.url))
-                else:
-                    raise ValueError(f"No yet implemented: {self.url=}")
+                    else:
+                        self.track_resolved.emit(track.TrackYoutube(url=self.url))
             case QUrl():
-                return self.track_resolved.emit(track.TrackLocal(path=self.url))
+                self.track_resolved.emit(track.TrackLocal(path=self.url))
 
 
 class BundlePlayerWindows(QMainWindow):

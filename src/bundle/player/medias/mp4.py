@@ -70,7 +70,7 @@ class MP4(bundle.Data.Json):
             # Extract audio stream and save as MP3
             (
                 ffmpeg.input(str(self.path))
-                .output(str(output_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 2}, loglevel="quiet")
+                .output(str(output_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
                 .run(overwrite_output=True)
             )
             logger.info(f"Extraction MP4 to MP3: {output_path}")
