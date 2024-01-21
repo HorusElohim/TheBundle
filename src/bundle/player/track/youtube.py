@@ -1,11 +1,15 @@
 import bundle
-from pytube import YouTube
+from pytube import YouTube, Playlist
 from .base import TrackBase
 from ..medias import MP3, MP4
 from tqdm import tqdm
 import requests
 
 logger = bundle.getLogger(__name__)
+
+
+def resolve_youtube__playlist_urls(url: str) -> list[str]:
+    return list(Playlist(url))
 
 
 def download(url: str):
@@ -15,7 +19,7 @@ def download(url: str):
         response.raise_for_status()
 
         total_size_in_bytes = int(response.headers.get("content-length", 0))
-        block_size = 4096 
+        block_size = 4096
         progress_bar = tqdm(total=total_size_in_bytes, unit="iB", unit_scale=True)
 
         data = b""

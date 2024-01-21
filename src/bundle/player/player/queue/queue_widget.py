@@ -1,7 +1,5 @@
 from threading import Lock
-from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QListWidgetItem, QVBoxLayout, QWidget
-from typing import Tuple
 import bundle
 import random
 
@@ -102,40 +100,32 @@ class PlayerQueue(QWidget):
 
     def select_track(self, index: int):
         logger.debug(f"select_track: {index}")
-        self.reset_selection()  # Reset selection for all items first
+        self.reset_selection()
         if 0 <= index < self.queueList.count():
             self.current_index = index
             item_widget = self.queueList.itemWidget(self.queueList.item(index))
             if isinstance(item_widget, QueueItemWidget):
-                # Set the style for the selected widget
-                item_widget.setSelectedStyle()  # Implement this method in QueueItemWidget
+                item_widget.setSelectedStyle()
 
     def reset_selection(self):
         for i in range(self.queueList.count()):
             item_widget = self.queueList.itemWidget(self.queueList.item(i))
             if isinstance(item_widget, QueueItemWidget):
-                # Reset the style for each widget
-                item_widget.resetStyle()  # Implement this method in QueueItemWidget
+                item_widget.resetStyle()
 
     def shuffle_tracks(self):
         count = self.queueList.count()
         logger.debug(f"shuffling tracks: {count}")
         if count <= 1:
             return  # No need to shuffle if 0 or 1 item
-
-        # Extract track information
         tracks = []
         for i in range(count):
             item_widget = self.queueList.itemWidget(self.queueList.item(i))
             if isinstance(item_widget, QueueItemWidget):
                 tracks.append(item_widget.track)
-
-        # Shuffle the tracks
         random.shuffle(tracks)
-
-        # Clear the QListWidget and repopulate
         self.queueList.clear()
         for track in tracks:
-            self.add_track(track)  # Reuse your existing method to add tracks
+            self.add_track(track)
 
         self.select_track(0)

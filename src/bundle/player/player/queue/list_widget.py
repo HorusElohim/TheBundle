@@ -72,5 +72,5 @@ class ListWidget(QListWidget):
         item = self.itemAt(event.pos())
         if item:
             row = self.row(item)
-            self.itemDoubleClicked.emit(row)  # Emit the itemDoubleClicked signal
+            self.itemDoubleClicked.emit(row)
         super().mouseDoubleClickEvent(event)

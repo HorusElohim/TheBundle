@@ -13,25 +13,6 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-def resolve_url(url: str | QUrl) -> track.TrackBase | None:
-    logger.debug("resolving: %s", url)
-    match url:
-        case str():
-            if "youtu" in url:
-                if "playlist" in url:
-                    popup.critical_popup(
-                        None,
-                        "Detected Youtube Playlist",
-                        "Please avoid youtube urls has 'https://music.youtube.com/playlist?list=' ",
-                    )
-                    return None
-                return track.TrackYoutube(url=url)
-            else:
-                raise ValueError(f"No yet implemented: {url=}")
-        case QUrl():
-            return track.TrackLocal(path=url)
-
-
 class MediaKeyHandler(QObject):
     play_pause_signal = Signal()
     next_track_signal = Signal()
@@ -71,15 +52,25 @@ class TrackLoaderThread(QThread):
 
 class ThreadURLResolver(QThread):
     track_resolved = Signal(track.TrackBase)
+    track_url = Signal(str)
 
     def __init__(self, url):
         super().__init__()
         self.url = url
 
     def run(self):
-        resolved_track = resolve_url(self.url)
-        if resolved_track:
-            self.track_resolved.emit(resolved_track)
+        logger.debug("resolving: %s", self.url)
+        match self.url:
+            case str():
+                if "youtu" in self.url:
+                    if "playlist" in self.url:
+                        for url in track.resolve_youtube__playlist_urls(self.url):
+                            self.track_url.emit(url)
+                    return self.track_resolved.emit(track.TrackYoutube(url=self.url))
+                else:
+                    raise ValueError(f"No yet implemented: {self.url=}")
+            case QUrl():
+                return self.track_resolved.emit(track.TrackLocal(path=self.url))
 
 
 class BundlePlayerWindows(QMainWindow):
@@ -121,6 +112,7 @@ class BundlePlayerWindows(QMainWindow):
         logger.debug("add_track_from_url")
         thread = ThreadURLResolver(url)
         thread.track_resolved.connect(self.add_track_slot)
+        thread.track_url.connect(self.add_track_from_url_slot)
         thread.finished.connect(lambda: self.cleanup_thread(thread))
         thread.start()
         logger.debug("url resolver thread started")
@@ -150,8 +142,12 @@ class BundlePlayerWindows(QMainWindow):
                 self.add_track_from_url(clipboard_url)
 
     def add_track_from_url(self, url: str | QUrl):
-        logger.debug("add_track_from_url")
+        logger.debug(f"add_track_from_url: {url}")
         self._create_and_start_url_resolver_thread(url)
+
+    @Slot(str)
+    def add_track_from_url_slot(self, url: str):
+        self.add_track_from_url(url)
 
     @Slot(track.TrackBase)
     def add_track_slot(self, track_base: track.TrackBase):
