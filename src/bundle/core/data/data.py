@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Type, TypeVar, Union
 from pprint import pformat
 
 from .. import Emoji
-from . import dataclass, field, asdict, LOGGER
+from . import dataclass, field, fields, asdict, LOGGER
 
 
 @dataclass
@@ -75,7 +75,7 @@ class Dataclass:
 
             initialized_fields = {}
             for field_name in source_dict:
-                if Dataclass._is_annotation_present_in_mro(target_class, field_name):
+                if field_name in fields(target_class):
                     field_type = next(
                         (
                             getattr(base_class, "__annotations__", {}).get(field_name)
@@ -84,7 +84,7 @@ class Dataclass:
                         ),
                         None,
                     )
-                    LOGGER.debug(f"{field_name=} {field_type=}")
+
                     if isinstance(source_dict[field_name], dict):
                         initialized_fields[field_name] = Dataclass._recursive_dataclass_from_dict(
                             field_type, source_dict[field_name]
@@ -141,11 +141,6 @@ class Dataclass:
         data_dict = asdict(self)
         LOGGER.debug(Emoji.success)
         return data_dict
-
-    def __str__(self) -> str:
-        class_header = f"--------\n{self.class_type}\n--------"
-        formatted_data = pformat(self.as_dict(), indent=4, width=80, depth=None)
-        return f"{class_header}\n{formatted_data}\n--------"
 
     def __hash__(self) -> int:
         return hash(self.as_dict())

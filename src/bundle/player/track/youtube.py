@@ -83,7 +83,7 @@ class TrackYoutube(TrackBase):
             logger.debug("started")
             self.track.thumbnail = download_url_callback(self.youtube_urls.thumbnail)
             self.track.save(data=download_url_callback(self.youtube_urls.video))
-            self.track: MP3 = self.track.as_mp3()
+            # self.track: MP3 = self.track.as_mp3()
             logger.info(f"track downloaded: {self.track.path}")
 
         except Exception as e:
