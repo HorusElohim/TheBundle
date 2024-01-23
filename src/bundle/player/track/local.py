@@ -26,5 +26,5 @@ class TrackLocal(TrackBase):
             case ".mp4":
                 self.track = MP4.load(path)
             case _:
-                raise ValueError(f"Unsupported type: {path}")
+                self.track = None
         logger.debug(f"constructed {bundle.core.Emoji.success}")

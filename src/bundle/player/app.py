@@ -45,7 +45,8 @@ class TrackLoaderThread(QThread):
             if track_path.suffix == ".mp4":
                 logger.debug(f"Found track: {track_path}")
                 local_track = track.TrackLocal(path=track_path)
-                self.track_found.emit(local_track)
+                if local_track.track is not None:
+                    self.track_found.emit(local_track)
 
         self.finished.emit()
 
