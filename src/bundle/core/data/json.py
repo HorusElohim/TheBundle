@@ -115,7 +115,7 @@ class JSONData(JSONDataABC, Dataclass):
         try:
             with Path(json_path).open("r") as file:
                 obj_dict = js.load(file, cls=decoder)
-                LOGGER.debug(f"{Emoji.success} {json_path=} ")
+                LOGGER.debug(f"{Emoji.success} {str(json_path)} ")
                 return obj_dict
         except jsonschema.ValidationError:
             LOGGER.error(f"{Emoji.failed} {json_path=} \n{traceback.format_exc()}")
@@ -131,23 +131,23 @@ class JSONData(JSONDataABC, Dataclass):
         try:
             with Path(path).open("w") as file:
                 js.dump(obj_dict, file, indent=4, cls=encoder)
-                LOGGER.debug(f"{Emoji.success} {path=} ")
+                LOGGER.debug(f"{Emoji.success} {str(path)} ")
                 return obj_dict
         except jsonschema.ValidationError:
-            LOGGER.error(f" {Emoji.failed} {path=}\n{traceback.format_exc()}")
+            LOGGER.error(f" {Emoji.failed} {str(path)}\n{traceback.format_exc()}")
             return None
 
     @classmethod
     def from_json(cls: Type[JSONData], path: Union[str, Path]) -> JSONData:
         """Load the dataclass from a JSON file."""
         obj_dict = JSONData.load_json_file(json_path=path, decoder=cls.json_decoder)
-        LOGGER.debug(f"{Emoji.success} {path=}{obj_dict}")
+        LOGGER.debug(f"{Emoji.success} {path=}")
         return cls.from_dict(obj_dict)
 
     def dump_json(self, path: Union[str, Path]) -> None:
         """Save the dataclass to a JSON file."""
         self.dump_json_file(obj_dict=self.as_dict(), path=path, encoder=self.json_encoder)
-        LOGGER.debug(f"{Emoji.success} {path=}")
+        LOGGER.debug(f"{Emoji.success} {str(path)}")
 
     def as_json(self) -> None:
         """Convert the dataclass to a JSON string."""
