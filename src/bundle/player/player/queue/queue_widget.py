@@ -57,17 +57,19 @@ class PlayerQueue(QWidget):
         item_widget = QueueItemWidget(self, track)
         list_item = QListWidgetItem(self.queueList)
         list_item.setSizeHint(item_widget.sizeHint())
-        logger.debug("list item widget created")
         logger.debug(f"{bundle.core.Emoji.success}")
         return item_widget, list_item
 
     def add_track(self, track: TrackBase):
-        queue_item, list_item = self._create_list_item_widget(track)
-        self.queueList.addItem(list_item)
-        self.queueList.setItemWidget(list_item, queue_item)
-        if self.queueList.count() == 1:
-            self.select_track(0)
-        logger.debug(f"{bundle.core.Emoji.success}")
+        if track is not None and track.track is not None:
+            queue_item, list_item = self._create_list_item_widget(track)
+            self.queueList.addItem(list_item)
+            self.queueList.setItemWidget(list_item, queue_item)
+            if self.queueList.count() == 1:
+                self.select_track(0)
+            logger.debug(f"{bundle.core.Emoji.success}")
+        else:
+            logger.warning(f"track {track}")
 
     def has_next(self) -> int:
         has_next = self.current_index < self.queueList.count() - 1

@@ -92,6 +92,7 @@ class BundlePlayerWindows(QMainWindow):
         self._create_and_start_mediakey_handler()
         # Load saved tracks
         self._create_and_start_loading_thread()
+        logger.info(f"app started with data folder: {str(config.DATA_PATH)}")
 
     def _create_and_start_mediakey_handler(self):
         self.media_handler = MediaKeyHandler()
@@ -150,9 +151,9 @@ class BundlePlayerWindows(QMainWindow):
         self.add_track_from_url(url)
 
     @Slot(track.TrackBase)
-    def add_track_slot(self, track_base: track.TrackBase):
-        logger.debug(f"Adding track type <{track_base.class_name}>: {str(track_base.path)}")
+    def add_track_slot(self, track_base: track.TrackLocal | track.TrackYoutube):
         self.player.add_track(track_base)
+        logger.info(f"added {track_base.class_name} {track_base.filename}")
 
     def cleanup_thread(self, thread):
         logger.debug(f"cleaning up thread: {thread}")
@@ -161,6 +162,10 @@ class BundlePlayerWindows(QMainWindow):
 
 
 def main():
+    import bundle
+    from logging import INFO
+
+    bundle.core.LOGGER.setLevel(INFO)
     app = QApplication([])
     app.setStyle("fusion")
 
