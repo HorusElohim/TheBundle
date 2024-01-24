@@ -42,4 +42,3 @@ class NodeProcess(NodeSyncBase, process.Process):
 @data.dataclass(unsafe_hash=True)
 class NodeStreamingProcess(NodeSyncBase, process.Process.Streaming):
     Base = NodeSyncBase
-

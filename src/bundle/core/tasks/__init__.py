@@ -18,7 +18,6 @@
 # under the License.
 
 
-
 from typing import Type
 from .. import data, getLogger
 
