@@ -151,7 +151,7 @@ class BundlePlayerWindows(QMainWindow):
 
     @Slot(track.TrackBase)
     def add_track_slot(self, track_base: track.TrackBase):
-        logger.debug(f"Adding track type <{track_base.class_type}>: {track_base.path}")
+        logger.debug(f"Adding track type <{track_base.class_name}>: {str(track_base.path)}")
         self.player.add_track(track_base)
 
     def cleanup_thread(self, thread):
