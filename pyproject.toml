@@ -26,9 +26,11 @@ player = [
     "mutagen",
     "requests",
 ]
+ai = ["openai", "python-dotenv"]
 
 [project.scripts]
 bundle_player = "bundle.player:main"
+bundle_gpt = "bundle.ai.gpt:main"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]
