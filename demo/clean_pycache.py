@@ -3,11 +3,11 @@ import bundle
 import shutil
 import os
 
-LOGGER = bundle.logging.getLogger(__name__)
+LOGGER = bundle.getLogger(__name__)
 
 
-@bundle.data.dataclass
-class CleanPyCache(bundle.tasks.Task):
+@bundle.Data.dataclass
+class CleanPyCache(bundle.Task):
     def exec(self) -> None:
         if not self.path.is_dir():
             raise ValueError(f"The path {self.path} is not a valid directory.")
