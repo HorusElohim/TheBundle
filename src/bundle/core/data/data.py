@@ -21,6 +21,7 @@ from __future__ import annotations
 
 from dataclasses import Field, asdict, dataclass, field, fields
 from enum import Enum
+import inspect
 from types import UnionType
 from typing import Any, Generator, Type, TypeVar, get_args, get_origin, get_type_hints
 
@@ -158,7 +159,7 @@ class Dataclass:
             elif is_parameterized_generic(field_type):
                 # Check if contains Dataclass
                 sequence_type = get_sequence_element_type(field_type)
-                if issubclass(sequence_type, Dataclass):
+                if inspect.isclass(sequence_type) and issubclass(sequence_type, Dataclass):
                     # The current supported Dataclass reconstruction on sequence are the following
                     orig_type = get_origin(field_type)
                     if orig_type not in SUPPORTED_DATACLASS_SEQUENCE_TYPES:
