@@ -9,7 +9,7 @@ logger = bundle.getLogger(__name__)
 
 @bundle.Data.dataclass
 class TrackLocal(TrackBase):
-    path: QUrl | bundle.Path = None
+    path: QUrl | bundle.Path | None = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -28,3 +28,13 @@ class TrackLocal(TrackBase):
             case _:
                 self.track = None
         logger.debug(f"constructed {bundle.core.Emoji.success}")
+
+    @property
+    def filename(self) -> str:
+        match self.path:
+            case bundle.Path():
+                return self.path.name
+            case QUrl():
+                return self.path.fileName()
+            case _:
+                return ""
