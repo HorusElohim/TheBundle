@@ -1,13 +1,13 @@
 import bundle
 import signal
-
+from datetime import datetime
 
 BIN_PATH = bundle.Path(r"C:\FFmpeg\ffmpeg-6.0-essentials_build\bin\ffmpeg.exe")
 
 
-@bundle.data.dataclass
-class FFmpegRecord(bundle.process.Process):
-    bin_path: bundle.Path = bundle.data.field(default_factory=lambda: BIN_PATH)
+@bundle.Data.dataclass
+class FFmpegRecord(bundle.Process):
+    bin_path: bundle.Path = bundle.Data.field(default_factory=lambda: BIN_PATH)
     format: str = "gdigrab"
     framerate: float = 60
     width: int = 2560
@@ -71,6 +71,6 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal_handler)
 
     print("Starting recording. Press Ctrl+C to stop.")
-    name = f"Recording_{bundle.datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}"
+    name = f"Recording_{datetime.now().strftime('%Y.%m.%d.%H.%M.%S')}"
     ffrecord = FFmpegRecord(name=name)
     ffrecord()
