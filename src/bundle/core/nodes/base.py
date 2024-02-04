@@ -39,4 +39,3 @@ class NodeBase(entity.Entity):
             raise ValueError("node must be an instance of NodeBase")
         self.children.append(node)
         LOGGER.debug(f"added child node: {node.tag}")
-

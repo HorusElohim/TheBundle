@@ -62,9 +62,9 @@ def cprofile_decorator(
 
             # Compare against expected duration and threshold in nanoseconds
             duration_diff_ns = abs(elapsed_ns - expected_duration)
-            
+
             LOGGER.info(f"{func.__name__}= executed in {elapsed_ns}ns")
-            
+
             if elapsed_ns > expected_duration and duration_diff_ns > performance_threshold:
                 LOGGER.error(
                     f"Function {func.__name__} exceeded the performance threshold by "

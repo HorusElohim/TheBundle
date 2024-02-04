@@ -92,6 +92,7 @@ class Dataclass:
         as_dict: Convert the class as dictionary
 
     """
+
     dataclass = dataclass
     field = field
 
