@@ -3,9 +3,6 @@
     "title": "TestEntity",
     "type": "object",
     "properties": {
-        "class_type": {
-            "type": "string"
-        },
         "name": {
             "type": "string"
         },
@@ -36,7 +33,6 @@
         }
     },
     "required": [
-        "class_type",
         "name",
         "path",
         "born_time",
