@@ -16,3 +16,7 @@ class TrackBase(bundle.Entity):
 
     def is_valid(self):
         return self.track.is_valid() if self.track else False
+
+    @property
+    def filename(self) -> str:
+        return self.path.name
