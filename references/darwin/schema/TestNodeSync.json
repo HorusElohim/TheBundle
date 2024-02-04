@@ -3,9 +3,6 @@
     "title": "TestNodeSync",
     "type": "object",
     "properties": {
-        "class_type": {
-            "type": "string"
-        },
         "name": {
             "type": "string"
         },
@@ -50,9 +47,6 @@
                 "title": "NodeBase",
                 "type": "object",
                 "properties": {
-                    "class_type": {
-                        "type": "string"
-                    },
                     "name": {
                         "type": "string"
                     },
@@ -93,7 +87,6 @@
                     }
                 },
                 "required": [
-                    "class_type",
                     "name",
                     "path",
                     "born_time",
@@ -106,7 +99,6 @@
         }
     },
     "required": [
-        "class_type",
         "name",
         "path",
         "born_time",

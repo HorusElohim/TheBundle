@@ -2,12 +2,6 @@
     "$schema": "http://json-schema.org/draft-07/schema#",
     "title": "JSONData",
     "type": "object",
-    "properties": {
-        "class_type": {
-            "type": "string"
-        }
-    },
-    "required": [
-        "class_type"
-    ]
+    "properties": {},
+    "required": []
 }
