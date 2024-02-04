@@ -32,12 +32,11 @@ class NodeBase(entity.Entity):
 
     @property
     def tag(self):
-        return f"{self.class_type}.{self.name}.{self.id}"
+        return f"{self.class_name}.{self.name}.{self.id}"
 
     def add_child(self, node: NodeBase):
         if not isinstance(node, NodeBase):
             raise ValueError("node must be an instance of NodeBase")
         self.children.append(node)
         LOGGER.debug(f"added child node: {node.tag}")
-    
-    
+
