@@ -166,9 +166,10 @@ def main():
     from logging import INFO
 
     bundle.core.LOGGER.setLevel(INFO)
+    logger.info("starting the BundlePlayer")
     app = QApplication([])
     app.setStyle("fusion")
-
+    app.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))
     # Create and show the main window
     main_window = BundlePlayerWindows()
     main_window.show()
