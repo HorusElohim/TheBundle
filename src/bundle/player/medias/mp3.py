@@ -1,7 +1,9 @@
 import bundle
+import hashlib
 from mutagen.mp3 import MP3 as MutagenMP3
 from mutagen.id3 import ID3, APIC, error, TIT2, TPE1
 
+from . import sanitize_pathname
 from ..config import DATA_PATH
 
 MP3_PATH = DATA_PATH / "mp3"
@@ -17,6 +19,12 @@ class MP3(bundle.Entity):
     artist: str = bundle.Data.field(default_factory=str)
     thumbnail: bytes = bundle.Data.field(default_factory=bytes, repr=False)
     path: str | bundle.Path = "auto"
+
+    @property
+    def identifier(self) -> str:
+        data_to_hash = (self.title + self.artist).encode("utf-8")
+        hash_object = hashlib.sha256(data_to_hash)
+        return hash_object.hexdigest()
 
     def is_valid(self):
         return self.title and self.duration and self.artist and self.thumbnail
@@ -56,6 +64,7 @@ class MP3(bundle.Entity):
 
                 if self.path == "auto":
                     self.path = MP3_PATH / f"{self.title}-{self.artist}.mp3"
+                    self.path = sanitize_pathname(self.path)
 
                 with open(self.path, "wb") as fd:
                     fd.write(payload)
