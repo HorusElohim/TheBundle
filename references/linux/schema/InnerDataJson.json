@@ -3,9 +3,6 @@
     "title": "InnerDataJson",
     "type": "object",
     "properties": {
-        "class_type": {
-            "type": "string"
-        },
         "json_str": {
             "type": "string"
         },
@@ -17,7 +14,6 @@
         }
     },
     "required": [
-        "class_type",
         "json_str",
         "int_value",
         "float_value"
