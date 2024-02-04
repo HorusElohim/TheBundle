@@ -1,5 +1,4 @@
 {
-    "class_type": "GraphResultTest",
     "results": {
         "TestGraphNodeSync.RootNode.test-id": "RootNode",
         "TestGraphNodeSync.ChildNode1.test-id": {
