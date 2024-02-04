@@ -1,19 +1,19 @@
 import click
 import bundle
-import subprocess
-
-LOGGER = bundle.logging.getLogger(__name__)
 
 
-def apply_black_to_file(path: bundle.typing.Union[bundle.Path, str]):
+LOGGER = bundle.setup_logging(name=__name__, level=10)
+
+
+def apply_black_to_file(path: bundle.Path | str):
     LOGGER.info("applying black to '%s' ...", path)
-    p = bundle.process.Process(command=f"black {path}")
+    p = bundle.Process(command=f"black {path}")
     p(shell=True, text=True)
     LOGGER.info("black applied to  '%s' ✅", path)
 
 
 @click.command()
-@click.option("--path", default=bundle.__path__[0], help="Path to format with Black.")
+@click.argument("path", default=bundle.__path__[0])
 def main(path):
     """Simple script that applies Black formatter to a given path."""
     apply_black_to_file(path)

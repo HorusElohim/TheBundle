@@ -3,7 +3,7 @@ import bundle
 import shutil
 import os
 
-LOGGER = bundle.getLogger(__name__)
+LOGGER = bundle.setup_logging(name=__name__, level=10)
 
 
 @bundle.Data.dataclass

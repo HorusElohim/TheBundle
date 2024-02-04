@@ -7,7 +7,6 @@ import asyncio
 from pathlib import Path
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
-import bundle
 import latex
 
 
@@ -19,10 +18,10 @@ LATEX_HEADER = r"""
     \usepackage[table]{xcolor}
     \usepackage{geometry}
     \usepackage{booktabs}
-    \usepackage{longtable} 
-    \usepackage{hyperref} 
+    \usepackage{longtable}
+    \usepackage{hyperref}
     \usepackage[utf8]{inputenc}
-    \geometry{margin=1in} 
+    \geometry{margin=1in}
     \definecolor{backgroundcolor}{HTML}{121212}
     \definecolor{textcolor}{HTML}{E0E0E0}
     \definecolor{plotcolor}{HTML}{D3D3D3}
