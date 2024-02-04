@@ -11,14 +11,15 @@ from ...track import TrackBase
 logger = bundle.getLogger(__name__)
 
 
-def get_tooltips(track: TrackBase):
-    tooltip = f"""
-type: {track.class_type} | {track.track.class_type}
+def get_tooltips(track: TrackBase | None):
+    if track:
+        return f"""
+type: {track.class_name} | {track.track.class_name}
 title: {track.track.title}
 artist: {track.track.artist}
 duration: {track.duration_str}
     """
-    return tooltip
+    return ""
 
 
 class QueueItemWidget(QWidget):
@@ -62,7 +63,6 @@ class QueueItemWidget(QWidget):
 
         self.setLayout(layout)
         self.setToolTip(get_tooltips(self.track))
-        logger.debug("PlayerQueueItem constructed")
 
     def setSelectedStyle(self):
         self.titleLabel.setStyleSheet(styles.TITLE_LABEL_SELECTED_STYLE)
