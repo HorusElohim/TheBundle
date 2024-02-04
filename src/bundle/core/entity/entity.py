@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from datetime import timedelta
 
 from . import LOGGER
 from .. import data, Path, time, typing, version, Emoji
@@ -60,7 +61,7 @@ class Entity(data.JSONData):
                 if LOGGER:
                     LOGGER.error(f"Exception: {ex}")
         if LOGGER:
-            LOGGER.debug("%s  %s.%s age=%d", Emoji.dead, self.class_name, self.name, self.age)
+            LOGGER.debug("%s  %s.%s age=%s", Emoji.dead, self.class_name, self.name, Entity.format_ns(self.age))
 
     def move(self, new_path: typing.Union[Path, str]):
         """
@@ -71,3 +72,26 @@ class Entity(data.JSONData):
         # Absolute and Relative
         # Update the entity's path
         self.path = self.path.parent / new_path if not Path(new_path).is_absolute() else new_path
+
+    @staticmethod
+    def format_ns(ns: int) -> str:
+        # Convert nanoseconds to microseconds for timedelta compatibility
+        td = timedelta(microseconds=ns / 1000)
+
+        units = [
+            (td.days, "d"),
+            (td.seconds // 3600, "h"),
+            (td.seconds % 3600 // 60, "m"),
+            (td.seconds % 60, "s"),
+            (td.microseconds // 1000, "ms"),
+            (td.microseconds % 1000, "µs"),  # Add microseconds
+        ]
+
+        time_str = ":".join(f"{value}{unit}" for value, unit in units if value > 0)
+
+        # Append remaining nanoseconds for durations less than 1 microsecond
+        remaining_ns = ns % 1000
+        if remaining_ns > 0:
+            time_str += f":{remaining_ns}ns"
+
+        return time_str
