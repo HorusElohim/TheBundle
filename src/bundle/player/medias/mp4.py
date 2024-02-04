@@ -2,7 +2,10 @@ from __future__ import annotations
 
 import bundle
 import ffmpeg
+import hashlib
+import shutil
 
+from . import sanitize_pathname
 from .mp3 import MP3, MP3_PATH
 from ..config import DATA_PATH
 
@@ -22,6 +25,12 @@ class MP4(bundle.Entity):
     thumbnail: bytes = bundle.Data.field(default_factory=bytes, repr=False)
     path: str | bundle.Path = "auto"
 
+    @property
+    def identifier(self) -> str:
+        data_to_hash = (self.title + self.artist).encode("utf-8")
+        hash_object = hashlib.sha256(data_to_hash)
+        return hash_object.hexdigest()
+
     def is_valid(self):
         return self.title and self.duration and self.artist and self.thumbnail
 
@@ -33,24 +42,10 @@ class MP4(bundle.Entity):
         if metadata_path.exists():
             logger.debug(f"found metadata: {metadata_path}")
             return cls.from_json(metadata_path)
-
-        mp3_path = cls.get_mp3_path(path)
-        if mp3_path.exists():
-            logger.debug(f"found mp3: {mp3_path}")
-            mp3 = MP3.load(mp3_path)
-            mp4 = cls(
-                title=mp3.title,
-                artist=mp3.artist,
-                duration=mp3.duration,
-                thumbnail=mp3.thumbnail,
-                path=path,
-            )
-            if not metadata_path.exists():
-                logger.debug(f"saving: {metadata_path}")
-                mp4.save(only_metadata=True)
-            return mp4
         else:
-            return None
+            logger.warning(f"Missing metadata for {path=}. Removing track!")
+            shutil.rmtree(path, ignore_errors=True)
+            raise RuntimeError()
 
     @property
     def filename(self) -> str:
@@ -73,10 +68,10 @@ class MP4(bundle.Entity):
             if not only_metadata:
                 if data is None:
                     raise ValueError("Missing data to save")
-
                 if self.path == "auto":
                     # Define how to automatically set the file path
                     self.path = MP4_PATH / f"{self.filename}.mp4"
+                    self.path = sanitize_pathname(self.path)
                     logger.debug(f"auto-name: {self.path}")
                 with open(self.path, "wb") as fd:
                     fd.write(data)
