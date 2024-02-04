@@ -180,10 +180,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install GitPython click
 
-      - name: "Pull changes"
+      - name: Pull changes
         run: |
-          git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git fetch origin
+          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
 
+      - name: Configure Git User
+        run: |
+            git config --global user.name 'TheBundle'
+            git config --global user.email 'noreply@github.com'
+            
       - name: Remove Target Commits
         run: |
           git stash save --include-untracked
@@ -192,13 +198,14 @@ jobs:
             echo "No commits found with the specified message."
           else
             for commit in $commits; do
+                # Rebasing while keeping the original author's date
                 GIT_COMMITTER_NAME="$(git log -1 --format='%an' $commit)"
                 GIT_COMMITTER_EMAIL="$(git log -1 --format='%ae' $commit)"
                 git rebase --onto $commit^ $commit --strategy-option=theirs --committer-date-is-author-date || git rebase --abort
             done
           fi
           git stash list | grep -q 'stash@{0}' && git stash pop
-
-          git config --global user.name 'TheBundle'
-          git config --global user.email 'noreply@github.com'
-          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+  
+          # Push the changes
+          git push --force --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+      
