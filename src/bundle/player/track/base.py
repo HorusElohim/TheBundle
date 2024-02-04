@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 import bundle
+from PySide6.QtCore import QUrl
 from ..medias import MP3, MP4
 
 
 @bundle.Data.dataclass
 class TrackBase(bundle.Entity):
     track: MP3 | MP4 | None = None
+
+    @property
+    def identifier(self):
+        return self.track.identifier
 
     @property
     def duration_str(self) -> str:
@@ -19,4 +24,6 @@ class TrackBase(bundle.Entity):
 
     @property
     def filename(self) -> str:
+        if isinstance(self.path, QUrl):
+            self.path = bundle.Path(self.path.toLocalFile())
         return self.path.name

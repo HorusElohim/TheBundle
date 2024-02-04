@@ -1,7 +1,9 @@
 import bundle
 from pytube import YouTube, Playlist
 from .base import TrackBase
+from .database import DB
 from ..medias import MP3, MP4
+
 from tqdm import tqdm
 import requests
 
@@ -54,7 +56,12 @@ class TrackYoutube(TrackBase):
         if self.url is None:
             raise ValueError("url cannot be None")
         self.retrieve_youtube_info()
-        self.download_track()
+        if DB.has(self.track):
+            self.path = DB.get(self.identifier)
+            logger.info(f"track already in db {self.identifier} -> {self.path}")
+            self.track.load(self.path)
+        else:
+            self.download_track()
         return super().__post_init__()
 
     def retrieve_youtube_info(self):
@@ -83,7 +90,7 @@ class TrackYoutube(TrackBase):
             logger.debug("started")
             self.track.thumbnail = download_url_callback(self.youtube_urls.thumbnail)
             self.track.save(data=download_url_callback(self.youtube_urls.video))
-            # self.track: MP3 = self.track.as_mp3()
+            self.path = self.track.path
             logger.info(f"track downloaded: {self.track.path}")
 
         except Exception as e:
