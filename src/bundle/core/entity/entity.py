@@ -31,19 +31,24 @@ class Entity(data.JSONData):
     auto_save: bool = data.field(default_factory=bool)
 
     @property
+    def class_name(self) -> str:
+        return self.__class__.__name__
+
+    @property
     def age(self) -> int:
         return time.time_ns() - self.born_time
 
     @property
     def code(self) -> str:
         import inspect
-
-        return inspect.getsource(inspect.getmodule(inspect.currentframe()))
+        if frame := inspect.currentframe():
+            if module := inspect.getmodule(frame):
+                return inspect.getsource(module)
+        return ""
 
     def __post_init__(self):
-        super().__post_init__()  # Ensure any parent class post-init actions are performed
         self.name = self.name if self.name else "Default"
-        LOGGER.debug("%s  %s.%s path=%s", Emoji.born, self.class_type, self.name, self.path)
+        LOGGER.debug("%s  %s.%s path=%s", Emoji.born, self.class_name, self.name, self.path)
 
     def __del__(self):
         if self.auto_save:
@@ -54,7 +59,7 @@ class Entity(data.JSONData):
                 if LOGGER:
                     LOGGER.error(f"Exception: {ex}")
         if LOGGER:
-            LOGGER.debug("%s  %s.%s age=%d", Emoji.dead, self.class_type, self.name, self.age)
+            LOGGER.debug("%s  %s.%s age=%d", Emoji.dead, self.class_name, self.name, self.age)
 
     def move(self, new_path: typing.Union[Path, str]):
         """
