@@ -106,7 +106,7 @@ def setup_logging(
             formatter = JsonFormatter()
         else:
             formatter = logging.Formatter(
-                "%(asctime)s.%(mssecs)03d - %(levelname)s - [%(name)s] - %(filename)s:%(funcName)s:%(lineno)d: - %(message)s"
+                "%(asctime)s - %(levelname)s [%(name)s] %(filename)s:%(funcName)s:%(lineno)d: %(message)s"
             )
 
         file_handler.setFormatter(formatter)
