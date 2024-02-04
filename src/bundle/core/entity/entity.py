@@ -41,6 +41,7 @@ class Entity(data.JSONData):
     @property
     def code(self) -> str:
         import inspect
+
         if frame := inspect.currentframe():
             if module := inspect.getmodule(frame):
                 return inspect.getsource(module)

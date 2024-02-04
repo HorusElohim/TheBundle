@@ -38,6 +38,7 @@ def check_file_exist(path: str | Path, not_exist_raise=False) -> Path:
 from .data import Dataclass
 from .json import JSONData
 
+
 @dataclass
 class Data(Dataclass):
     Json = JSONData

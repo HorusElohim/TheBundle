@@ -26,6 +26,7 @@ from .base import NodeBase
 from .synchronous import NodeSync, NodeProcess, NodeStreamingProcess
 from .asynchronous import NodeAsyncTask, NodeProcessAsync, NodeProcessStreamingAsync
 
+
 @data.dataclass
 class Node(NodeSync):
     Sync = NodeSync

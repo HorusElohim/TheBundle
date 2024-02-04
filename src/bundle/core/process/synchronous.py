@@ -21,11 +21,8 @@
 import subprocess
 import signal
 import os
-from typing import Callable
-import shlex
 
 from .. import logger
-from . import data
 from .base import ProcessBase, StreamingProcessBase, data, LOGGER
 
 
@@ -33,8 +30,9 @@ from .base import ProcessBase, StreamingProcessBase, data, LOGGER
 class ProcessSync(ProcessBase):
     def exec(self, **kwds) -> bool:
         LOGGER.debug(f"running: '{self.command}'")
+        report = ""
         try:
-            self._process = subprocess.run(shlex.split(self.command), **kwds)
+            self._process = subprocess.run(self.command, **kwds)
             self.returncode = self._process.returncode
             self.stdout = self._process.stdout
             self.stderr = self._process.stderr
@@ -56,7 +54,7 @@ class ProcessSync(ProcessBase):
 
     def terminate(self):
         if self._process is not None:
-            os.kill(self.process.pid, signal.SIGINT)
+            os.kill(self._process.pid, signal.SIGINT)
 
 
 @data.dataclass
