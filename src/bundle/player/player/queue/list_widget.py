@@ -16,6 +16,7 @@ class ListWidget(QListWidget):
         self._startPos = None
         self._currentItem = None
         self._originalBgColor = None  # Store the original background color
+        self._isSwiping = False
         self.itemSelectionChanged.connect(self.onSelectionChanged)
         self.setStyleSheet("background-color: black;")
 
