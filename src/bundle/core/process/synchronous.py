@@ -21,6 +21,7 @@
 import subprocess
 import signal
 import os
+import shlex
 
 from .. import logger
 from .base import ProcessBase, StreamingProcessBase, data, LOGGER
@@ -29,10 +30,9 @@ from .base import ProcessBase, StreamingProcessBase, data, LOGGER
 @data.dataclass
 class ProcessSync(ProcessBase):
     def exec(self, **kwds) -> bool:
-        LOGGER.debug(f"running: '{self.command}'")
-        report = ""
+        report = f"running: '{shlex.split(self.command)}'"
         try:
-            self._process = subprocess.run(self.command, **kwds)
+            self._process = subprocess.run(shlex.split(self.command), **kwds)
             self.returncode = self._process.returncode
             self.stdout = self._process.stdout
             self.stderr = self._process.stderr
@@ -45,11 +45,12 @@ class ProcessSync(ProcessBase):
         finally:
             self._reset_process()
             if self.returncode == 0:
-                LOGGER.debug(f"{logger.Emoji.success}")
+                LOGGER.debug(f" {logger.Emoji.success} {report}")
                 return True
             else:
-                LOGGER.error(f"{logger.Emoji.failed}")
-                LOGGER.error(f"{self}")
+                LOGGER.error(f"{logger.Emoji.failed} {report}")
+                if self.stderr:
+                    LOGGER.error(f"stderr: {self.stderr}")
                 return False
 
     def terminate(self):
