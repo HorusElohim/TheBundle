@@ -2,9 +2,9 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QMouseEvent
 from PySide6.QtWidgets import QListWidget, QListWidgetItem, QVBoxLayout, QWidget
 
-import bundle
+from bundle import logger
 
-logger = bundle.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 class ListWidget(QListWidget):
@@ -57,7 +57,7 @@ class ListWidget(QListWidget):
                 item = self.itemAt(self._startPos)
                 if item:
                     row = self.row(item)
-                    logger.debug(f"emitting idex to remove: {row}")
+                    log.debug(f"emitting idex to remove: {row}")
                     self.itemRemoved.emit(row)
 
         if self._currentItem:

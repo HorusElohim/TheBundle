@@ -17,24 +17,16 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from . import logger
+from . import utils
 
-import time
-
-import typing
-from pathlib import Path
-from datetime import datetime
-
-from .. import version
-from .logger import setup_logging, getLogger, Emoji
-
-LOGGER = logger.setup_logging()
-
+CORE_LOGGER = logger.setup_logging(name=__name__)
 
 from . import data
-from . import entity
-from . import tasks
-from . import process
-from . import nodes
-from . import graphs
+from .data import Data
 
-LOGGER.debug("bundle core loaded")
+from . import atom
+from .atom import Atom
+
+
+CORE_LOGGER.debug("bundle core loaded")

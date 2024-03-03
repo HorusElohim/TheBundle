@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import bundle
+from pathlib import Path
+from bundle.core import atom
 from PySide6.QtCore import QUrl
 from ..medias import MP3, MP4
 
 
-@bundle.Data.dataclass
-class TrackBase(bundle.Entity):
+class TrackBase(atom.Atom):
     track: MP3 | MP4 | None = None
 
     @property
@@ -25,5 +25,5 @@ class TrackBase(bundle.Entity):
     @property
     def filename(self) -> str:
         if isinstance(self.path, QUrl):
-            self.path = bundle.Path(self.path.toLocalFile())
+            self.path = Path(self.path.toLocalFile())
         return self.path.name

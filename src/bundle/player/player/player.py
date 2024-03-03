@@ -5,13 +5,12 @@ import subprocess
 from PySide6.QtCore import Qt, QUrl
 from PySide6.QtMultimedia import QMediaPlayer
 from PySide6.QtWidgets import (
-    QFileDialog,
     QVBoxLayout,
     QWidget,
     QSplitter,
 )
 
-import bundle
+from bundle import logger
 import time
 
 from .popup import warning_popup
@@ -21,7 +20,7 @@ from .queue import PlayerQueue
 from ..track import TrackBase
 from .. import config
 
-logger = bundle.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 MEDIA_STATUS_OK = [
     QMediaPlayer.MediaStatus.LoadingMedia,
@@ -64,7 +63,7 @@ class Player(QWidget):
 
         self.queue.show()
         self.setup_ui()
-        logger.debug(f"constructed {bundle.core.Emoji.success}")
+        log.debug(f"constructed {logger.Emoji.success}")
 
     def setup_ui(self):
         splitter = QSplitter(Qt.Horizontal, self)
@@ -86,22 +85,22 @@ class Player(QWidget):
 
         self.setLayout(mainLayout)
 
-        logger.debug(f"constructed {bundle.core.Emoji.success}")
+        log.debug(f"constructed {logger.Emoji.success}")
 
     def remove_track(self, index: int):
         current_index = self.queue.get_current_track_index()
-        logger.debug(f"remove_track {index=} with {current_index=}")
+        log.debug(f"remove_track {index=} with {current_index=}")
         self.queue.remove_track(index)
         if current_index == index:
             self.stop()
 
     def play_track_at(self, index: int):
-        logger.debug(f"play_track_at: {index}")
+        log.debug(f"play_track_at: {index}")
         self.queue.select_track(index)
         self.play()
 
     def handle_media_status_changed(self, status):
-        logger.debug(f"handle_media_status_changed with {status=}")
+        log.debug(f"handle_media_status_changed with {status=}")
         time.sleep(0.1)
         if status in MEDIA_STATUS_OK and not self.engine.video.isVisible():
             self.engine.stackedLayout.setCurrentWidget(self.engine.video)
@@ -117,7 +116,7 @@ class Player(QWidget):
 
     def toggle_play_pause(self):
         state = self.engine.player.playbackState()
-        logger.debug(f"toggle_play_pause {state=}")
+        log.debug(f"toggle_play_pause {state=}")
         match state:
             case QMediaPlayer.PlaybackState.PlayingState:
                 self.pause()
@@ -127,20 +126,20 @@ class Player(QWidget):
                 self.play()
 
     def resume(self):
-        logger.debug("resume")
+        log.debug("resume")
         self.engine.player.play()
         self.controls.play_button.setText(ControlButton.pause.value)
         self.controls.timer.start()
 
     def stop(self):
-        logger.debug("stop")
+        log.debug("stop")
         self.controls.timer.stop()
         self.engine.player.stop()
         self.engine.player.setSource(QUrl())
         self.controls.play_button.setText(ControlButton.play.value)
 
     def play(self):
-        logger.debug("play")
+        log.debug("play")
         current_track = self.queue.get_current_track()
         if current_track:
             self.engine.play_track(current_track)
@@ -153,7 +152,7 @@ class Player(QWidget):
         self.engine.player.pause()
         self.controls.play_button.setText(ControlButton.play.value)
         self.controls.timer.stop()
-        logger.debug(ControlButton.pause.value)
+        log.debug(ControlButton.pause.value)
 
     def set_volume(self, value):
         self.engine.audio.setVolume(value / 100)

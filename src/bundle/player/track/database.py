@@ -1,17 +1,17 @@
 from __future__ import annotations
-import bundle
+
+from pathlib import Path
+from bundle.core import data, atom
 from PySide6.QtCore import QUrl
 from threading import Lock
 
-from ..config import DATA_PATH
 from .base import TrackBase
 
 LOCK = Lock()
 
 
-@bundle.Data.dataclass
-class TrackDatabase(bundle.Entity):
-    database: dict[str : bundle.Path] = bundle.Entity.field(default_factory=dict)
+class TrackDatabase(atom.Atom):
+    database: dict[str, Path] = data.Field(default_factory=dict)
 
     def has(self, track: TrackBase):
         with LOCK:
@@ -19,10 +19,10 @@ class TrackDatabase(bundle.Entity):
 
     def add(self, track: TrackBase):
         with LOCK:
-            track_path = bundle.Path(track.path.toString()) if isinstance(track.path, QUrl) else bundle.Path(track.path)
+            track_path = Path(track.path.toString()) if isinstance(track.path, QUrl) else Path(track.path)
             self.database[track.identifier] = track_path
 
-    def get(self, identifier: str) -> bundle.Path:
+    def get(self, identifier: str) -> Path:
         with LOCK:
             return self.database[identifier]
 

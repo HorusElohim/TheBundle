@@ -3,16 +3,16 @@ from PySide6.QtGui import QIcon
 from PySide6.QtCore import QObject, QSize, Qt, QUrl
 from PySide6.QtCore import QThread, Signal, Slot
 from PySide6.QtWidgets import QApplication, QMainWindow
-import time
+from pathlib import Path
 from collections import deque
 from threading import Lock
 from .player import Player
 from . import track
 from . import config
 from . import medias
-from logging import getLogger
+from bundle import logger
 
-logger = getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 class MediaKeyHandler(QObject):
@@ -42,10 +42,10 @@ class TrackLoaderThread(QThread):
     finished = Signal()  # Signal to indicate job completion
 
     def run(self):
-        logger.debug("Loading tracks in TrackLoaderThread")
+        log.debug("Loading tracks in TrackLoaderThread")
         for track_path in medias.MP4_PATH.iterdir():
             if track_path.suffix == ".mp4":
-                logger.debug(f"Found track: {track_path}")
+                log.debug(f"Found track: {track_path}")
                 local_track = track.TrackLocal(path=track_path)
                 if local_track.track is not None:
                     self.track_found.emit(local_track)
@@ -62,7 +62,7 @@ class ThreadUrlResolverManager(QObject):
         self._queue = deque()
         self.current_thread = 0
         self.queue_lock = Lock()
-        logger.debug("LThreadUrlResolverManager init")
+        log.debug("LThreadUrlResolverManager init")
 
     @property
     def queue(self):
@@ -70,31 +70,31 @@ class ThreadUrlResolverManager(QObject):
             return self._queue
 
     def add_url(self, url):
-        logger.debug(f"add_url: {url}")
+        log.debug(f"add_url: {url}")
         self.queue.append(url)
         if self.current_thread == 0:
             self._start_next_thread()
 
     def _start_next_thread(self):
-        logger.debug("starting new thread")
+        log.debug("starting new thread")
         if self.queue:
             next_url = self.queue.pop()
-            logger.debug(f"new thread working on {next_url}")
+            log.debug(f"new thread working on {next_url}")
             thread = ThreadURLResolver(next_url)
             thread.track_resolved.connect(self.track_resolved.emit)
             thread.track_url.connect(self.track_url.emit)
             thread.finished.connect(lambda: self._on_thread_finished(thread))
             thread.start()
             self.current_thread += 1
-            logger.debug(f"new thread started")
+            log.debug(f"new thread started")
 
     @Slot()
     def _on_thread_finished(self, thread):
-        logger.debug(f"thread finished")
+        log.debug(f"thread finished")
         thread.deleteLater()
         self.current_thread -= 1
         if self.queue:
-            logger.debug(f"still URL in the queue")
+            log.debug(f"still URL in the queue")
             self._start_next_thread()
 
 
@@ -107,21 +107,21 @@ class ThreadURLResolver(QThread):
         self.url = url
 
     def run(self):
-        logger.debug("resolving: %s", self.url)
+        log.debug("resolving: %s", self.url)
         match self.url:
             case str():
                 if "youtu" in self.url:
                     if "playlist" in self.url:
-                        logger.info(f"resolving youtube playlist: {self.url}")
+                        log.info(f"resolving youtube playlist: {self.url}")
                         urls = track.resolve_youtube__playlist_urls(self.url)
-                        logger.info(f"found {len(urls)} urls")
+                        log.info(f"found {len(urls)} urls")
                         for url in urls:
                             self.track_url.emit(url)
                     else:
-                        logger.info(f"resolving youtube url: {self.url}")
+                        log.info(f"resolving youtube url: {self.url}")
                         self.track_resolved.emit(track.TrackYoutube(url=self.url))
             case QUrl():
-                self.track_resolved.emit(track.TrackLocal(path=self.url))
+                self.track_resolved.emit(track.TrackLocal(path=Path(self.url.toLocalFile())))
 
 
 class BundlePlayerWindows(QMainWindow):
@@ -145,7 +145,7 @@ class BundlePlayerWindows(QMainWindow):
         self._create_and_start_mediakey_handler()
         # Load saved tracks
         self._create_and_start_loading_thread()
-        logger.info(f"app started with data folder: {str(config.DATA_PATH)}")
+        log.info(f"app started with data folder: {str(config.DATA_PATH)}")
 
     def _create_and_start_mediakey_handler(self):
         self.media_handler = MediaKeyHandler()
@@ -160,16 +160,16 @@ class BundlePlayerWindows(QMainWindow):
         self.track_loader_thread.finished.connect(self.track_loader_thread.quit)
         self.track_loader_thread.finished.connect(self.track_loader_thread.deleteLater)
         self.track_loader_thread.start()
-        logger.debug("loading thread started")
+        log.debug("loading thread started")
 
     def dropEvent(self, event):
-        logger.debug("drop")
+        log.debug("drop")
         mimeData = event.mimeData()
         if mimeData.hasUrls():
             url = mimeData.urls()[0]
             self.add_track_from_url(url)
         else:
-            logger.error(f"drop has no url: {mimeData}")
+            log.error(f"drop has no url: {mimeData}")
 
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -179,14 +179,14 @@ class BundlePlayerWindows(QMainWindow):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_V and (event.modifiers() & Qt.ControlModifier):
-            logger.debug("paste")
+            log.debug("paste")
             clipboard = QApplication.clipboard()
             clipboard_url = clipboard.text()
             if clipboard_url:
                 self.add_track_from_url(clipboard_url)
 
     def add_track_from_url(self, url: str | QUrl):
-        logger.debug(f"add_track_from_url: {url}")
+        log.debug(f"add_track_from_url: {url}")
         self.resolver_manager.add_url(url)
 
     @Slot(str)
@@ -198,12 +198,12 @@ class BundlePlayerWindows(QMainWindow):
         if not track.DB.has(track_base):
             track.DB.add(track_base)
             self.player.add_track(track_base)
-            logger.info(f"added {track_base.class_name} {track_base.filename}")
+            log.info(f"added {track_base.class_name} {track_base.filename}")
         else:
-            logger.debug("track already in db - no addition")
+            log.debug("track already in db - no addition")
 
     def cleanup_thread(self, thread):
-        logger.debug(f"cleaning up thread: {thread}")
+        log.debug(f"cleaning up thread: {thread}")
         thread.deleteLater()
         self._threads.remove(thread)
 
@@ -212,8 +212,8 @@ def main():
     import bundle
     from logging import INFO
 
-    bundle.core.LOGGER.setLevel(INFO)
-    logger.info("starting the BundlePlayer")
+    # bundle.core.CORE_LOGGER.setLevel(INFO)
+    log.info("starting the BundlePlayer")
     app = QApplication([])
     app.setStyle("fusion")
     app.setWindowIcon(QIcon(str(config.ICON_PATH.absolute())))

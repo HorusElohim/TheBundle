@@ -4,11 +4,11 @@ from PySide6.QtGui import QColor
 from PySide6.QtWidgets import QGraphicsDropShadowEffect
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QVBoxLayout, QWidget
 
-import bundle
+from bundle import logger
 from .. import styles
 from ...track import TrackBase
 
-logger = bundle.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 def get_tooltips(track: TrackBase | None):

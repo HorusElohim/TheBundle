@@ -1,0 +1,24 @@
+{
+    "string_field": "",
+    "int_field": 1,
+    "float_field": 1.0,
+    "bool_field": false,
+    "optional_field": null,
+    "list_field": [],
+    "set_field": [],
+    "dict_field": {},
+    "union_field": 0,
+    "nested_model": {
+        "id": 0,
+        "info": "",
+        "timestamp": "1991-12-28T00:00:00"
+    },
+    "nested_model_list": [],
+    "optional_nested_model": null,
+    "recursive_model": {
+        "name": "",
+        "children": null
+    },
+    "dynamic_default_field": "LowValue",
+    "file_path": "."
+}

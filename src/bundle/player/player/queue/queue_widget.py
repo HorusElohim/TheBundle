@@ -1,13 +1,13 @@
 from threading import Lock
 from PySide6.QtWidgets import QListWidgetItem, QVBoxLayout, QWidget
-import bundle
+from bundle import logger
 import random
 
 from .list_widget import ListWidget
 from .item_widget import QueueItemWidget
 from ...track import TrackBase
 
-logger = bundle.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 class PlayerQueue(QWidget):
@@ -38,16 +38,16 @@ class PlayerQueue(QWidget):
         self.current_index = -1
 
     def isEmpty(self):
-        logger.debug("isEmpty")
+        log.debug("isEmpty")
         return self.queueList.count() == 0
 
     def get_current_track(self) -> TrackBase | None:
         if 0 <= self.current_index < self.queueList.count():
             itemWidget = self.queueList.itemWidget(self.queueList.item(self.current_index))
             if isinstance(itemWidget, QueueItemWidget):
-                logger.debug(f"returning current track: {itemWidget.track.track.path}")
+                log.debug(f"returning current track: {itemWidget.track.track.path}")
                 return itemWidget.track
-        logger.debug(f"no current track")
+        log.debug(f"no current track")
         return None
 
     def get_current_track_index(self) -> int:
@@ -57,7 +57,7 @@ class PlayerQueue(QWidget):
         item_widget = QueueItemWidget(self, track)
         list_item = QListWidgetItem(self.queueList)
         list_item.setSizeHint(item_widget.sizeHint())
-        logger.debug(f"{bundle.core.Emoji.success}")
+        log.debug(f"{logger.Emoji.success}")
         return item_widget, list_item
 
     def add_track(self, track: TrackBase):
@@ -67,41 +67,41 @@ class PlayerQueue(QWidget):
             self.queueList.setItemWidget(list_item, queue_item)
             if self.queueList.count() == 1:
                 self.select_track(0)
-            logger.debug(f"{bundle.core.Emoji.success}")
+            log.debug(f"{logger.Emoji.success}")
         else:
-            logger.warning(f"track {track}")
+            log.warning(f"track {track}")
 
     def has_next(self) -> int:
         has_next = self.current_index < self.queueList.count() - 1
-        logger.debug(f"has_next: {has_next}")
+        log.debug(f"has_next: {has_next}")
         return has_next
 
     def next_track(self):
         if self.queueList.count() > 0 and self.current_index < self.queueList.count() - 1:
-            logger.debug(f"next_track from: {self.current_index}")
+            log.debug(f"next_track from: {self.current_index}")
             self.select_track(self.current_index + 1)
-            logger.debug(f"next_track to: {self.current_index}")
+            log.debug(f"next_track to: {self.current_index}")
         else:
-            logger.warning("no next_track")
+            log.warning("no next_track")
 
     def previous_track(self):
         if self.current_index >= 1:
-            logger.debug(f"previous_track from: {self.current_index}")
+            log.debug(f"previous_track from: {self.current_index}")
             self.select_track(self.current_index - 1)
-            logger.debug(f"previous_track to: {self.current_index}")
-            logger.debug("previous_track")
+            log.debug(f"previous_track to: {self.current_index}")
+            log.debug("previous_track")
             return
-        logger.debug("no previous_track")
+        log.debug("no previous_track")
 
     def remove_track(self, index: int):
-        logger.debug(f"remove_track: {index}")
+        log.debug(f"remove_track: {index}")
         if 0 <= index < self.queueList.count():
             self.queueList.takeItem(index)
             if self.current_index >= index:
                 self.current_index -= 1
 
     def select_track(self, index: int):
-        logger.debug(f"select_track: {index}")
+        log.debug(f"select_track: {index}")
         self.reset_selection()
         if 0 <= index < self.queueList.count():
             self.current_index = index
@@ -117,7 +117,7 @@ class PlayerQueue(QWidget):
 
     def shuffle_tracks(self):
         count = self.queueList.count()
-        logger.debug(f"shuffling tracks: {count}")
+        log.debug(f"shuffling tracks: {count}")
         if count <= 1:
             return  # No need to shuffle if 0 or 1 item
         tracks = []

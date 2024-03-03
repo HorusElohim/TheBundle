@@ -18,8 +18,8 @@
 # under the License.
 
 
-import logging
+from ..core import logger
 
-LOGGER = logging.getLogger(__name__)
+TEST_LOGGER = logger.setup_logging(__name__)
 
 from .tools import *

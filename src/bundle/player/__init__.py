@@ -1,6 +1,6 @@
-from ..core import setup_logging
+from ..core import logger
 
-LOGGER = setup_logging(name="bundle_player", level=10)
+LOGGER = logger.setup_logging(name=__name__, level=logger.logging.DEBUG)
 
 from . import config
 from . import track

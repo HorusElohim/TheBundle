@@ -1,13 +1,12 @@
 from enum import Enum
 
-import bundle
+from bundle import logger
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtWidgets import QHBoxLayout, QLabel, QPushButton, QSlider, QWidget
 
 from . import styles
-import logging
 
-logger = logging.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 class ControlButton(Enum):
@@ -85,7 +84,7 @@ class PlayerControls(QWidget):
 
         self.timer = QTimer(self)
         self.timer.setInterval(1000)
-        logger.debug(f"constructed {bundle.core.Emoji.success}")
+        log.debug(f"constructed {logger.Emoji.success}")
 
     def toggle_volume_slider(self):
         self.volumeSlider.setVisible(not self.volumeSlider.isVisible())

@@ -1,4 +1,4 @@
-import bundle
+from bundle import logger
 from PySide6.QtCore import QSize, Qt, QUrl, QTimer
 from PySide6.QtGui import QPixmap
 from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer, QAudioDevice, QMediaDevices
@@ -9,7 +9,7 @@ from PySide6.QtWidgets import QLabel, QStackedLayout, QWidget
 from .. import config
 from ..track import TrackBase
 
-logger = bundle.getLogger(__name__)
+log = logger.getLogger(__name__)
 
 
 class PlayerEngine(QWidget):
@@ -43,41 +43,39 @@ class PlayerEngine(QWidget):
         self.audio_device_check_timer.timeout.connect(self.check_audio_device)
         self.audio_device_check_timer.start(1250)  # Check every 5 seconds
 
-        logger.debug(f"constructed {bundle.core.Emoji.success}")
+        log.debug(f"constructed {logger.Emoji.success}")
 
     def minimumSizeHint(self):
         # Provide a sensible minimum size
         return QSize(280, 260)  # Adjust as needed
 
     def _url_remote_request(self, url: QUrl):
-        logger.debug("ssl request ...")
+        log.debug("ssl request ...")
         req = QNetworkRequest(QUrl(url))
         sslConfig = QSslConfiguration.defaultConfiguration()
         sslConfig.setPeerVerifyMode(QSslSocket.PeerVerifyMode.AutoVerifyPeer)
         req.setSslConfiguration(sslConfig)
-        logger.debug(f"ssl {bundle.core.Emoji.success}")
+        log.debug(f"ssl {logger.Emoji.success}")
 
     def play_track(self, track: TrackBase):
         url = QUrl.fromLocalFile(str(track.track.path))
-        logger.debug(f"play_track {url=}")
+        log.debug(f"play_track {url=}")
         self.player.setSource(url)
         self.player.play()
 
     def handle_player_error(self, error):
         if str(error) not in ["Error.FormatError"]:
-            logger.error(f"Playback error: {error}")
+            log.error(f"Playback error: {error}")
 
     def check_audio_device(self):
         new_device = QMediaDevices.defaultAudioOutput()
         if new_device.description() != self.current_audio_device.description():
-            logger.debug(
-                f"Audio output device changed,\n{self.current_audio_device.description()} -> {new_device.description()}"
-            )
+            log.debug(f"Audio output device changed,\n{self.current_audio_device.description()} -> {new_device.description()}")
             self.current_audio_device = new_device
             self.update_audio_output()
 
     def update_audio_output(self):
-        logger.debug("update_audio_output")
+        log.debug("update_audio_output")
         new_audio_output = QAudioOutput(self.current_audio_device, self)
         self.player.setAudioOutput(new_audio_output)
         self.audio = new_audio_output
