@@ -56,11 +56,16 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Install Playwright system dependencies
+        run: |
+            npx playwright install-deps
+
       - name: Install dependencies
         run: |
             python -m pip install --upgrade pip
             pip install GitPython click
             pip install -e .[test]
+            playwright install
 
       - name: "Pull changes"
         run: |
@@ -96,11 +101,12 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install BUNDLE dependencies
         run: |
             python -m pip install --upgrade pip
             pip install GitPython click
             pip install -e .[test]
+            playwright install
 
       - name: "Pull changes"
         run: |
@@ -142,6 +148,7 @@ jobs:
             python -m pip install --upgrade pip
             pip install GitPython click
             pip install -e .[test]
+            playwright install
 
       - name: "Pull changes"
         run: |
@@ -189,7 +196,7 @@ jobs:
         run: |
             git config --global user.name 'TheBundle'
             git config --global user.email 'noreply@github.com'
-            
+
       - name: Remove Target Commits
         run: |
           git stash save --include-untracked
@@ -205,7 +212,6 @@ jobs:
             done
           fi
           git stash list | grep -q 'stash@{0}' && git stash pop
-  
+
           # Push the changes
           git push --force --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
-      

@@ -1,2 +1,3 @@
 include *.png
-include *.mp3
+include *.html
+include *.css

@@ -1,0 +1,47 @@
+body {
+    background-color: #121212;
+    /* Dark background */
+    color: #fff;
+    /* Light text color for contrast */
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    /* Center the container horizontally */
+    align-items: center;
+    /* Center the container vertically */
+    height: 100vh;
+    /* Full screen height */
+    margin: 0;
+    /* Remove default margin */
+}
+
+.container {
+    text-align: center;
+    /* Center the content inside the container */
+}
+
+h1 {
+    margin-bottom: 50px;
+    /* Add some space below the heading */
+}
+
+.youtube-btn {
+    display: inline-block;
+    background-color: #FF0000;
+    /* YouTube red */
+    color: #fff;
+    /* White text */
+    padding: 20px 40px;
+    border-radius: 50%;
+    /* Circular button */
+    font-size: 20px;
+    text-decoration: none;
+    /* Remove underline from link */
+    transition: background-color 0.3s;
+    /* Smooth background color change on hover */
+}
+
+.youtube-btn:hover {
+    background-color: #CC0000;
+    /* Darker shade of red on hover */
+}

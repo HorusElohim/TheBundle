@@ -8,27 +8,35 @@ dynamic = ["version"]
 description = "Python TheBundle essential code."
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
 requires-python = ">=3.10"
-dependencies = ["jsonschema", "colorama", "wheel"]
+dependencies = [
+    "zmq",
+    "tqdm",
+    "wheel",
+    "click",
+    "aiohttp",
+    "requests",
+    "colorama",
+    "aiofiles",
+    "pydantic",
+    "jsonschema",
+    "asyncclick",
+    "playwright",
+    "tornado>=6.1; sys_platform == 'win32'",
+]
 
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"
 
 [project.optional-dependencies]
-test = ["pytest"]
+test = ["pytest", "pytest-asyncio"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
-player = [
-    "pyside6",
-    "pytube",
-    "tqdm",
-    "ffmpeg-python",
-    "pynput",
-    "mutagen",
-    "requests",
-]
+youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
+web = ["fastapi", "uvicorn[standard]", "websockets"]
 
 [project.scripts]
-bundle_player = "bundle.player:main"
+bundle_tube = "bundle.youtube.cli:main"
+bundle_web = "bundle.website.cli:cli"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]

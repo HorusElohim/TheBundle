@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="/youtube/styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <h1 class="main_title"> Youtube Downloader </h1>
+        <div class="music-card">
+
+            <div id="metadata-container" style="display:none;">
+                <div id="thumbnail-container" class="image">
+                    <img id="track-thumbnail" src="">
+                </div>
+                <div class="info">
+                    <h2 id="track-title" class="title"></h2>
+                    <p id="track-author" class="artist"></p>
+                </div>
+            </div>
+            <div class="input-area">
+                <input type="text" id="youtube-url" placeholder="Enter YouTube URL here" required>
+                <div class="toggle" id="format-toggle">
+                    <label for="mp3">MP3
+                        <input type="radio" id="mp3" name="format" value="mp3" checked>
+                    </label>
+                    <label for="mp4">MP4
+                        <input type="radio" id="mp4" name="format" value="mp4">
+                    </label>
+                </div>
+                <button id="download-btn">Download</button>
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div id="progress-container" style="display:none;">
+            <progress id="download-progress" value="0" max="100"></progress>
+            <div id="progress-info"></div>
+        </div>
+    </div>
+    <script src="/youtube/youtubePage.js"></script>
+</body>
+
+</html>
