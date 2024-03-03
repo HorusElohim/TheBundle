@@ -2,15 +2,22 @@ import os
 import re
 import click
 import pstats
-import bundle
 import asyncio
 from pathlib import Path
+import matplotlib
+import shutil
+
+matplotlib.use("Agg")  # Use the Agg backend to prevent Tkinter issues
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 import latex
+from bundle.core.data import Data, Field
+from bundle.core import logger
+from enum import Enum
 
+LOGGER = logger.setup_root_logger(name=__name__)
 
-LOGGER = bundle.setup_logging(name=__name__, level=10)
+MAX_PARALLEL_ASYNC = 20
 
 LATEX_HEADER = r"""
     \documentclass{article}
@@ -32,14 +39,10 @@ LATEX_HEADER = r"""
 
 
 def latex_escape(text: str):
-    """
-    Escapes special characters for LaTeX.
-    """
     return re.sub(r"([_#%&${}])", r"\\\1", text)
 
 
 def parse_function_name(function: str):
-    # Use a regex to capture the file name and line number separately
     match = re.match(r"^(.*):(\d+)(\(.*\))$", function)
     full_file_name = "N/A"
     function_detail = "N/A"
@@ -56,7 +59,6 @@ def parse_function_name(function: str):
             .replace(")", "")
         )
 
-        # Check if file_name is a placeholder like '~' for built-in functions
         if "~" in file_name:
             full_file_name = "built-in"
         else:
@@ -70,60 +72,180 @@ def parse_function_name_plot(function: str):
     return f"{function_file}  {function_name}"
 
 
-@bundle.Data.dataclass
-class ProfileFinder(bundle.Task):
-    def exec(self, *args, **kwds):
-        prof_files = []
-        for root, dirs, files in os.walk(self.path):
-            for file in files:
-                if file.endswith(".prof"):
-                    prof_files.append(Path(root) / file)
-        return prof_files
+class TimeScale(Enum):
+    SECOND = "second"
+    MILLISECOND = "millisecond"
+    MICROSECOND = "microsecond"
+    NANOSECOND = "nanosecond"
 
 
-@bundle.Data.dataclass
-class ProfileLoader(bundle.Task.Async):
-    profile_data: list = bundle.Data.field(default_factory=list)
-    total_calls: int = bundle.Data.field(default_factory=int)
+class ProfileFunction(Data):
+    function: str
+    total_calls: int
+    total_time: float
+    cumulative_time: float
 
-    async def exec(self, *args, **kwds):
-        self.stats = pstats.Stats(str(self.path))
-        self.stats.strip_dirs().sort_stats("cumulative")
-        for func, (cc, nc, tt, ct, callers) in self.stats.stats.items():
-            self.profile_data.append(
-                {"function": "{}:{}({})".format(*func), "total_calls": cc, "total_time": tt, "cumulative_time": ct}
+
+class ProfileData(Data):
+    prof_path: Path
+    data: list[ProfileFunction] = Field(default_factory=list)
+    total_calls: int = 0
+    plot_path: Path = Field(default_factory=Path)
+
+    def add(self, x: ProfileFunction):
+        self.data.append(x)
+
+    def sort(self):
+        self.data = sorted(self.data, key=lambda x: x.cumulative_time, reverse=True)
+
+    def compute_total_calls(self):
+        self.total_calls = sum(x.total_calls for x in self.data)
+
+
+class ProfilerReportGenerator:
+    def __init__(self, input_path: Path, output_path: Path, time_scale: TimeScale):
+        self.input_path = input_path
+        self.output_path = output_path
+        self.time_scale = time_scale
+        self.profile_data_list: list[ProfileData] = []
+
+    def get_time_multiplier(self):
+        if self.time_scale == TimeScale.SECOND:
+            return 1
+        elif self.time_scale == TimeScale.MILLISECOND:
+            return 1e3
+        elif self.time_scale == TimeScale.MICROSECOND:
+            return 1e6
+        elif self.time_scale == TimeScale.NANOSECOND:
+            return 1e9
+
+    def get_time_unit(self):
+        if self.time_scale == TimeScale.SECOND:
+            return "s"
+        elif self.time_scale == TimeScale.MILLISECOND:
+            return "ms"
+        elif self.time_scale == TimeScale.MICROSECOND:
+            return "μs"
+        elif self.time_scale == TimeScale.NANOSECOND:
+            return "ns"
+
+    async def run(self):
+        await self.find_all_profiler_paths()
+        if not self.prof_paths:
+            LOGGER.warning("No .prof files found in the specified input path.")
+            return
+        await self.process_profiles()
+        await self.generate_latex_report()
+
+    async def find_all_profiler_paths(self):
+        def _find_paths():
+            prof_paths = []
+            for root, _, files in os.walk(self.input_path):
+                for file in files:
+                    if file.endswith(".prof"):
+                        prof_paths.append(Path(root) / file)
+            return prof_paths
+
+        self.prof_paths = await asyncio.to_thread(_find_paths)
+
+    async def process_profiles(self):
+        semaphore = asyncio.Semaphore(MAX_PARALLEL_ASYNC)
+
+        async def sem_process_profile(prof_path):
+            async with semaphore:
+                return await self.process_profile(prof_path)
+
+        tasks = [sem_process_profile(prof_path) for prof_path in self.prof_paths]
+        self.profile_data_list = await asyncio.gather(*tasks)
+
+    async def process_profile(self, prof_path: Path) -> ProfileData:
+        profile_data = await self.load_profile_data(prof_path)
+        await self.generate_profiler_plot(profile_data)
+        return profile_data
+
+    async def load_profile_data(self, prof_path: Path) -> ProfileData:
+        def _load_data():
+            profile_data = ProfileData(prof_path=prof_path)
+            stats = pstats.Stats(str(prof_path))
+            stats.strip_dirs().sort_stats("cumulative")
+            for func, (cc, nc, tt, ct, callers) in stats.stats.items():
+                function_str = "{}:{}({})".format(*func)
+                profile_data.add(
+                    ProfileFunction(
+                        function=function_str,
+                        total_calls=cc,
+                        total_time=tt,
+                        cumulative_time=ct,
+                    )
+                )
+            profile_data.sort()
+            profile_data.compute_total_calls()
+            LOGGER.info(f"Parsed {prof_path.as_posix()}")
+            return profile_data
+
+        return await asyncio.to_thread(_load_data)
+
+    async def generate_profiler_plot(self, profile_data: ProfileData):
+        def _generate_plot():
+            fig, ax = plt.subplots()
+            ax.set_facecolor("#2d2d2d")  # Dark gray background
+            ax.grid(True, linestyle=":", color="#555555")  # Dotted grid lines
+
+            multiplier = self.get_time_multiplier()
+            cumulative_times = [x.cumulative_time * multiplier for x in profile_data.data[:10]]
+            function_names = [parse_function_name_plot(x.function) for x in profile_data.data[:10]]
+
+            # Create the bar chart
+            bars = self.create_barchart(ax, function_names, cumulative_times)
+            self.configure_axes(ax, cumulative_times)
+            self.annotate_bars(ax, bars)
+
+            plot_path = profile_data.prof_path.with_suffix(".png")
+            fig.savefig(
+                plot_path,
+                transparent=True,
+                bbox_inches="tight",
+                pad_inches=0,
+                dpi=300,
             )
-        self.profile_data = sorted(self.profile_data, key=lambda x: x["cumulative_time"], reverse=True)
-        self.total_calls = sum(item["total_calls"] for item in self.profile_data)
-        return self.profile_data
+            LOGGER.info("Plot saved: %s", plot_path)
+            profile_data.plot_path = plot_path
+            plt.close(fig)  # Close the figure to free up memory
 
-
-@bundle.Data.dataclass
-class ProfilerPlot(bundle.Task.Async):
-    plot_color_hex: str = "#D3D3D3"
+        await asyncio.to_thread(_generate_plot)
 
     def create_barchart(self, ax, function_names, cumulative_times):
+        """
+        Create a horizontal bar chart.
+        """
         return ax.barh(function_names, cumulative_times, color="skyblue")
 
     def configure_axes(self, ax, cumulative_times):
-        ax.set_xlabel("Cumulative Time (ns)", color=self.plot_color_hex)
-        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.1e}"))
-        x_tick_interval = max(cumulative_times) / 3
+        """
+        Configure the axes, labels, and ticks.
+        """
+        unit_label = self.get_time_unit()
+        ax.set_xlabel(f"Cumulative Time ({unit_label})", color="#D3D3D3")
+        ax.xaxis.set_major_formatter(FuncFormatter(lambda x, _: f"{x:.3f}"))
+        x_tick_interval = max(cumulative_times) / 3 if cumulative_times else 1
         ax.xaxis.set_major_locator(MultipleLocator(x_tick_interval))
         if cumulative_times:
             max_time = max(cumulative_times)
             ax.set_xlim(right=max_time * 1.1)
-        ax.tick_params(axis="x", colors=self.plot_color_hex)
-        ax.tick_params(axis="y", colors=self.plot_color_hex)
+        ax.tick_params(axis="x", colors="#D3D3D3")
+        ax.tick_params(axis="y", colors="#D3D3D3")
 
     def annotate_bars(self, ax, bars):
+        """
+        Annotate bars with their width values.
+        """
         for bar in bars:
             width = bar.get_width()
             label_x_pos, ha = self.determine_label_position(ax, width)
             ax.text(
                 label_x_pos,
                 bar.get_y() + bar.get_height() / 2,
-                f"{width}",
+                f"{width:.3f}",
                 ha=ha,
                 va="center",
                 color="black",
@@ -131,6 +253,9 @@ class ProfilerPlot(bundle.Task.Async):
             )
 
     def determine_label_position(self, ax, bar_width):
+        """
+        Determine the label position and alignment based on bar width.
+        """
         if bar_width < ax.get_xlim()[1] * 0.01:
             ha = "left"
             label_x_pos = bar_width + ax.get_xlim()[1] * 0.005
@@ -139,169 +264,102 @@ class ProfilerPlot(bundle.Task.Async):
             label_x_pos = bar_width
         return label_x_pos, ha
 
-    async def exec(self, profile_data, *args, **kwds):
-        fig, ax = plt.subplots()
-        ax.set_facecolor("#2d2d2d")  # Dark gray background
-        ax.grid(True, linestyle=":", color="#555555")  # Dotted grid lines
-        LOGGER.debug("subplots created")
-        cumulative_times = [int(x["cumulative_time"] * 1e9) for x in profile_data[:10]]
-        function_names = [parse_function_name_plot(x["function"]) for x in profile_data[:10]]
-        LOGGER.debug("data processed")
-        bars = self.create_barchart(ax, function_names, cumulative_times)
-        self.configure_axes(ax, cumulative_times)
-        self.annotate_bars(ax, bars)
-        LOGGER.debug("plot built")
-        fig.savefig(self.path, transparent=True, bbox_inches="tight", pad_inches=0, dpi=300)
-        LOGGER.debug(f"plot saved {self.path=}")
-        plt.clf()
+    async def generate_latex_report(self):
+        LOGGER.info("LaTeX building ...")
+        target_folder = latex_escape(str(self.input_path.as_posix()))
+        latex_content = [
+            f"{LATEX_HEADER}",
+            f"\\title{{\\color{{textcolor}}Profiler Report: {target_folder}}}",
+            r"\author{TheBundle}",
+            r"\maketitle",
+            r"\tableofcontents ",
+            r"\newpage",
+        ]
 
-    def __del__(self):
-        LOGGER.debug(f"cleaning plot: {self.path}")
-        # os.remove(self.path)
-        return super().__del__()
+        async def generate_section(profile_data):
+            prof_path = latex_escape(str(profile_data.prof_path.name))
+            plot_path = latex_escape(str(profile_data.plot_path.as_posix()))
+            table_content = self.generate_table(profile_data)
+            section_content = (
+                f"\\section{{ {{ {prof_path} }}}}\n"
+                f"Total Calls: {profile_data.total_calls}\n\n"
+                "\\begin{figure}[htbp]\\centering\n"
+                f"\\includegraphics[width=1\\linewidth] {{{{ {plot_path} }}}}\n"
+                "\\end{figure}\n"
+                f"{table_content}"
+                "\\clearpage\n"
+            )
+            return section_content
 
+        # Generate sections concurrently
+        LOGGER.info("LaTeX constructing content ...")
+        tasks = [generate_section(pd) for pd in self.profile_data_list]
+        sections = await asyncio.gather(*tasks)
+        latex_content.extend(sections)
+        latex_content.append(r"\end{document}")
+        latex_content_str = "".join(latex_content)
 
-@bundle.Data.dataclass
-class ProfilerReportLatex(bundle.Task):
-    main_folder: str = bundle.Data.field(default_factory=str)
-    output_path: str = bundle.Data.field(default_factory=str)
-    latex_content: str = bundle.Data.field(default_factory=str)
+        # Build PDF
+        pdf = await asyncio.to_thread(latex.build_pdf, latex_content_str)
+        LOGGER.info("LaTeX build success")
 
-    def generate_table(self, profile_data):
-        table_content = (
-            "\\begin{longtable}{@{}p{0.15\\linewidth}p{0.35\\linewidth}lll@{}}\n"
-            "\\toprule\n"
-            "File & Function & Total Calls & Total Time (ns) & Cumulative Time (ns) \\\\\n"
-            "\\midrule\n"
-            "\\endfirsthead\n"
-            "\\toprule\n"
-            "File & Function & Total Calls & Total Time (ns) & Cumulative Time (ns) \\\\\n"
-            "\\midrule\n"
-            "\\endhead\n"
-            "\\midrule\n"
-            "\\multicolumn{5}{r}{{Continued on next page}} \\\\\n"
-            "\\midrule\n"
-            "\\endfoot\n"
-            "\\bottomrule\n"
-            "\\endlastfoot\n"
-        )
+        # Save PDF
+        await asyncio.to_thread(pdf.save_to, self.output_path)
+        LOGGER.info(f"LaTeX saved to {self.output_path}")
 
-        for item in profile_data:
-            # Ensure that latex_escape is applied to each part of the text that needs it
-            file_name, function_detail = parse_function_name(item["function"])
+        LOGGER.info("LaTeX cleaning resources...")
+        # Clean up resources concurrently
+        cleanup_tasks = [asyncio.to_thread(os.remove, profile_data.plot_path) for profile_data in self.profile_data_list]
+        await asyncio.gather(*cleanup_tasks)
+
+    def generate_table(self, profile_data: ProfileData):
+        unit_label = self.get_time_unit()
+        table_lines = [
+            "\\begin{longtable}{@{}p{0.15\\linewidth}p{0.35\\linewidth}lll@{}}\n",
+            "\\toprule\n",
+            f"File & Function & Total Calls & Total Time ({unit_label}) & Cumulative Time ({unit_label}) \\\\\n",
+            "\\midrule\n",
+            "\\endfirsthead\n",
+            "\\toprule\n",
+            f"File & Function & Total Calls & Total Time ({unit_label}) & Cumulative Time ({unit_label}) \\\\\n",
+            "\\midrule\n",
+            "\\endhead\n",
+            "\\midrule\n",
+            "\\multicolumn{5}{r}{{Continued on next page}} \\\\\n",
+            "\\midrule\n",
+            "\\endfoot\n",
+            "\\bottomrule\n",
+            "\\endlastfoot\n",
+        ]
+
+        multiplier = self.get_time_multiplier()
+        for prof_func in profile_data.data:
+            file_name, function_detail = parse_function_name(prof_func.function)
             file_name = latex_escape(file_name)
             function_detail = latex_escape(function_detail)
-            total_time_ns = int(item["total_time"] * 1e9)
-            cumulative_time_ns = int(item["cumulative_time"] * 1e9)
-            # Apply latex_escape to each field that is inserted into the LaTeX code
-            table_content += (
-                f"{file_name} & {function_detail} & {item['total_calls']} & {total_time_ns} & {cumulative_time_ns} \\\\\n"
+            total_time_scaled = prof_func.total_time * multiplier
+            cumulative_time_scaled = prof_func.cumulative_time * multiplier
+            table_lines.append(
+                f"{file_name} & {function_detail} & {prof_func.total_calls} & {total_time_scaled:.3f} & {cumulative_time_scaled:.3f} \\\\\n"
             )
-        table_content += "\\end{longtable}\n"
-        return table_content
-
-    async def generate_plots(self):
-        semaphore = asyncio.Semaphore(5)
-
-        async def run_task(plot_task):
-            async with semaphore:
-                return await plot_task()
-
-        plot_tasks = [
-            ProfilerPlot(
-                profile_data=loader.profile_data,
-                path=str((loader.path.parent / f"{loader.path.stem}_dark.png").absolute()),
-            )
-            for loader in self.profile_loaders
-        ]
-        LOGGER.debug("starting ProfilerPlots")
-        return await asyncio.gather(*(run_task(plot_task) for plot_task in plot_tasks))
-
-    def generate(self, prof_loaders: list[ProfileLoader], prof_plots: list[ProfilerPlot]):
-        LOGGER.info(f"LateX generation ...")
-        main_folder_name = latex_escape(self.main_folder)
-        self.latex_content = (
-            f"{LATEX_HEADER}"
-            f"\\title{{\\color{{textcolor}}Profiler Report: {main_folder_name}}}"
-            r"\author{TheBundle}"
-            r"\maketitle"
-            r"\tableofcontents "
-            r"\newpage"
-        )
-
-        for loader, prof_plot in zip(prof_loaders, prof_plots):
-            total_calls = loader.total_calls
-            section_title = latex_escape(os.path.basename(loader.path))
-
-            # Add the section title, image, and table content on the same page
-            self.latex_content += (
-                f"\\section{{{section_title}}}\n"
-                f"Total Calls: {total_calls}\n\n"
-                f"\\begin{{figure}}[htbp]\n\\centering\n"
-                f"\\includegraphics[width=1\\linewidth]{{{prof_plot.path}}}\n"
-                "\\end{figure}\n"
-                f"{self.generate_table(loader.profile_data)}"
-                "\\clearpage\n"  # Ensures that tables do not exceed one page
-            )
-
-        self.latex_content += r"\end{document}"
-        LOGGER.info(f"LateX generation {bundle.core.logger.Emoji.success}")
-
-    def build(self):
-        # Generate PDF from LaTeX content
-        LOGGER.info(f"LateX building ...")
-        pdf = latex.build_pdf(self.latex_content)
-        LOGGER.info(f"LateX build {bundle.core.logger.Emoji.success}")
-        pdf.save_to(self.output_path)
-        LOGGER.info(f"LateX saved to {self.output_path}")
-
-    def exec(self, prof_loaders: list[ProfileLoader], prof_plots: list[ProfilerPlot], *args, **kwds):
-        self.generate(prof_loaders, prof_plots)
-        self.build()
-
-
-@bundle.Data.dataclass
-class MainProfilerReport(bundle.Task):
-    input_path: str = bundle.Data.field(default_factory=str)
-    output_path: str = bundle.Data.field(default_factory=str)
-
-    async def run_loader_and_plot_generator(self, loader, plot_generator):
-        await loader()
-        await plot_generator(loader.profile_data)
-        return loader, plot_generator
-
-    async def run_all(self, prof_files):
-        tasks = []
-        for prof_file in prof_files:
-            loader = ProfileLoader(path=prof_file)
-            plot_file = str((prof_file.parent / f"{prof_file.stem}_dark.png").absolute())
-            plot_generator = ProfilerPlot(path=plot_file)
-            task = self.run_loader_and_plot_generator(loader, plot_generator)
-            tasks.append(task)
-        return await asyncio.gather(*tasks)
-
-    def exec(self, *args, **kwds):
-        # Find .prof files
-        prof_files = ProfileFinder(path=self.input_path)()
-
-        # Run loaders and plot generators concurrently
-        results = asyncio.run(self.run_all(prof_files))
-
-        # Unpack results into loaders and plot_generators
-        loaders, plot_generators = zip(*results)
-
-        # Generate report
-        ProfilerReportLatex(output_path=self.output_path, main_folder=self.input_path)(loaders, plot_generators)
+        table_lines.append("\\end{longtable}\n")
+        return "".join(table_lines)
 
 
 @click.command()
-@click.option("--input_path", help="Path to search for .prof files", required=True)
-@click.option("--output_path", help="Path to save the LaTeX report", required=True)
-def main(input_path, output_path):
-    LOGGER.info("Program start")
-    task = MainProfilerReport(input_path=input_path, output_path=output_path)
-    task()
-    LOGGER.info(f"Run {bundle.core.logger.Emoji.success} in {task.duration * 1e-9:.2f} seconds")
+@click.option("--input_path", "-i", help="Path to search for .prof files", required=True)
+@click.option("--output_path", "-o", help="Path to save the LaTeX report", required=True)
+@click.option(
+    "--time-scale",
+    "-t",
+    type=click.Choice([e.value for e in TimeScale], case_sensitive=False),
+    default="nanosecond",
+    help="Time scale for output times",
+)
+def main(input_path, output_path, time_scale):
+    time_scale_enum = TimeScale(time_scale.lower())
+    profiler = ProfilerReportGenerator(Path(input_path), Path(output_path), time_scale_enum)
+    asyncio.run(profiler.run())
 
 
 if __name__ == "__main__":

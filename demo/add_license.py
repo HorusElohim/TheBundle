@@ -4,7 +4,7 @@ import bundle
 
 LOGGER = bundle.logging.getLogger(__name__)
 
-LICENSE_TEXT = """# Copyright 2023 HorusElohim
+LICENSE_TEXT = """# Copyright 2024 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -45,7 +45,7 @@ class AddLicenseTask(bundle.tasks.AsyncTask):
     async def exec(self):
         with open(self.path, "r+", encoding="utf-8") as f:
             content = f.read()
-            if "Copyright 2023 HorusElohim" not in content:
+            if "Copyright 2024 HorusElohim" not in content:
                 LOGGER.warn("missing LICENSE for %s", self.path)
                 f.seek(0, 0)
                 f.write(LICENSE_TEXT + "\n\n" + content)
