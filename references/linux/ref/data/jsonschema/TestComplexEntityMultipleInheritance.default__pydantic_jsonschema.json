@@ -1,0 +1,249 @@
+{
+    "$defs": {
+        "Identifier": {
+            "additionalProperties": false,
+            "properties": {
+                "index": {
+                    "title": "Index",
+                    "type": "integer"
+                },
+                "uuid": {
+                    "title": "Uuid",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "index",
+                "uuid"
+            ],
+            "title": "Identifier",
+            "type": "object"
+        },
+        "NestedModel": {
+            "additionalProperties": false,
+            "properties": {
+                "id": {
+                    "default": 0,
+                    "title": "Id",
+                    "type": "integer"
+                },
+                "info": {
+                    "default": "",
+                    "title": "Info",
+                    "type": "string"
+                },
+                "timestamp": {
+                    "format": "date-time",
+                    "title": "Timestamp",
+                    "type": "string"
+                }
+            },
+            "title": "NestedModel",
+            "type": "object"
+        },
+        "bundle__testing__tools__references__data__RecursiveModel": {
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "default": "",
+                    "title": "Name",
+                    "type": "string"
+                },
+                "children": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/bundle__testing__tools__references__data__RecursiveModel"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Children"
+                }
+            },
+            "title": "RecursiveModel",
+            "type": "object"
+        },
+        "bundle__testing__tools__references__entity__RecursiveModel": {
+            "additionalProperties": false,
+            "properties": {
+                "version": {
+                    "default": "testing",
+                    "title": "Version",
+                    "type": "string"
+                },
+                "name": {
+                    "default": "default",
+                    "title": "Name",
+                    "type": "string"
+                },
+                "identifier": {
+                    "$ref": "#/$defs/Identifier"
+                },
+                "born_time": {
+                    "default": 1709476008724944900,
+                    "title": "Born Time",
+                    "type": "integer"
+                },
+                "children": {
+                    "anyOf": [
+                        {
+                            "items": {
+                                "$ref": "#/$defs/bundle__testing__tools__references__entity__RecursiveModel"
+                            },
+                            "type": "array"
+                        },
+                        {
+                            "type": "null"
+                        }
+                    ],
+                    "default": null,
+                    "title": "Children"
+                }
+            },
+            "title": "RecursiveModel",
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "properties": {
+        "string_field": {
+            "default": "",
+            "title": "String Field",
+            "type": "string"
+        },
+        "int_field": {
+            "default": 1,
+            "title": "Int Field",
+            "type": "integer"
+        },
+        "float_field": {
+            "default": 1.0,
+            "title": "Float Field",
+            "type": "number"
+        },
+        "bool_field": {
+            "default": false,
+            "title": "Bool Field",
+            "type": "boolean"
+        },
+        "optional_field": {
+            "anyOf": [
+                {
+                    "type": "string"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Optional Field"
+        },
+        "list_field": {
+            "items": {
+                "type": "integer"
+            },
+            "title": "List Field",
+            "type": "array"
+        },
+        "set_field": {
+            "items": {
+                "type": "string"
+            },
+            "title": "Set Field",
+            "type": "array",
+            "uniqueItems": true
+        },
+        "dict_field": {
+            "additionalProperties": {
+                "type": "integer"
+            },
+            "title": "Dict Field",
+            "type": "object"
+        },
+        "union_field": {
+            "anyOf": [
+                {
+                    "type": "integer"
+                },
+                {
+                    "type": "string"
+                }
+            ],
+            "default": 0,
+            "title": "Union Field"
+        },
+        "nested_model": {
+            "$ref": "#/$defs/NestedModel"
+        },
+        "nested_model_list": {
+            "items": {
+                "$ref": "#/$defs/NestedModel"
+            },
+            "title": "Nested Model List",
+            "type": "array"
+        },
+        "optional_nested_model": {
+            "anyOf": [
+                {
+                    "$ref": "#/$defs/NestedModel"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null
+        },
+        "recursive_model": {
+            "$ref": "#/$defs/bundle__testing__tools__references__data__RecursiveModel"
+        },
+        "dynamic_default_field": {
+            "title": "Dynamic Default Field",
+            "type": "string"
+        },
+        "file_path": {
+            "format": "path",
+            "title": "File Path",
+            "type": "string"
+        },
+        "version": {
+            "default": "testing",
+            "title": "Version",
+            "type": "string"
+        },
+        "name": {
+            "default": "default",
+            "title": "Name",
+            "type": "string"
+        },
+        "identifier": {
+            "$ref": "#/$defs/Identifier"
+        },
+        "born_time": {
+            "default": 1709476008724944900,
+            "title": "Born Time",
+            "type": "integer"
+        },
+        "children": {
+            "anyOf": [
+                {
+                    "items": {
+                        "$ref": "#/$defs/bundle__testing__tools__references__entity__RecursiveModel"
+                    },
+                    "type": "array"
+                },
+                {
+                    "type": "null"
+                }
+            ],
+            "default": null,
+            "title": "Children"
+        }
+    },
+    "title": "TestComplexEntityMultipleInheritance",
+    "type": "object"
+}
