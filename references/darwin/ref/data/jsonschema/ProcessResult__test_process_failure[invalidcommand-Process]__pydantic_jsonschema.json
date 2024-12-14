@@ -1,0 +1,30 @@
+{
+    "additionalProperties": false,
+    "description": "Data class to store the result of a process execution.",
+    "properties": {
+        "command": {
+            "title": "Command",
+            "type": "string"
+        },
+        "returncode": {
+            "title": "Returncode",
+            "type": "integer"
+        },
+        "stdout": {
+            "title": "Stdout",
+            "type": "string"
+        },
+        "stderr": {
+            "title": "Stderr",
+            "type": "string"
+        }
+    },
+    "required": [
+        "command",
+        "returncode",
+        "stdout",
+        "stderr"
+    ],
+    "title": "ProcessResult",
+    "type": "object"
+}
