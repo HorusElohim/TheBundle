@@ -1,0 +1,6 @@
+{
+    "command": "invalidcommand",
+    "returncode": 1,
+    "stdout": "",
+    "stderr": "'invalidcommand' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"
+}
