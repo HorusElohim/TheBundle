@@ -37,6 +37,7 @@ web = ["fastapi", "uvicorn[standard]", "websockets"]
 [project.scripts]
 bundle_tube = "bundle.youtube.cli:main"
 bundle_web = "bundle.website.cli:cli"
+bundle_scraper = "bundle.scraper.cli:cli"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]
