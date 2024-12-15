@@ -23,7 +23,7 @@ from enum import Enum
 from typing import Generic, List, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
-from playwright.async_api import BrowserContext, Page, Playwright, async_playwright
+from playwright.async_api import BrowserContext, Page, Playwright, ElementHandle, async_playwright
 
 from .logger import get_logger
 from . import data, tracer, entity
@@ -115,8 +115,6 @@ class Browser(entity.Entity, Generic[T_Browser]):
         Enter the asynchronous context manager, starting Playwright and launching the browser.
         """
         try:
-            self._playwright = await async_playwright().start()
-            logger.debug("Playwright started.")
             await self.launch()
             return self
         except Exception as e:
@@ -139,6 +137,9 @@ class Browser(entity.Entity, Generic[T_Browser]):
         Returns:
             Browser: The current instance for method chaining.
         """
+        self._playwright = await async_playwright().start()
+        logger.debug("Playwright started.")
+
         if not self._playwright:
             raise RuntimeError("Playwright is not started.")
 
@@ -169,7 +170,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             raise
 
     @tracer.asyn.decorator_call_raise
-    async def new_context(self: T_Browser) -> T_Browser:
+    async def new_context(self: T_Browser, *args, **kwargs) -> T_Browser:
         """
         Create a new browser context.
 
@@ -179,7 +180,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         if not self.browser:
             raise RuntimeError("Browser is not launched. Call launch() first.")
 
-        context = await self.browser.new_context()
+        context = await self.browser.new_context(*args, **kwargs)
         self.contexts.append(context)
         logger.debug("%s New browser context created.", logger.Emoji.success)
         return self
