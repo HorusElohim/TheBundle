@@ -22,31 +22,31 @@ Welcome to **TheBundle** 🧯, a robust Python framework designed to simplify co
 
 ### Core Modules
 
-#### 1. [Logger](src/bundle/core/logger) 📜
+#### 1. [Logger](src/bundle/core/logger.py) 📜
 Custom logging framework with colored console output, JSON formatting, and support for enhanced log levels.
 
-#### 2. [Tracer](src/bundle/core/tracer) 📊
+#### 2. [Tracer](src/bundle/core/tracer/README.md) 📊
 Unified tracing for asynchronous and synchronous operations with detailed logging and error handling.
 
-#### 3. [Data](src/bundle/core/data) 🔢
+#### 3. [Data](src/bundle/core/data.py) 🔢
 Advanced JSON handling and validation with support for serialization and schema generation.
 
-#### 4. [Entity](src/bundle/core/entity) 🔢
+#### 4. [Entity](src/bundle/core/entity.py) 🔢
 Lifecycle-managed objects extending `Data`, including features like unique identifiers and introspection.
 
-#### 5. [Process](src/bundle/core/process) ⚙️
+#### 5. [Process](src/bundle/core/process.py) ⚙️
 Execute shell commands asynchronously, stream outputs, and handle errors effectively.
 
-#### 6. [Downloader](src/bundle/core/downloader) 🔣
+#### 6. [Downloader](src/bundle/core/downloader.py) 🔣
 Async file downloading with support for in-memory buffering and TQDM progress visualization.
 
-#### 7. [Socket](src/bundle/core/socket) 🪟
+#### 7. [Socket](src/bundle/core/socket.py) 🪟
 ZeroMQ-based sockets with support for multiple communication patterns and chainable configurations.
 
-#### 8. [Browser](src/bundle/core/browser) 🌐
+#### 8. [Browser](src/bundle/core/browser.py) 🌐
 Simplified Playwright integration for browser automation and testing.
 
-#### 9. [Utils](src/bundle/core/utils) 🔧
+#### 9. [Utils](src/bundle/core/utils.py) 🔧
 Essential utilities for path management, duration formatting, and more.
 
 ### Installation
