@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+from tabulate import tabulate
 from ....core import browser, logger
 from .data import TorrentData
 
@@ -198,7 +199,7 @@ class Browser(browser.Browser):
         """
         log.debug(f"Fetching magnet link for torrent: {torrent.name}")
         page = await self.new_page()
-        await page.goto(torrent.detail_url)
+        await page.goto(torrent.detail_url, wait_until="commit")
 
         # Wait for the magnet link element
         await page.wait_for_selector("a#openPopup")
@@ -211,3 +212,40 @@ class Browser(browser.Browser):
 
         # Close the page to free resources
         await page.close()
+
+    def tabulate_torrents(self, torrents: list[TorrentData], truncate_width: int = 30) -> str:
+        """
+        Formats torrent data into a table with truncated fields for readability and outputs full URLs separately.
+        """
+
+        def truncate(text: str, max_length: int) -> str:
+            """
+            Truncates a string to a maximum length, appending '...' if it's too long.
+            """
+            return text if len(text) <= max_length else text[: max_length - 3] + "..."
+
+        # Prepare the data for tabulation
+        table_data = []
+        for idx, t in enumerate(torrents):
+            table_data.append(
+                [
+                    idx + 1,
+                    t.name,
+                    t.seeds,
+                    t.leeches,
+                    t.uploaded_at,
+                    t.size,
+                    truncate(t.uploader, truncate_width),
+                    truncate(t.detail_url, truncate_width),
+                    truncate(t.magnet_link, truncate_width),
+                ]
+            )
+        headers = ["#", "Name", "Seeds", "Leeches", "Uploaded At", "Size", "Uploader", "Detail URL", "Magnet Link"]
+        table = tabulate(table_data, headers=headers, tablefmt="fancy_grid")
+
+        # Prepare full links as a separate plain-text output
+        links = "\n\n".join(
+            [f"[{idx + 1}] Detail URL: {t.detail_url}\n    Magnet Link: {t.magnet_link}" for idx, t in enumerate(torrents)]
+        )
+
+        return "\n" + table + "\n\n" + "Full Links:\n" + links
