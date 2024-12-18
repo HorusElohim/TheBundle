@@ -28,13 +28,9 @@ async def search(name: str):
         await browser.set_context()
         page = await browser.new_page()
         url_1 = await browser.get_search_url(name, page=1)
-        await page.goto(url_1)
-        # Now parse the table
+        await page.goto(url_1, wait_until="commit")
         torrents = await browser.get_torrents(page)
-        for torrent in torrents:
-            log.info(await torrent.as_json())
-
-        await asyncio.sleep(10)
+        log.info(browser.tabulate_torrents(torrents))
 
 
 cli.add_command(torrent)
