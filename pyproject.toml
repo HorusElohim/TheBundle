@@ -33,10 +33,22 @@ dev = ["snakeviz"]
 pypi = ["build", "twine"]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 web = ["fastapi", "uvicorn[standard]", "websockets"]
+legalai = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "sentencepiece",
+    "accelerate",
+    "faiss-cpu",
+    "pymilvus",
+    "wandb",
+    "rouge-score",
+    "PyPDF2",
+]
 
 [project.scripts]
 bundle_tube = "bundle.youtube.cli:main"
 bundle_web = "bundle.website.cli:cli"
+bundle_legalai = "bundle.legalai.cli:cli"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]
