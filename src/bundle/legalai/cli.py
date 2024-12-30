@@ -1,11 +1,13 @@
 import click
 import os
 import json
+import csv
 from PyPDF2 import PdfReader
-from .config import LegalAIConfig
+from .config import get_config
 from .retrieval import get_vector_store, retrieve_documents
 from .summarization import Summarizer
 from .conversation import ConversationMemory
+from .model import UnifiedLanguageModel
 
 
 @click.group()
@@ -21,8 +23,8 @@ def index_documents(doc_path):
     Read documents from doc_path (PDF, JSON, CSV, or text).
     Chunk, embed, and upsert them into the vector store.
     """
-
-    store = get_vector_store()
+    model = UnifiedLanguageModel()
+    store = get_vector_store(model)
     docs = []
     metas = []
 
@@ -105,8 +107,10 @@ def summarize(query):
     """
     Retrieve top-k docs and summarize with the Llama-based Summarizer.
     """
-    store = get_vector_store()
-    results = retrieve_documents(query, store, LegalAIConfig.RETRIEVAL_TOP_K)
+    model = UnifiedLanguageModel()
+    store = get_vector_store(model)
+
+    results = retrieve_documents(query, store, get_config().retrieval_top_k)
     context = []
     for r in results:
         # Pinecone returns text=None (metadata only), Faiss & Milvus might store text
@@ -115,7 +119,7 @@ def summarize(query):
         elif r.get("metadata"):
             context.append(str(r["metadata"]))
 
-    summarizer = Summarizer()
+    summarizer = Summarizer(model)
     summary = summarizer.summarize_context(context, query)
     click.echo(f"\n=== Summary ===\n{summary}")
 
@@ -126,15 +130,16 @@ def interactive():
     Basic interactive conversation using multi-turn memory.
     """
     memory = ConversationMemory()
-    store = get_vector_store()
-    summarizer = Summarizer()
+    model = UnifiedLanguageModel()
+    store = get_vector_store(model)
+    summarizer = Summarizer(model)
 
     while True:
         user_query = click.prompt("User")
         if user_query.lower() in ["exit", "quit"]:
             break
 
-        results = retrieve_documents(user_query, store, LegalAIConfig.RETRIEVAL_TOP_K)
+        results = retrieve_documents(user_query, store, get_config().retrieval_top_k)
         context = []
         for r in results:
             if r.get("text"):

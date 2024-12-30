@@ -1,9 +1,14 @@
 # legalai/datastore/base.py
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List
+from ..model import UnifiedLanguageModel
 
 
 class BaseVectorStore(ABC):
+    def __init__(self, model: UnifiedLanguageModel) -> None:
+        super().__init__()
+        self.model = model
+
     @abstractmethod
     def upsert(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> None:
         pass

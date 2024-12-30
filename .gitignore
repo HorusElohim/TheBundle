@@ -185,3 +185,7 @@ wvenv
 torchenv
 
 .DS_Store
+
+.secret
+
+documents/

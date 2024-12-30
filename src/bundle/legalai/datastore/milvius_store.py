@@ -5,24 +5,24 @@ from typing import List, Dict, Any
 from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
 
 from .base import BaseVectorStore
-from ..embeddings import LlamaEmbeddingWrapper
-from ..config import LegalAIConfig
+from ..config import get_config
+from ..model import UnifiedLanguageModel
 
 
 class MilvusVectorStore(BaseVectorStore):
     """
-    A self-hosted Milvus-based vector store.
-    Expects a Milvus server running at config MILVUS_HOST:MILVUS_PORT.
+    A self-hosted Milvus-based vector store, now using UnifiedLanguageModel for embeddings.
+    Expects a running Milvus server at config milvus_host:milvus_port.
     """
 
-    def __init__(self):
+    def __init__(self, model: UnifiedLanguageModel):
         print("[MilvusVectorStore] Initializing connection...")
-        self.embedding_model = LlamaEmbeddingWrapper()
-        self.collection_name = LegalAIConfig.MILVUS_COLLECTION_NAME
-        self.dim = LegalAIConfig.MILVUS_DIM
 
-        # 1) Connect
-        connections.connect(alias="default", host=LegalAIConfig.MILVUS_HOST, port=LegalAIConfig.MILVUS_PORT)
+        self.collection_name = get_config().milvus_collection_name
+        self.dim = get_config().milvus_dim
+
+        # 1) Connect to Milvus
+        connections.connect(alias="default", host=get_config().milvus_host, port=str(get_config().milvus_port))
 
         # 2) Create or load existing collection
         if not utility.has_collection(self.collection_name):
@@ -33,40 +33,53 @@ class MilvusVectorStore(BaseVectorStore):
             ]
             schema = CollectionSchema(fields, description="LegalAI collection schema.")
             self.collection = Collection(name=self.collection_name, schema=schema)
+
             # Create index
-            index_params = {"index_type": "IVF_FLAT", "metric_type": "COSINE", "params": {"nlist": 1024}}
+            index_params = {
+                "index_type": "IVF_FLAT",
+                "metric_type": "COSINE",
+                "params": {"nlist": 1024},
+            }
             self.collection.create_index(field_name="embedding", index_params=index_params)
         else:
             print(f"[MilvusVectorStore] Loading existing collection {self.collection_name}...")
             self.collection = Collection(self.collection_name)
 
-        # 3) Load collection to memory
+        # 3) Load collection
         self.collection.load()
 
-    def upsert(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> None:
-        # We’ll store embeddings, but we also want to keep the chunk text or doc_id somewhere.
-        # For a more advanced schema, add additional fields.
-        # For demonstration, we only store 'embedding' in Milvus.
+        # Use UnifiedLanguageModel for all embedding logic
+        super().__init__(model)
 
+    def upsert(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> None:
+        """
+        1) Chunk docs
+        2) Encode them with self.model.encode_texts(...)
+        3) Insert embeddings into Milvus
+        """
         total_chunks = 0
         for text, meta in zip(texts, metadatas):
-            ctext = BaseVectorStore.chunk_text(text, LegalAIConfig.CHUNK_SIZE, LegalAIConfig.CHUNK_OVERLAP)
-            embs = self.embedding_model.encode_texts(ctext)
+            ctext = BaseVectorStore.chunk_text(text, get_config().chunk_size, get_config().chunk_overlap)
+            embs = self.model.encode_texts(ctext)
+
             # Normalize
             norms = np.linalg.norm(embs, axis=1, keepdims=True)
             embs = embs / (norms + 1e-12)
 
-            n = embs.shape[0]
-            # Insert in batches
-            self.collection.insert([[emb.tolist() for emb in embs]], fields=["embedding"])  # shape: (n, 768)
-            total_chunks += n
+            # Insert in Milvus
+            # Each row is a float vector
+            self.collection.insert([[emb.tolist() for emb in embs]], fields=["embedding"])
+            total_chunks += embs.shape[0]
 
         self.collection.load()
         print(f"[MilvusVectorStore] Upserted {total_chunks} total chunks into collection '{self.collection_name}'.")
 
     def query(self, query: str, top_k: int) -> List[Dict[str, Any]]:
-        query_emb = self.embedding_model.encode_texts([query])
-        # Normalize
+        """
+        Encode query using self.model and do a vector search in Milvus.
+        Return a list of relevant hits with optional metadata/distance.
+        """
+        query_emb = self.model.encode_texts([query])
         norms = np.linalg.norm(query_emb, axis=1, keepdims=True)
         query_emb = query_emb / (norms + 1e-12)
 
@@ -80,16 +93,14 @@ class MilvusVectorStore(BaseVectorStore):
             anns_field="embedding",
             param=search_params,
             limit=top_k,
-            output_fields=["id"],  # or any other fields you've added
+            output_fields=["id"],
         )
 
-        # results is a list of the queries, each query is a list of hits
+        # results is a list of hits for each query (we have only 1 query)
         matches_list = results[0]
 
         matches = []
         for hit in matches_list:
-            # For advanced usage, we’d store doc_id or chunk text in separate fields
-            # or in a parallel DB. For now, just storing the milvus ID & distance.
             matches.append(
                 {
                     "metadata": {"milvus_id": hit.id},
