@@ -2,11 +2,17 @@
 
 import torch
 import numpy as np
+from math import ceil
 from typing import List
+from tqdm import tqdm
 from transformers import AutoTokenizer, AutoModelForCausalLM
 
 from .base import BaseLanguageModel
 from ..config import get_config
+
+from bundle.core import logger
+
+log = logger.get_logger(__name__)
 
 
 class UnifiedLanguageModel(BaseLanguageModel):
@@ -34,7 +40,7 @@ class UnifiedLanguageModel(BaseLanguageModel):
         # FP16 vs. FP32: If GPU or MPS is used, we can do half precision
         self.dtype = torch.float16 if (self.device != "cpu") else torch.float32
 
-        print(f"[UnifiedLanguageModel] Loading {self.model_name} on {self.device} with dtype={self.dtype}")
+        log.debug(f"Loading {self.model_name} on {self.device} with dtype={self.dtype}")
 
         # Tokenizer
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
@@ -42,9 +48,7 @@ class UnifiedLanguageModel(BaseLanguageModel):
             self.tokenizer.pad_token_id = self.tokenizer.eos_token_id
 
         # Model (AutoModelForCausalLM) - Single load
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_name, torch_dtype=self.dtype, device_map="auto" if self.device != "cpu" else None
-        ).to(self.device)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name, torch_dtype=self.dtype).to(self.device)
 
         self.model.eval()
 
@@ -53,11 +57,26 @@ class UnifiedLanguageModel(BaseLanguageModel):
         1) Tokenize in batches
         2) Forward pass with output_hidden_states=True
         3) Mean-pool last hidden states
+        4) Show progress bar via tqdm
         """
+        log.debug("encode_texts input: %s", str(texts))
+
         embeddings_list = []
-        for i in range(0, len(texts), self.batch_size):
-            batch_texts = texts[i : i + self.batch_size]
-            inputs = self.tokenizer(batch_texts, return_tensors="pt", padding=True, truncation=True).to(self.device)
+        total_batches = ceil(len(texts) / self.batch_size)
+
+        # Use tqdm to show progress over the batches
+        for batch_idx in tqdm(range(total_batches), desc="Encoding texts"):
+            start = batch_idx * self.batch_size
+            end = start + self.batch_size
+            batch_texts = texts[start:end]
+
+            inputs = self.tokenizer(
+                batch_texts,
+                return_tensors="pt",
+                padding=True,
+                truncation=True,
+                max_length=512,  # Provide a max length to avoid truncation warnings
+            ).to(self.device)
 
             with torch.no_grad():
                 outputs = self.model(**inputs, output_hidden_states=True)
@@ -65,6 +84,7 @@ class UnifiedLanguageModel(BaseLanguageModel):
                 last_hidden = outputs.hidden_states[-1]  # shape [B, seq_len, hidden_dim]
                 # mean pool across seq_len
                 batch_emb = last_hidden.mean(dim=1)  # shape [B, hidden_dim]
+
             embeddings_list.append(batch_emb.cpu().numpy())
 
         return np.concatenate(embeddings_list, axis=0)
@@ -74,6 +94,7 @@ class UnifiedLanguageModel(BaseLanguageModel):
         Basic text generation method using model.generate().
         """
         max_new_tokens = max_new_tokens if max_new_tokens is not None else self.max_new_tokens
+        log.debug("prompt: %s", prompt)
         inputs = self.tokenizer(prompt, return_tensors="pt").to(self.device)
 
         with torch.no_grad():

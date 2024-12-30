@@ -1,6 +1,9 @@
 # legalai/conversation.py
 from dataclasses import dataclass, field
 from typing import List
+from bundle.core import logger
+
+log = logger.get_logger(__name__)
 
 
 @dataclass
@@ -15,9 +18,11 @@ class ConversationMemory:
 
     def add_turn(self, role: str, content: str) -> None:
         self.turns.append(ConversationTurn(role=role, content=content))
+        log.debug("role:'%s' with content: '%s'", role, content)
 
     def to_prompt(self) -> str:
         result = ""
         for turn in self.turns:
             result += f"{turn.role.capitalize()}: {turn.content}\n"
+        log.debug("result:'%s'", result)
         return result

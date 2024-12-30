@@ -1,110 +1,120 @@
-# legalai/datastore/milvus_store.py
 import numpy as np
 from typing import List, Dict, Any
+from pymilvus import MilvusClient, DataType, CollectionSchema, FieldSchema
+from tqdm import tqdm
 
-from pymilvus import connections, FieldSchema, CollectionSchema, DataType, Collection, utility
-
+from bundle.core import logger
 from .base import BaseVectorStore
 from ..config import get_config
 from ..model import UnifiedLanguageModel
 
+log = logger.get_logger(__name__)
+
 
 class MilvusVectorStore(BaseVectorStore):
     """
-    A self-hosted Milvus-based vector store, now using UnifiedLanguageModel for embeddings.
-    Expects a running Milvus server at config milvus_host:milvus_port.
+    A local Milvus Lite-based vector store for embedding storage and retrieval.
     """
 
     def __init__(self, model: UnifiedLanguageModel):
-        print("[MilvusVectorStore] Initializing connection...")
+        """
+        Initialize local Milvus Lite DB and collection.
+        """
+        self.model = model
+        # The local DB file name
+        milvus_db_file = f"{get_config().milvus_collection_name}.db"
+        log.debug(f"Using Milvus Lite with local file: {milvus_db_file}")
 
+        # Create local MilvusClient
+        self.client = MilvusClient(milvus_db_file)
+
+        # Collection name + dimension from config
         self.collection_name = get_config().milvus_collection_name
         self.dim = get_config().milvus_dim
 
-        # 1) Connect to Milvus
-        connections.connect(alias="default", host=get_config().milvus_host, port=str(get_config().milvus_port))
-
-        # 2) Create or load existing collection
-        if not utility.has_collection(self.collection_name):
-            print(f"[MilvusVectorStore] Creating collection {self.collection_name}...")
-            fields = [
-                FieldSchema(name="id", dtype=DataType.INT64, is_primary=True, auto_id=True),
-                FieldSchema(name="embedding", dtype=DataType.FLOAT_VECTOR, dim=self.dim),
-            ]
-            schema = CollectionSchema(fields, description="LegalAI collection schema.")
-            self.collection = Collection(name=self.collection_name, schema=schema)
-
-            # Create index
-            index_params = {
-                "index_type": "IVF_FLAT",
-                "metric_type": "COSINE",
-                "params": {"nlist": 1024},
-            }
-            self.collection.create_index(field_name="embedding", index_params=index_params)
+        # Check if collection exists, else create it
+        if not self.client.has_collection(self.collection_name):
+            log.debug(f"Creating local collection '{self.collection_name}' with dimension={self.dim}.")
+            self._create_collection()
         else:
-            print(f"[MilvusVectorStore] Loading existing collection {self.collection_name}...")
-            self.collection = Collection(self.collection_name)
+            log.debug(f"Collection '{self.collection_name}' already exists.")
 
-        # 3) Load collection
-        self.collection.load()
-
-        # Use UnifiedLanguageModel for all embedding logic
-        super().__init__(model)
+    def _create_collection(self):
+        """
+        Create a collection schema and initialize it.
+        """
+        fields = [
+            FieldSchema("id", dtype=DataType.INT64, is_primary=True, auto_id=True),
+            FieldSchema("vector", DataType.FLOAT_VECTOR, dim=self.dim),
+            FieldSchema("text", dtype=DataType.VARCHAR, is_primary=False, max_length=512, enable_analyzer=True),
+        ]
+        schema = CollectionSchema(fields=fields, description="Test book search", enable_dynamic_field=True)
+        self.client.create_collection(
+            collection_name=self.collection_name,
+            schema=schema,
+            description="A collection for storing embeddings and metadata.",
+            metric_type="IP",
+            consitency_level="strong",
+        )
+        log.debug(f"Collection '{self.collection_name}' created with dimension={self.dim}.")
 
     def upsert(self, texts: List[str], metadatas: List[Dict[str, Any]]) -> None:
         """
-        1) Chunk docs
-        2) Encode them with self.model.encode_texts(...)
-        3) Insert embeddings into Milvus
+        Embed texts and insert them into the collection.
         """
         total_chunks = 0
-        for text, meta in zip(texts, metadatas):
+
+        texts = texts[:1]
+
+        for i in tqdm(range(len(texts)), desc="Upserting docs"):
+            text = texts[i]
+            meta = metadatas[i]
+
+            # 1) Chunk text
             ctext = BaseVectorStore.chunk_text(text, get_config().chunk_size, get_config().chunk_overlap)
-            embs = self.model.encode_texts(ctext)
 
-            # Normalize
-            norms = np.linalg.norm(embs, axis=1, keepdims=True)
-            embs = embs / (norms + 1e-12)
+            ctext = ctext[:1]
 
-            # Insert in Milvus
-            # Each row is a float vector
-            self.collection.insert([[emb.tolist() for emb in embs]], fields=["embedding"])
-            total_chunks += embs.shape[0]
+            # 2) Encode text chunks
+            embs = self.model.encode_texts(ctext).astype(np.float32)
 
-        self.collection.load()
-        print(f"[MilvusVectorStore] Upserted {total_chunks} total chunks into collection '{self.collection_name}'.")
+            if embs.shape[1] != self.dim:
+                log.error(f"Embedding dimension={embs.shape[1]} mismatch collection dim={self.dim}. Skipping.")
+                continue
+
+            # 3) Prepare records for insertion
+            data_to_insert = [{"id": (i * 1000) + j, "vector": emb, "text": ctext[j]} for j, emb in enumerate(embs)]
+
+            # Insert into the collection
+            self.client.insert(collection_name=self.collection_name, data=data_to_insert)
+            total_chunks += len(data_to_insert)
+
+        log.debug(f"Upserted {total_chunks} embeddings into '{self.collection_name}'.")
 
     def query(self, query: str, top_k: int) -> List[Dict[str, Any]]:
         """
-        Encode query using self.model and do a vector search in Milvus.
-        Return a list of relevant hits with optional metadata/distance.
+        Search the collection for the top-k closest embeddings to the query.
         """
-        query_emb = self.model.encode_texts([query])
-        norms = np.linalg.norm(query_emb, axis=1, keepdims=True)
-        query_emb = query_emb / (norms + 1e-12)
+        # 1) Encode the query
+        log.debug(f"Query: {query}")
 
-        search_params = {
-            "metric_type": "COSINE",
-            "params": {"nprobe": 10},
-        }
+        query_emb = self.model.encode_texts([query]).astype(np.float32)
 
-        results = self.collection.search(
-            data=[query_emb[0].tolist()],
-            anns_field="embedding",
-            param=search_params,
+        log.debug(f"Query embedding shape: {query_emb.shape}")
+
+        if query_emb.shape[1] != self.dim:
+            log.error(f"Query embedding dimension={query_emb.shape[1]} doesn't match collection dim={self.dim}.")
+            return []
+
+        # Search with limit
+        results = self.client.search(
+            collection_name=self.collection_name,
+            data=query_emb.tolist(),
             limit=top_k,
-            output_fields=["id"],
+            search_params={"metric_type": "IP", "params": {}},
+            # search_params=search_params
         )
-
-        # results is a list of hits for each query (we have only 1 query)
-        matches_list = results[0]
-
-        matches = []
-        for hit in matches_list:
-            matches.append(
-                {
-                    "metadata": {"milvus_id": hit.id},
-                    "score": hit.distance,
-                }
-            )
-        return matches
+        log.debug(f"Search results: {results}")
+        # 3) Parse results
+        # matches = [{"id": match.id, "score": match.distance, "text": match.entity.get("text")} for match in results[0]]
+        return results

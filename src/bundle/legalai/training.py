@@ -21,6 +21,13 @@ class LegalAIDataset(torch.utils.data.Dataset):
         self.summaries = summaries
         self.tokenizer = tokenizer
         self.max_len = max_len
+        # Decide device automatically (CPU, GPU, MPS, etc.)
+        if torch.cuda.is_available():
+            self.device = "cuda"
+        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+            self.device = "mps"
+        else:
+            self.device = "cpu"
 
     def __len__(self):
         return len(self.documents)
@@ -28,8 +35,8 @@ class LegalAIDataset(torch.utils.data.Dataset):
     def __getitem__(self, idx):
         source = self.documents[idx]
         target = self.summaries[idx]
-        inputs = self.tokenizer(source, max_length=self.max_len, truncation=True, padding="max_length")
-        labels = self.tokenizer(target, max_length=self.max_len, truncation=True, padding="max_length")
+        inputs = self.tokenizer(source, max_length=self.max_len, truncation=True, padding="max_length").to(self.device)
+        labels = self.tokenizer(target, max_length=self.max_len, truncation=True, padding="max_length").to(self.device)
         return {
             "input_ids": torch.tensor(inputs["input_ids"]),
             "attention_mask": torch.tensor(inputs["attention_mask"]),

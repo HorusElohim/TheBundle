@@ -1,8 +1,11 @@
 from pathlib import Path
+import asyncio
 from typing import cast
 
-from bundle.core import data
+from bundle.core import data, logger, tracer
 from bundle.core.utils import ensure_path
+
+log = logger.get_logger(__name__)
 
 
 class LegalAIConfig(data.Data):
@@ -15,18 +18,13 @@ class LegalAIConfig(data.Data):
     embedding_model_name: str = data.Field(default="")  # This will be dynamically set to model_name
 
     # Vector Store Selection
-    vector_store_type: str = data.Field(default="FAISS")
-
-    # Pinecone
-    pinecone_api_key: str = data.Field(default="YOUR-PINECONE-KEY")
-    pinecone_env: str = data.Field(default="YOUR-PINECONE-ENV")
-    pinecone_index_name: str = data.Field(default="legal-judgments-index")
+    vector_store_type: str = data.Field(default="MILVUS")
 
     # Milvus
     milvus_host: str = data.Field(default="127.0.0.1")
     milvus_port: int = data.Field(default=19530)
     milvus_collection_name: str = data.Field(default="legal_judgments")
-    milvus_dim: int = data.Field(default=768)
+    milvus_dim: int = data.Field(default=4096)
 
     # Chunking
     chunk_size: int = data.Field(default=300)
@@ -56,9 +54,14 @@ DEFAULT_CONFIG_PATH = Path.home() / ".LegalAI" / "configuration-v0.1.json"
 ensure_path(DEFAULT_CONFIG_PATH)
 
 if DEFAULT_CONFIG_PATH.exists():
-    CONFIG = LegalAIConfig.from_json(DEFAULT_CONFIG_PATH)
+    log.debug("Configuration loaded from JSON")
+    CONFIG = asyncio.run(LegalAIConfig.from_json(DEFAULT_CONFIG_PATH))
 else:
+    log.debug("Configuration loaded from DEFAULT")
     CONFIG = LegalAIConfig()
+    asyncio.run(CONFIG.dump_json(DEFAULT_CONFIG_PATH))
+
+log.debug(f"Config: \n{asyncio.run(CONFIG.as_json())}")
 
 
 def get_config() -> LegalAIConfig:

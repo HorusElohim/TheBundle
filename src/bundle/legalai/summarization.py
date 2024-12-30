@@ -4,6 +4,10 @@ from typing import List
 from .config import get_config
 from .model import UnifiedLanguageModel
 
+from bundle.core import logger
+
+log = logger.get_logger(__name__)
+
 
 class Summarizer:
     """
@@ -13,7 +17,7 @@ class Summarizer:
 
     def __init__(self, model: UnifiedLanguageModel):
         # Instead of loading a separate model, we instantiate one UnifiedLanguageModel
-        print(f"[Summarizer] Using UnifiedLanguageModel for generation: {get_config().model_name}")
+        log.debug(f"UnifiedLanguageModel for generation: {get_config().model_name}")
         self.model = model
 
     def summarize_context(self, context_texts: List[str], user_query: str, max_new_tokens: int | None = None) -> str:
@@ -30,5 +34,6 @@ class Summarizer:
         )
 
         # Now we simply call the generate_text method on our unified model.
+        log.debug("calling model generate_text")
         summary = self.model.generate_text(prompt, max_new_tokens=max_new_tokens)
         return summary
