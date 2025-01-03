@@ -28,12 +28,10 @@ class Summarizer:
         max_new_tokens = max_new_tokens or get_config().max_new_tokens
         joined_context = "\n".join([f"- {ctx}" for ctx in context_texts if ctx])
         prompt = (
-            f"System: You are a legal AI. Use the provided context to answer succinctly.\n"
-            f"Context:\n{joined_context}\n\n"
+            f"System: You are a legal AI. Use the provided context to answer succinctly. Be concise. Do not add anything more then what requested.\n"
+            f"Context: '{joined_context}'\n\n"
             f"User: {user_query}\nAssistant:"
         )
-
         # Now we simply call the generate_text method on our unified model.
-        log.debug("calling model generate_text")
         summary = self.model.generate_text(prompt, max_new_tokens=max_new_tokens)
         return summary

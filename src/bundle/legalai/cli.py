@@ -182,7 +182,7 @@ def interactive():
         conv_prompt = memory.to_prompt()  # e.g. "User: <...>\nSystem: <...>\n..."
 
         # 9) Summarize or generate a response from the retrieved context
-        summary = summarizer.summarize_context(context, user_query)
+        summary = summarizer.summarize_context(["This is the story of william Sheckspire"], user_query)
 
         # 10) Add the assistant turn to the memory
         memory.add_turn("assistant", summary)
