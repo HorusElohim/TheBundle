@@ -81,7 +81,7 @@ class Process(Entity):
             self._process.communicate,
         )
 
-        returncode = self._process.returncode
+        returncode = -1 if self._process.returncode is None else self._process.returncode
 
         stdout_decoded = stdout.decode("utf-8") if stdout else ""
         stderr_decoded = stderr.decode("utf-8") if stderr else ""
@@ -118,7 +118,7 @@ class ProcessStream(Process):
 
         return await tracer.asyn.call_raise(self._internal_call_, command, stdout_lines, stderr_lines, **kwargs)
 
-    async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:
+    async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
         self._process = await tracer.asyn.call_raise(
             asyncio.create_subprocess_shell,
             command,

@@ -129,7 +129,7 @@ class Data(BaseModel):
     model_config = configuration()
 
     # Test name is used to differenciate the same Data with different test result
-    __test_name = PrivateAttr(default="base")
+    __test_name: str = PrivateAttr(default="base")
 
     @classmethod
     async def from_dict(cls: Type[D], data: dict) -> D:

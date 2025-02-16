@@ -80,6 +80,7 @@ class Downloader:
         Returns:
             bool: True if the download was successful, False otherwise.
         """
+        status = False
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.url) as response:
@@ -106,7 +107,6 @@ class Downloader:
 
         except Exception as ex:
             logger.error(f"Error downloading {self.url}. Exception: {ex}")
-            status = False
         finally:
             await tracer.asyn.call_raise(self.end)
             logger.debug("%s", Emoji.status(status))

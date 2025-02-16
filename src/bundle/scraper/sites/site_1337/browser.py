@@ -67,7 +67,7 @@ class Browser(browser.Browser):
         # Fetch required cells
         cells = await self._fetch_cell_elements(row)
         if not cells:
-            log.debug(f"Skipping row {idx}, missing required cells.")
+            log.warning(f"Skipping row {idx}, missing required cells.")
             return None
 
         name_td, seeds_td, leeches_td, date_td, size_td, uploader_td = cells

@@ -65,7 +65,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
 
     type: zmq.SocketType = data.Field(default=zmq.SocketType.PAIR)
     mode: SocketMode = data.Field(default=SocketMode.CONNECT)
-    endpoint: str = data.Field(default=str)
+    endpoint: str = data.Field(default_factory=str)
     is_closed: bool = False
     _socket: zmq.asyncio.Socket | None = data.PrivateAttr(default=None)
 
@@ -76,12 +76,16 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return socket_type
 
     @data.model_validator(mode="after")
-    def check_dynamic_default_based_on_int_field(cls: Type[T_Socket], instance: T_Socket):
-        instance._socket = instance._context.socket(instance.type.value)
-        return instance
+    def instantiate_internal_socket(self) -> Socket:
+        self._socket = self._context.socket(self.type.value)
+        return self
 
     @property
-    def socket(self):
+    def socket(self) -> zmq.asyncio.Socket:
+        if self._socket is None:
+            raise RuntimeError("Cannot use socket: Socket is None")
+        if self.is_closed:
+            raise RuntimeError("Cannot send data: Socket is closed.")
         return self._socket
 
     async def __aenter__(self: T_Socket) -> T_Socket:
@@ -105,7 +109,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         """
         self.mode = SocketMode.BIND
         self.endpoint = endpoint
-        self._socket.bind(endpoint)
+        self.socket.bind(endpoint)
         return self
 
     @tracer.syn.decorator_call_raise
@@ -121,7 +125,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         """
         self.mode = SocketMode.CONNECT
         self.endpoint = endpoint
-        self._socket.connect(endpoint)
+        self.socket.connect(endpoint)
         return self
 
     @tracer.syn.decorator_call_raise
@@ -144,7 +148,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
             zmq.SocketType.DISH,
         ):
             raise ValueError("subscribe() can only be used with SUB, XSUB, or DISH sockets.")
-        self._socket.setsockopt(zmq.SUBSCRIBE, topic)
+        self.socket.setsockopt(zmq.SUBSCRIBE, topic)
         return self
 
     @tracer.asyn.decorator_call_raise
@@ -154,7 +158,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         """
         if self.is_closed:
             return
-        await tracer.asyn.call_raise(self._socket.close)
+        await tracer.asyn.call_raise(self.socket.close)
         self.is_closed = True
 
     @tracer.asyn.decorator_call_raise
@@ -168,10 +172,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         Raises:
             RuntimeError: If the socket is closed.
         """
-        if self.is_closed:
-            raise RuntimeError("Cannot send data: Socket is closed.")
-
-        await self._socket.send(data)
+        await self.socket.send(data)
 
     @tracer.asyn.decorator_call_raise
     async def recv(self) -> bytes:
@@ -184,10 +185,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         Raises:
             RuntimeError: If the socket is closed.
         """
-        if self.is_closed:
-            raise RuntimeError("Cannot receive data: Socket is closed.")
-
-        return await self._socket.recv()
+        return await self.socket.recv()
 
     @tracer.asyn.decorator_call_raise
     async def send_multipart(self, data: list[bytes]) -> None:
@@ -203,7 +201,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         if self.is_closed:
             raise RuntimeError("Cannot send data: Socket is closed.")
 
-        await self._socket.send_multipart(data)
+        await self.socket.send_multipart(data)
 
     @tracer.asyn.decorator_call_raise
     async def recv_multipart(self) -> list[bytes]:
@@ -219,7 +217,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         if self.is_closed:
             raise RuntimeError("Cannot receive data: Socket is closed.")
 
-        return await self._socket.recv_multipart()
+        return await self.socket.recv_multipart()
 
     @staticmethod
     async def proxy(frontend: "Socket", backend: "Socket") -> None:
