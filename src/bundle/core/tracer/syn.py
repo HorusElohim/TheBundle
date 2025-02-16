@@ -18,16 +18,20 @@
 # under the License.
 
 from functools import wraps
-from typing import Callable, TypeVar, Concatenate, ParamSpec
+from typing import Callable, TypeVar, Concatenate, ParamSpec, cast
 
 from .common import log_call_success, log_call_exception
 
 
-P, R = ParamSpec("P"), TypeVar("R")
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 def call(
-    func: Callable[Concatenate[P], R], *args: P.args, stacklevel: int = 3, **kwargs: P.kwargs
+    func: Callable[Concatenate[P], R],
+    *args: P.args,
+    stacklevel: int = 3,  # type:ignore
+    **kwargs: P.kwargs,
 ) -> tuple[R | None, Exception | None]:
     result: None | R = None
     try:
@@ -40,11 +44,16 @@ def call(
     return result, None
 
 
-def call_raise(func: Callable[Concatenate[P], R], *args: P.args, stacklevel: int = 3, **kwargs: P.kwargs) -> R:
+def call_raise(
+    func: Callable[Concatenate[P], R],
+    *args: P.args,
+    stacklevel: int = 3,  # type:ignore
+    **kwargs: P.kwargs,
+) -> R:
     result, exception = call(func, *args, stacklevel=stacklevel, **kwargs)
     if exception:
         raise exception
-    return result
+    return cast(R, result)
 
 
 def decorator_call(func: Callable[P, R]) -> Callable[P, tuple[R | None, Exception | None]]:

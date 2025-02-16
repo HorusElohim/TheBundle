@@ -25,10 +25,10 @@ def main():
 @click.option("--dry-run", "-dr", is_flag=True, help="Dry run, without any download just resolve the URL")
 @click.option("--mp3", is_flag=True, help="Download MP4 and convert to MP3")
 @click.option("--mp3-only", is_flag=True, help="Download MP4 and convert to MP3")
-async def download(url, folder, dry_run, mp3, mp3_only):
+async def download(url, directory, dry_run, mp3, mp3_only):
     LOGGER.info(f"started {url=}")
-    folder = Path(folder)
-    db = Database(path=folder)
+    directory = Path(directory)
+    db = Database(path=directory)
     await db.load()
 
     semaphore = asyncio.Semaphore(1)
@@ -46,7 +46,7 @@ async def download(url, folder, dry_run, mp3, mp3_only):
             LOGGER.info(f"YoutubeTrack:\n{await youtube_track.as_json()}")
             continue
         LOGGER.info(f"🎶 - {youtube_track.filename}")
-        target_path = folder / f"{youtube_track.filename}.mp4"
+        target_path = directory / f"{youtube_track.filename}.mp4"
         audio_downloader = DownloaderTQDM(url=youtube_track.video_url, destination=target_path)
         thumbnail_downloader = Downloader(url=youtube_track.thumbnail_url)
 
@@ -74,14 +74,16 @@ def track():
 @track.command()
 @click.argument("track_path", type=click.Path(exists=True))
 async def info(track_path: Path):
+    track = None
     track_path = Path(track_path)
     if track_path.suffix == ".mp4":
         track = await MP4.load(track_path)
     elif track_path.suffix == ".mp3":
         track = await MP3.load(track_path)
-    LOGGER.info(track.as_json())
-    thumbnail = await track.get_thumbnail()
-    LOGGER.info(f"thumbnail - len:{len(thumbnail) if thumbnail else 0}")
+    if track:
+        LOGGER.info(await track.as_json())
+        thumbnail = await track.get_thumbnail()
+        LOGGER.info(f"thumbnail - len:{len(thumbnail) if thumbnail else 0}")
 
 
 @track.command()
@@ -115,7 +117,7 @@ def database():
 
 
 @database.command()
-@click.option("-d", "directory", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination Folder")
+@click.option("-d", "directory", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination directory")
 async def show(directory):
     db = Database(path=directory)
     await db.load()
