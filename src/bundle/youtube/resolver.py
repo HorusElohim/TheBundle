@@ -34,7 +34,7 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
         standard_url = f"https://www.youtube.com/watch?v={video_id}"
         LOGGER.debug(f"Standardized URL: {standard_url}")
 
-        yt = await asyncio.get_event_loop().run_in_executor(None, lambda: YouTube(standard_url))
+        yt = await asyncio.get_event_loop().run_in_executor(None, lambda: YouTube(standard_url, use_po_token=True))
         audio_stream = yt.streams.get_audio_only()
         video_stream = yt.streams.get_highest_resolution()
 
@@ -55,7 +55,7 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
 
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
     try:
-        playlist = await asyncio.to_thread(Playlist, url)
+        playlist = await asyncio.to_thread(Playlist, url, use_po_token=True)
         for video_url in playlist.video_urls:
             yield video_url
 
