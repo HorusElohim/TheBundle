@@ -1,27 +1,49 @@
 import asyncio
+from pathlib import Path
 import bundle
 import platform
 import pytest
 import zmq
 
+DEFAULT_SAFE_SLEEP = 0.1
 PROTOCOLS = ["tcp", "ipc", "inproc"]
 HAS_DRAFT_SUPPORT = zmq.has("draft")
-IS_RUNNING_ON_WINDOWS = platform.system() == "Windows"
+IS_WINDOWS = platform.system() == "Windows"
 
 # Mark all tests in this module as asynchronous
 pytestmark = pytest.mark.asyncio
 
+parametrize_socket_protocol = pytest.mark.parametrize("protocol", PROTOCOLS)
+bundle_cprofile = pytest.mark.bundle_cprofile(
+    expected_duration=300_000_000, performance_threshold=100_000_000
+)  # 300ms + ~100ms
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_pub_sub(protocol):
+
+def resolve_endpoint(protocol: str, tmp_path: Path, port: int):
+    match protocol:
+        case "tcp":
+            return f"{protocol}://127.0.0.1:{port}"
+        case "inproc":
+            tmp_path = bundle.core.utils.ensure_path(tmp_path)
+            return f"{protocol}://{str(tmp_path / 'sock.sock')}"
+        case "ipc":
+            # IPC has a maximum of 103 characters
+            tmp_path = bundle.core.utils.ensure_path(Path("/tmp/") / tmp_path.name)
+            return f"{protocol}://{str(tmp_path / 'sock.sock')}"
+
+    raise ValueError(f"Unsupported protocol {protocol}")
+
+
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_pub_sub(protocol, tmp_path):
     """
     Test PUB/SUB pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5555" if protocol == "tcp" else f"{protocol}://test_pub_sub"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5555)
 
     # Create the publisher and subscriber sockets
     async with (
@@ -30,7 +52,7 @@ async def test_pub_sub(protocol):
     ):
         # Allow some time for the subscriber to connect and subscribe
         # This is crucial to ensure the subscriber is ready to receive messages
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Send a message from the publisher
         message = b"topic Hello, Subscribers!"
@@ -45,16 +67,16 @@ async def test_pub_sub(protocol):
     return f"Socket-PubSub-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_push_pull(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_push_pull(protocol, tmp_path):
     """
     Test PUSH/PULL pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5556" if protocol == "tcp" else f"{protocol}://test_push_pull"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5556)
 
     # Create the pusher and puller sockets
     async with (
@@ -62,7 +84,7 @@ async def test_push_pull(protocol):
         bundle.core.Socket.pull().connect(endpoint) as puller,
     ):
         # Allow some time for the puller to connect
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Send a message from the pusher
         message = b"Task 1"
@@ -77,16 +99,16 @@ async def test_push_pull(protocol):
     return f"Socket-PushPull-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_req_rep(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_req_rep(protocol, tmp_path):
     """
     Test REQ/REP pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5557" if protocol == "tcp" else f"{protocol}://test_req_rep"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5557)
 
     # Create the requester and replier sockets
     async with (
@@ -94,7 +116,7 @@ async def test_req_rep(protocol):
         bundle.core.Socket.rep().bind(endpoint) as replier,
     ):
         # Allow some time for the connection to establish
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Send request and receive reply
         request = b"Hello, REP!"
@@ -117,16 +139,16 @@ async def test_req_rep(protocol):
     return f"Socket-ReqRep-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_dealer_router(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_dealer_router(protocol, tmp_path):
     """
     Test DEALER/ROUTER pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5558" if protocol == "tcp" else f"{protocol}://test_dealer_router"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5558)
 
     # Create the DEALER and ROUTER sockets
     async with (
@@ -134,7 +156,7 @@ async def test_dealer_router(protocol):
         bundle.core.Socket.router().bind(endpoint) as router,
     ):
         # Allow some time for the connection to establish
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Dealer sends message to Router
         message_to_router = b"Hello, Router!"
@@ -157,17 +179,17 @@ async def test_dealer_router(protocol):
     return f"Socket-DealerRouter-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_proxy(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_proxy(protocol, tmp_path):
     """
     Test Proxy functionality with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    frontend_endpoint = f"{protocol}://127.0.0.1:5559" if protocol == "tcp" else f"{protocol}://test_proxy_frontend"
-    backend_endpoint = f"{protocol}://127.0.0.1:5560" if protocol == "tcp" else f"{protocol}://test_proxy_backend"
+    frontend_endpoint = resolve_endpoint(protocol, tmp_path / "frontend", 5559)
+    backend_endpoint = resolve_endpoint(protocol, tmp_path / "backend", 5560)
 
     # Create the sockets
     async with (
@@ -184,7 +206,7 @@ async def test_proxy(protocol):
         proxy_task = asyncio.create_task(bundle.core.Socket.proxy(frontend, backend))
 
         # Allow the proxy task to initialize and connections to establish
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Publisher sends message
         message = b"Proxy Test Message"
@@ -204,16 +226,16 @@ async def test_proxy(protocol):
     return f"Socket-Proxy-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_pair(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_pair(protocol, tmp_path):
     """
     Test PAIR pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5561" if protocol == "tcp" else f"{protocol}://test_pair"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5561)
 
     # Create the PAIR sockets
     async with (
@@ -221,7 +243,7 @@ async def test_pair(protocol):
         bundle.core.Socket.pair().connect(endpoint) as socket_b,
     ):
         # Allow some time for the connection to establish
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Socket A sends a message to Socket B
         message = b"Hello, PAIR!"
@@ -245,16 +267,16 @@ async def test_pair(protocol):
 # Now, adding tests for the missing SocketTypes
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_xpub_xsub(protocol):
+@bundle_cprofile
+@parametrize_socket_protocol
+async def test_xpub_xsub(protocol, tmp_path):
     """
     Test XPUB/XSUB pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5563" if protocol == "tcp" else f"{protocol}://test_xpub_xsub"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5562)
 
     # Create the XPUB and XSUB sockets
     async with (
@@ -262,7 +284,7 @@ async def test_xpub_xsub(protocol):
         bundle.core.Socket.xsub().connect(endpoint) as xsubscriber,
     ):
         # Allow some time for the connection to establish
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # XSUB subscribes to all topics by sending a subscription message
         await xsubscriber.send(b"\x01")  # Subscribe to all topics
@@ -282,7 +304,7 @@ async def test_xpub_xsub(protocol):
     return f"Socket-XPubXSub-{protocol.upper()}"
 
 
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
+@bundle_cprofile
 async def test_stream():
     """
     Basic Functionality Test for STREAM bundle.core.socket.
@@ -306,14 +328,14 @@ async def test_stream():
     - When sending data to the client, include the identity frame followed by the data.
 
     """
-    endpoint = "tcp://127.0.0.1:5564"
+    port = 5563
     host = "127.0.0.1"
-    port = 5564
+    endpoint = f"tcp://{host}:{port}"
 
     # Create the STREAM server socket
     async with bundle.core.Socket.stream().bind(endpoint) as server:
         # Allow some time for the server to start
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
 
         # Use a standard TCP client
         reader, writer = await asyncio.open_connection(host, port)
@@ -348,30 +370,26 @@ async def test_stream():
         writer.close()
         await writer.wait_closed()
 
-        # Optionally, close the server's connection to the client
-        # by sending a zero-length message with the client's identity
-        await server.send_multipart([identity, b""])
-
     return "Socket-Stream"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
+@bundle_cprofile
+@parametrize_socket_protocol
 @pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_server_client(protocol):
+async def test_server_client(protocol, tmp_path):
     """
     Test SERVER/CLIENT pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5565" if protocol == "tcp" else f"{protocol}://test_server_client"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5564)
 
     async with (
         bundle.core.Socket.server().bind(endpoint) as server,
         bundle.core.Socket.client().connect(endpoint) as client,
     ):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
         # Client sends request to Server
         await client.send(b"Hello, SERVER!")
 
@@ -389,23 +407,23 @@ async def test_server_client(protocol):
     return f"Socket-ServerClient-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
+@bundle_cprofile
+@parametrize_socket_protocol
 @pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_radio_dish(protocol):
+async def test_radio_dish(protocol, tmp_path):
     """
     Test RADIO/DISH pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5566" if protocol == "tcp" else f"{protocol}://test_radio_dish"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5565)
 
     async with (
         bundle.core.Socket.radio().bind(endpoint) as radio,
         bundle.core.Socket.dish().connect(endpoint).subscribe(b"topic") as dish,
     ):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
         # Radio sends message
         message = b"topic Hello, DISH!"
         await radio.send(message)
@@ -417,23 +435,23 @@ async def test_radio_dish(protocol):
     return f"Socket-RadioDish-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
+@bundle_cprofile
+@parametrize_socket_protocol
 @pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_gather_scatter(protocol):
+async def test_gather_scatter(protocol, tmp_path):
     """
     Test GATHER/SCATTER pattern with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5567" if protocol == "tcp" else f"{protocol}://test_gather_scatter"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5566)
 
     async with (
         bundle.core.Socket.scatter().bind(endpoint) as scatter,
         bundle.core.Socket.gather().connect(endpoint) as gatherer,
     ):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
         # Scatter sends message
         message = b"Hello, GATHER!"
         await scatter.send(message)
@@ -445,23 +463,23 @@ async def test_gather_scatter(protocol):
     return f"Socket-GatherScatter-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
+@bundle_cprofile
+@parametrize_socket_protocol
 @pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_peer(protocol):
+async def test_peer(protocol, tmp_path):
     """
     Test PEER socket with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5568" if protocol == "tcp" else f"{protocol}://test_peer"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5567)
 
     async with (
         bundle.core.Socket.peer().bind(endpoint) as peer_a,
         bundle.core.Socket.peer().connect(endpoint) as peer_b,
     ):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
         # Peer A sends message to Peer B
         await peer_a.send(b"Hello from Peer A")
         received = await peer_b.recv()
@@ -475,23 +493,23 @@ async def test_peer(protocol):
     return f"Socket-Peer-{protocol.upper()}"
 
 
-@pytest.mark.parametrize("protocol", PROTOCOLS)
+@bundle_cprofile
+@parametrize_socket_protocol
 @pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
-@pytest.mark.bundle_cprofile(expected_duration=300_000_000, performance_threshold=100_000_000)  # 300ms + ~100ms
-async def test_channel(protocol):
+async def test_channel(protocol, tmp_path):
     """
     Test CHANNEL socket with parameterized protocols.
     """
-    if IS_RUNNING_ON_WINDOWS and protocol == "ipc":
+    if IS_WINDOWS and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
-    endpoint = f"{protocol}://127.0.0.1:5569" if protocol == "tcp" else f"{protocol}://test_channel"
+    endpoint = resolve_endpoint(protocol, tmp_path, 5568)
 
     async with (
         bundle.core.Socket.channel().bind(endpoint) as channel_server,
         bundle.core.Socket.channel().connect(endpoint) as channel_client,
     ):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(DEFAULT_SAFE_SLEEP)
         # Channel client sends message
         await channel_client.send(b"Hello, CHANNEL Server!")
         received = await channel_server.recv()
