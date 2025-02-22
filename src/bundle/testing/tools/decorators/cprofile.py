@@ -41,7 +41,7 @@ def cprofile(
         @wraps(func)
         async def wrapper(*args, **kwds):
             # Enable profiling
-            logger.testing(f"Profiling async function {func.__name__} ...")
+            logger.testing(f"[{func.__name__}] profiling async function ...")
             pr = cProfile.Profile()
             pr.enable()
 
@@ -65,7 +65,7 @@ def cprofile(
                 elapsed_ns = end_ns - start_ns
 
                 # Log execution time
-                logger.testing(f"{func.__name__} executed in {core.utils.format_duration_ns(elapsed_ns)}")
+                logger.testing(f"[{func.__name__}] executed in {core.utils.format_duration_ns(elapsed_ns)}")
 
                 # Calculate the difference between elapsed time and expected duration
                 duration_diff_ns = elapsed_ns - expected_duration
@@ -84,7 +84,7 @@ def cprofile(
                     # Ensure that `result` has a meaningful identifier
                     result_identifier = utils.class_instance_name(result) if result else "result"
                     dump_file = cprofile_folder / f"{func.__name__}.{result_identifier}.prof"
-                    logger.testing(f"Dumping cProfile stats to: {dump_file}")
+                    logger.testing(f"[{func.__name__}] dumping cProfile stats to: {dump_file}")
                     pr.dump_stats(str(dump_file))
 
             # Return the function's result outside the try-except-finally
