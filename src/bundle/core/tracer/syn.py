@@ -17,11 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import asyncio
 from functools import wraps
-from typing import Callable, TypeVar, Concatenate, ParamSpec, cast
+from typing import Callable, Concatenate, ParamSpec, TypeVar, cast
 
-from .common import log_call_success, log_call_exception
-
+from .common import log_call_exception, log_call_success
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -35,7 +35,11 @@ def call(
 ) -> tuple[R | None, Exception | None]:
     result: None | R = None
     try:
-        result = func(*args, **kwargs)
+        if asyncio.iscoroutinefunction(func):
+            stacklevel += 3
+            result = asyncio.run(func(*args, **kwargs))
+        else:
+            result = func(*args, **kwargs)
         log_call_success(func, args, kwargs, result, stacklevel)
     except Exception as exception:
         log_call_exception(func, args, kwargs, exception, stacklevel)
