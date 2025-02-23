@@ -5,7 +5,28 @@ on:
     branches: [ main ]
 
 jobs:
+  check_commit_message:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run_tests: ${{ steps.check.outputs.should_run_tests }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: check
+        run: |
+          # Retrieve the most recent commit message
+          commit_message=$(git log -1 --pretty=%B)
+          echo "Commit message: $commit_message"
+          if echo "$commit_message" | grep -q "auto: \[drop reference\]"; then
+            echo "Found commit message, tests will run."
+            echo "should_run_tests=true" >> $GITHUB_OUTPUT
+          else
+            echo "Commit message not found, skipping tests."
+            echo "should_run_tests=false" >> $GITHUB_OUTPUT
+          fi
+
   wait_for_crossplatforms-tests:
+    needs: [check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -37,18 +58,17 @@ jobs:
           wait-interval: 3
           allowed-conclusions: success
 
-
   update_reference_linux:
-    needs: [wait_for_crossplatforms-tests]
+    needs: [wait_for_crossplatforms-tests, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       all-successful: ${{ steps.check-jobs.outputs.successful }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetches all history for all branches and tags
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
@@ -58,16 +78,16 @@ jobs:
 
       - name: Install Playwright system dependencies
         run: |
-            npx playwright install-deps
+          npx playwright install-deps
 
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install GitPython click
-            pip install -e .[test]
-            playwright install
+          python -m pip install --upgrade pip
+          pip install GitPython click
+          pip install -e .[test]
+          playwright install
 
-      - name: "Pull changes"
+      - name: Pull changes
         run: |
           git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
 
@@ -84,16 +104,16 @@ jobs:
           git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
 
   update_reference_darwin:
-    needs: [update_reference_linux]
+    needs: [update_reference_linux, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
     runs-on: macos-latest
     outputs:
       all-successful: ${{ steps.check-jobs.outputs.successful }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetches all history for all branches and tags
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
@@ -103,12 +123,12 @@ jobs:
 
       - name: Install BUNDLE dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install GitPython click
-            pip install -e .[test]
-            playwright install
+          python -m pip install --upgrade pip
+          pip install GitPython click
+          pip install -e .[test]
+          playwright install
 
-      - name: "Pull changes"
+      - name: Pull changes
         run: |
           git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
 
@@ -124,18 +144,17 @@ jobs:
           git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [darwin]"
           git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
 
-
   update_reference_windows:
-    needs: [update_reference_darwin]
+    needs: [update_reference_darwin, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
     runs-on: windows-latest
     outputs:
       all-successful: ${{ steps.check-jobs.outputs.successful }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetches all history for all branches and tags
+          fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - name: Set up Python
@@ -145,12 +164,12 @@ jobs:
 
       - name: Install dependencies
         run: |
-            python -m pip install --upgrade pip
-            pip install GitPython click
-            pip install -e .[test]
-            playwright install
+          python -m pip install --upgrade pip
+          pip install GitPython click
+          pip install -e .[test]
+          playwright install
 
-      - name: "Pull changes"
+      - name: Pull changes
         run: |
           git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
 
@@ -166,9 +185,9 @@ jobs:
           git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [windows]"
           git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
 
-
   remove_target_commit:
-    needs: ["update_reference_windows"]
+    needs: [update_reference_windows, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -194,8 +213,8 @@ jobs:
 
       - name: Configure Git User
         run: |
-            git config --global user.name 'TheBundle'
-            git config --global user.email 'noreply@github.com'
+          git config --global user.name 'TheBundle'
+          git config --global user.email 'noreply@github.com'
 
       - name: Remove Target Commits
         run: |
@@ -205,13 +224,10 @@ jobs:
             echo "No commits found with the specified message."
           else
             for commit in $commits; do
-                # Rebasing while keeping the original author's date
                 GIT_COMMITTER_NAME="$(git log -1 --format='%an' $commit)"
                 GIT_COMMITTER_EMAIL="$(git log -1 --format='%ae' $commit)"
                 git rebase --onto $commit^ $commit --strategy-option=theirs --committer-date-is-author-date || git rebase --abort
             done
           fi
           git stash list | grep -q 'stash@{0}' && git stash pop
-
-          # Push the changes
           git push --force --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
