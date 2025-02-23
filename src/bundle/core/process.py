@@ -41,8 +41,21 @@ class ProcessError(Exception):
     """Custom exception for process execution errors."""
 
     def __init__(self, result: ProcessResult):
-        super().__init__(f"Command failed with result {result}")
         self.result = result
+        exc_message = f"Command: {result.command} Return Code: {result.returncode}"
+
+        msg_lines = [exc_message]
+        if result.stdout:
+            stdout_clean = result.stdout.replace("\r\n", "\n").strip()
+            msg_lines.append("StdOut:")
+            msg_lines.append(stdout_clean)
+        if result.stderr:
+            stderr_clean = result.stderr.replace("\r\n", "\n").strip()
+            msg_lines.append("StdErr:")
+            msg_lines.append(stderr_clean)
+        message = "\n".join(msg_lines)
+        logger.error(message)
+        super().__init__(exc_message)
 
 
 class Process(Entity):
@@ -65,7 +78,7 @@ class Process(Entity):
         Raises:
             ProcessError: If the command execution fails.
         """
-        return await tracer.asyn.call_raise(self._internal_call_, command, **kwargs)
+        return await self._internal_call_(command, **kwargs)
 
     async def _internal_call_(self, command: str, **kwargs) -> ProcessResult:
 
