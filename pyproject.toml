@@ -11,9 +11,11 @@ requires-python = ">=3.10"
 dependencies = [
     "zmq",
     "tqdm",
+    "rich",
     "wheel",
     "click",
     "aiohttp",
+    "rich_click",
     "requests",
     "colorama",
     "aiofiles",
@@ -35,6 +37,7 @@ youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 web = ["fastapi", "uvicorn[standard]", "websockets"]
 
 [project.scripts]
+bundle = "bundle.cli:main"
 bundle_tube = "bundle.youtube.cli:main"
 bundle_web = "bundle.website.cli:cli"
 bundle_scraper = "bundle.scraper.cli:cli"

@@ -26,6 +26,7 @@ from typing import cast
 from enum import IntEnum
 
 from colorama import Fore, Style
+from rich.logging import RichHandler  # Use Rich's handler for improved console output
 
 
 class Emoji:
@@ -107,35 +108,6 @@ class JsonFormatter(logging.Formatter):
         return json.dumps(log_record, ensure_ascii=False)
 
 
-class ColoredConsoleHandler(logging.StreamHandler):
-    """Custom logging handler for colored console output."""
-
-    COLORS = {
-        "WARNING": Fore.YELLOW,
-        "INFO": Fore.GREEN,
-        "DEBUG": Fore.LIGHTMAGENTA_EX,
-        "CRITICAL": Fore.RED,
-        "ERROR": Fore.RED,
-        "VERBOSE": Fore.LIGHTBLACK_EX,
-        "TESTING": Fore.CYAN,
-    }
-
-    def __init__(self):
-        super().__init__()
-        self.formatters = {}
-
-    def format(self, record: logging.LogRecord) -> str:
-        if record.levelname not in self.formatters:
-            color = self.COLORS.get(record.levelname, Fore.WHITE)
-            format_str = (
-                f"{Fore.LIGHTBLUE_EX}%(asctime)s {color}%(levelname)-8s {Fore.MAGENTA}%(name)s\t"
-                f"{Fore.LIGHTBLACK_EX}%(pathname)s:%(lineno)d:{Fore.WHITE}%(funcName)s {color}%(message)s{Style.RESET_ALL}"
-            )
-            self.formatters[record.levelname] = logging.Formatter(format_str)
-        formatter = self.formatters[record.levelname]
-        return formatter.format(record)
-
-
 def setup_file_handler(log_path: Path, to_json: bool) -> logging.FileHandler:
     """Set up a file handler for logging."""
     try:
@@ -157,11 +129,34 @@ def setup_file_handler(log_path: Path, to_json: bool) -> logging.FileHandler:
 
 
 def setup_console_handler(colored_output: bool) -> logging.StreamHandler:
-    """Set up a console handler for logging."""
-    console_handler = ColoredConsoleHandler()
-    if not colored_output:
-        console_handler.setFormatter(logging.Formatter("%(levelname)s - [%(name)s]: %(message)s"))
-    return console_handler
+    """
+    Set up a console handler for logging.
+
+    When colored_output is True, uses RichHandler with a custom Console that employs
+    a custom Theme to style the custom TESTING and VERBOSE levels.
+    """
+    if colored_output:
+        from rich.console import Console
+        from rich.theme import Theme
+
+        # Create a custom theme including styles for the custom levels.
+        custom_theme = Theme(
+            {
+                "logging.level.debug": "bold magenta",
+                "logging.level.info": "bold green",
+                "logging.level.warning": "bold yellow",
+                "logging.level.error": "bold red",
+                "logging.level.critical": "bold red",
+                "logging.level.testing": "bold cyan",
+                "logging.level.verbose": "dim black",
+            }
+        )
+        console = Console(theme=custom_theme)
+        return RichHandler(console=console, rich_tracebacks=True)
+    else:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s - [%(name)s]: %(message)s"))
+        return handler
 
 
 def setup_root_logger(
@@ -207,5 +202,8 @@ if __name__ == "__main__":
     logger.debug("This is a debug message.")
     logger.info("This is an info message.")
     logger.warning("This is a warning.")
-    logger.error("This is an error.")
+    try:
+        1 / 0
+    except Exception as e:
+        logger.error("This is an error with an exception.", exc_info=True)
     logger.critical("This is critical.")
