@@ -30,17 +30,28 @@ dependencies = [
 version_file = "src/bundle/_version.py"
 
 [project.optional-dependencies]
-test = ["pytest", "pytest-asyncio"]
+test = ["pytest", "pytest-asyncio", "nest_asyncio"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 web = ["fastapi", "uvicorn[standard]", "websockets"]
+all = [
+    "pytest",
+    "pytest-asyncio",
+    "nest_asyncio",
+    "snakeviz",
+    "build",
+    "twine",
+    "pytubefix",
+    "mutagen",
+    "ffmpeg-python",
+    "fastapi",
+    "uvicorn[standard]",
+    "websockets",
+]
 
 [project.scripts]
 bundle = "bundle.cli:main"
-bundle_tube = "bundle.youtube.cli:main"
-bundle_web = "bundle.website.cli:cli"
-bundle_scraper = "bundle.scraper.cli:cli"
 
 [tool.pytest.ini_options]
 addopts = ["--doctest-modules", "--capture=no"]

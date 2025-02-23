@@ -10,16 +10,16 @@ from bundle.youtube.database import Database
 from bundle.youtube.media import MP3, MP4
 from bundle.youtube.resolver import resolve
 
-from . import YOUTUBE_PATH
 from ..core.downloader import Downloader, DownloaderTQDM
+from . import YOUTUBE_PATH
 
 
 @click.group()
-def main():
+def youtube():
     pass
 
 
-@main.command()
+@youtube.command()
 @click.argument("url", type=str)
 @click.option("directory", "-d", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination Folder")
 @click.option("--dry-run", "-dr", is_flag=True, help="Dry run, without any download just resolve the URL")
@@ -124,8 +124,8 @@ async def show(directory):
     LOGGER.info(await db.as_json())
 
 
-main.add_command(track)
-main.add_command(database)
+youtube.add_command(track)
+youtube.add_command(database)
 
 if __name__ == "__main__":
-    main()
+    youtube()
