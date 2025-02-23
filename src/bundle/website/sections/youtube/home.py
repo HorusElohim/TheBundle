@@ -71,6 +71,3 @@ async def download_track(websocket: WebSocket):
 
         await websocket.send_text(json.dumps({"type": "completed"}))
         break
-
-
-LOGGER.debug("initialized")
