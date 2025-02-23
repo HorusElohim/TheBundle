@@ -17,8 +17,9 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from typing import ParamSpec, TypeVar
+
 from .. import logger
-from typing import TypeVar, ParamSpec
 
 log = logger.get_logger(__name__)
 
@@ -74,12 +75,12 @@ def log_call_exception(func, args, kwargs, exception, stacklevel):
 def log_cancelled_exception(func, args, kwargs, exception, stacklevel):
     log.warning(
         "%s  %s.%s(%s, %s) -> async cancel exception: %s",
-        logger.Emoji.warning,
+        log.Emoji.warning,
         func.__module__,
         get_callable_name(func),
         args,
         kwargs,
         exception,
-        exc_info=False,
+        exc_info=True,
         stacklevel=stacklevel - 1,
     )
