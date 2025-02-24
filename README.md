@@ -4,9 +4,7 @@
 [![PyPI Release 🐍](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml)
 [![auto reference update 🔄](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml)
 
-# THE BUNDLE
-
-![The Bundle Dream](thebundle.png)
+![The Bundle Dream](thebundle.gif)
 
 
 ## Overview
