@@ -3,7 +3,7 @@ import time
 from pathlib import Path
 from random import randint
 
-import asyncclick as click
+import rich_click as click
 
 from bundle.youtube import LOGGER
 from bundle.youtube.database import Database

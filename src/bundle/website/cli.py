@@ -1,4 +1,5 @@
-import click
+import rich_click as click
+
 import uvicorn
 from . import get_app
 
