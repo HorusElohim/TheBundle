@@ -20,8 +20,9 @@
 import asyncio
 from functools import wraps
 from typing import Callable, TypeVar, ParamSpec, Awaitable, cast
+from .. import logger
 
-from .common import log_call_success, log_call_exception, log_cancelled_exception
+log = logger.get_logger(__name__)
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -31,19 +32,22 @@ async def call(
     func: Callable[P, R] | Callable[P, Awaitable[R]],
     *args: P.args,
     stacklevel: int = 3,  # type: ignore
+    log_level: logger.Level | None = None,
     **kwargs: P.kwargs,
 ) -> tuple[R | None, BaseException | None]:
     try:
         result = await (
             asyncio.to_thread(func, *args, **kwargs) if not asyncio.iscoroutinefunction(func) else func(*args, **kwargs)
         )
-        log_call_success(func, args, kwargs, result, stacklevel)
+        if log_level is None:
+            log_level = logger.Level.DEBUG
+        log.callable_success(func, args, kwargs, result, stacklevel, log_level)
         return cast(R, result), None
     except asyncio.CancelledError as cancel_exception:
-        log_cancelled_exception(func, args, kwargs, cancel_exception, stacklevel)
+        log.callable_exception(func, args, kwargs, cancel_exception, stacklevel)
         return None, cancel_exception
     except Exception as exception:
-        log_call_exception(func, args, kwargs, exception, stacklevel)
+        log.callable_cancel(func, args, kwargs, exception, stacklevel)
         return None, exception
 
 
@@ -51,29 +55,46 @@ async def call_raise(
     func: Callable[P, R] | Callable[P, Awaitable[R]],
     *args: P.args,
     stacklevel: int = 4,  # type: ignore
+    log_level: logger.Level | None = None,
     **kwargs: P.kwargs,
 ) -> R:
-    result, error = await call(func, *args, stacklevel=stacklevel, **kwargs)
+    result, error = await call(func, *args, stacklevel=stacklevel, log_level=log_level, **kwargs)
     if error:
         raise error
     return cast(R, result)
 
 
 def decorator_call(
-    func: Callable[P, R] | Callable[P, Awaitable[R]],
+    func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
+    *,
+    log_level: logger.Level | None = None,
 ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
-    @wraps(func)
-    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
-        return await call(func, *args, **kwargs, stacklevel=5)
+    def actual_decorator(
+        f: Callable[P, R] | Callable[P, Awaitable[R]]
+    ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
+        @wraps(f)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
+            return await call(f, *args, stacklevel=5, log_level=log_level, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    if func is None:
+        return actual_decorator
+    return actual_decorator(func)
 
 
 def decorator_call_raise(
-    func: Callable[P, R] | Callable[P, Awaitable[R]],
+    func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
+    *,
+    log_level: logger.Level | None = None,
 ) -> Callable[P, Awaitable[R]]:
-    @wraps(func)
-    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        return await call_raise(func, *args, **kwargs, stacklevel=5)
+    def actual_decorator(f: Callable[P, R] | Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+        @wraps(f)
+        async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            return await call_raise(f, *args, stacklevel=5, log_level=log_level, **kwargs)
 
-    return wrapper
+        return wrapper
+
+    if func is None:
+        return actual_decorator
+    return actual_decorator(func)
