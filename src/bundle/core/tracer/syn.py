@@ -19,18 +19,21 @@
 
 import asyncio
 from functools import wraps
-from typing import Callable, Concatenate, ParamSpec, TypeVar, cast
+from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
 
-from .common import log_call_exception, log_call_success
+from .. import logger
 
 P = ParamSpec("P")
 R = TypeVar("R")
 
+log = logger.get_logger(__name__)
+
 
 def call(
-    func: Callable[Concatenate[P], R],
+    func: Callable[P, R] | Callable[P, Awaitable[R]],
     *args: P.args,
     stacklevel: int = 3,  # type:ignore
+    log_level: logger.Level | None = None,
     **kwargs: P.kwargs,
 ) -> tuple[R | None, Exception | None]:
     result: None | R = None
@@ -40,9 +43,11 @@ def call(
             result = asyncio.run(func(*args, **kwargs))
         else:
             result = func(*args, **kwargs)
-        log_call_success(func, args, kwargs, result, stacklevel)
+        if log_level is None:
+            log_level = logger.Level.DEBUG
+        log.callable_success(func, args, kwargs, result, stacklevel, log_level)
     except Exception as exception:
-        log_call_exception(func, args, kwargs, exception, stacklevel)
+        log.callable_exception(func, args, kwargs, exception, stacklevel)
         return None, exception
 
     return result, None
@@ -52,25 +57,56 @@ def call_raise(
     func: Callable[Concatenate[P], R],
     *args: P.args,
     stacklevel: int = 3,  # type:ignore
+    log_level: logger.Level | None = None,
     **kwargs: P.kwargs,
 ) -> R:
-    result, exception = call(func, *args, stacklevel=stacklevel, **kwargs)
+    result, exception = call(func, *args, stacklevel=stacklevel, log_level=log_level, **kwargs)
     if exception:
         raise exception
     return cast(R, result)
 
 
-def decorator_call(func: Callable[P, R]) -> Callable[P, tuple[R | None, Exception | None]]:
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
-        return call(func, *args, **kwargs, stacklevel=5)
+def decorator_call(
+    func: Callable[P, R] | None = None,
+    *,
+    log_level: logger.Level | None = None,
+) -> Callable[..., object]:
+    """
+    Decorator that wraps a callable to log its outcome.
+    Returns a tuple (result, exception).
+    Can be used with or without parameters.
+    """
 
-    return wrapper
+    def actual_decorator(f: Callable[P, R]) -> Callable[P, tuple[R | None, Exception | None]]:
+        @wraps(f)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
+            return call(f, *args, **kwargs, stacklevel=5, log_level=log_level)
+
+        return wrapper
+
+    if func is None:
+        return actual_decorator
+    return actual_decorator(func)
 
 
-def decorator_call_raise(func: Callable[P, R]) -> Callable[P, R]:
-    @wraps(func)
-    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-        return call_raise(func, *args, **kwargs, stacklevel=5)
+def decorator_call_raise(
+    func: Callable[P, R] | None = None,
+    *,
+    log_level: logger.Level | None = None,
+) -> R:
+    """
+    Decorator that wraps a callable to log its outcome.
+    Returns the result directly or raises the logged exception.
+    Can be used with or without parameters.
+    """
 
-    return wrapper
+    def actual_decorator(f: Callable[P, R]) -> Callable[P, R]:
+        @wraps(f)
+        def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+            return call_raise(f, *args, **kwargs, stacklevel=5, log_level=log_level)
+
+        return wrapper
+
+    if func is None:
+        return actual_decorator
+    return actual_decorator(func)

@@ -21,12 +21,31 @@ import json
 import logging
 import time
 from datetime import datetime, timezone
-from pathlib import Path
-from typing import cast
 from enum import IntEnum
+from pathlib import Path
+from typing import Any, Callable, Mapping, cast
 
 from colorama import Fore, Style
 from rich.logging import RichHandler  # Use Rich's handler for improved console output
+
+
+def get_callable_name(callable_obj):
+    """
+    Helper function to retrieve the name of a callable for logging purposes.
+
+    Args:
+        callable_obj: The callable object whose name is to be retrieved.
+
+    Returns:
+        str: The qualified name of the callable.
+    """
+    if hasattr(callable_obj, "__qualname__"):
+        return callable_obj.__qualname__
+    elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
+        return callable_obj.__class__.__qualname__
+    elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):
+        return callable_obj.__call__.__qualname__
+    return str(callable_obj)
 
 
 class Emoji:
@@ -77,6 +96,92 @@ class BundleLogger(logging.getLoggerClass()):
     def testing(self, msg: str, *args, stacklevel=2, **kwargs) -> None:
         if self.isEnabledFor(Level.TESTING):
             self._log(Level.TESTING, msg, args, stacklevel=stacklevel, **kwargs)
+
+    def callable_success(
+        self,
+        func: Callable[..., Any],
+        args: Any,
+        kwargs: Mapping[str, Any],
+        result: Any,
+        stacklevel: int = 2,
+        level: Level = Level.DEBUG,
+    ) -> None:
+        """
+        Log a successful call at the given logging level.
+
+        Args:
+            func: The callable that was executed.
+            args: Positional arguments passed to the callable.
+            kwargs: Keyword arguments passed to the callable.
+            result: The result returned by the callable.
+            stacklevel: The stack level for the log record.
+            level: The logging level to use (default: DEBUG).
+        """
+        if self.isEnabledFor(level):
+            self._log(
+                level,
+                "%s  %s.%s(%s, %s) -> %s",
+                (Emoji.success, func.__module__, get_callable_name(func), args, kwargs, result),
+                stacklevel=stacklevel,
+            )
+
+    def callable_exception(
+        self,
+        func: Callable[..., Any],
+        args: Any,
+        kwargs: Mapping[str, Any],
+        exception: Exception,
+        stacklevel: int = 2,
+        level: Level = Level.ERROR,
+    ) -> None:
+        """
+        Log an exception raised during a call at the given logging level.
+
+        Args:
+            func: The callable that raised the exception.
+            args: Positional arguments passed to the callable.
+            kwargs: Keyword arguments passed to the callable.
+            exception: The exception that was raised.
+            stacklevel: The stack level for the log record.
+            level: The logging level to use (default: ERROR).
+        """
+        if self.isEnabledFor(level):
+            self._log(
+                level,
+                "%s  %s.%s(%s, %s). Exception: %s",
+                (Emoji.failed, func.__module__, get_callable_name(func), args, kwargs, exception),
+                exc_info=True,
+                stacklevel=stacklevel,
+            )
+
+    def callable_cancel(
+        self,
+        func: Callable[..., Any],
+        args: Any,
+        kwargs: Mapping[str, Any],
+        exception: Exception,
+        stacklevel: int = 2,
+        level: Level = Level.WARNING,
+    ) -> None:
+        """
+        Log a cancelled asynchronous call at the given logging level.
+
+        Args:
+            func: The callable that was cancelled.
+            args: Positional arguments passed to the callable.
+            kwargs: Keyword arguments passed to the callable.
+            exception: The async cancel exception.
+            stacklevel: The stack level for the log record.
+            level: The logging level to use (default: WARNING).
+        """
+        if self.isEnabledFor(level):
+            self._log(
+                level,
+                "%s  %s.%s(%s, %s) -> async cancel exception: %s",
+                (Emoji.warning, func.__module__, get_callable_name(func), args, kwargs, exception),
+                exc_info=True,
+                stacklevel=stacklevel - 1,
+            )
 
 
 # Set BundleLogger as the default logger class
@@ -195,15 +300,56 @@ def setup_root_logger(
 
 
 # Example Usage
+# Try me python logger.py
 if __name__ == "__main__":
-    logger = setup_root_logger(colored_output=True, log_path=Path("./logs"), to_json=False)
+    import asyncio
+
+    # -----------------------------------------------------------------------------
+    # Setup Logger
+    # -----------------------------------------------------------------------------
+    logger = setup_root_logger(colored_output=True, log_path=Path("./logs"), to_json=True, level=Level.VERBOSE)
+
+    # -----------------------------------------------------------------------------
+    # Standard Logging Examples
+    # -----------------------------------------------------------------------------
     logger.verbose("This is a verbose message.")
-    logger.testing("This is a testing message")
+    logger.testing("This is a testing message.")
     logger.debug("This is a debug message.")
     logger.info("This is an info message.")
     logger.warning("This is a warning.")
+
+    # -----------------------------------------------------------------------------
+    # Callable Logging Examples
+    # -----------------------------------------------------------------------------
+    # Define a sample function.
+    def sample_func(x, y):
+        return x + y
+
+    # Example: Log a successful callable execution.
+    result = sample_func(3, 4)
+    logger.callable_success(sample_func, (3, 4), {}, result, stacklevel=3)
+
+    # -----------------------------------------------------------------------------
+    # Exception Logging Examples
+    # -----------------------------------------------------------------------------
+    logger.info("------------------------ Exception Demo ------------------------")
+
+    logger.critical("This is critical.")
+
+    # Example: Log an exception during callable execution.
+    try:
+        raise ValueError("Sample exception")
+    except Exception as exc:
+        logger.callable_exception(sample_func, (3, 4), {}, exc, stacklevel=3)
+
+    # Example: Log a cancelled asynchronous callable.
+    try:
+        raise asyncio.CancelledError("Sample cancelled exception")
+    except asyncio.CancelledError as exc:
+        logger.callable_cancel(sample_func, (3, 4), {}, exc, stacklevel=3)
+
+    # Example: Log an exception.
     try:
         1 / 0
     except Exception as e:
         logger.error("This is an error with an exception.", exc_info=True)
-    logger.critical("This is critical.")
