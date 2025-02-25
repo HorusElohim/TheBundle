@@ -25,9 +25,9 @@ from . import tracer
 
 from . import utils
 from . import data
-from .data import Data
 
+from .data import Data
 from .entity import Entity
 from .process import Process, ProcessStream, ProcessResult, ProcessError
 from .downloader import Downloader, DownloaderTQDM
-from .socket import Socket
+from .sockets import Socket
