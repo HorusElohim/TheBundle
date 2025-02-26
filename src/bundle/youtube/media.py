@@ -28,9 +28,10 @@ from mutagen.mp3 import MP3 as MutagenMP3
 from mutagen.mp4 import MP4 as MutagenMP4
 from mutagen.mp4 import MP4Cover
 
-from ..core import tracer
-from . import LOGGER
+from ..core import tracer, logger
 from .data import MP3TrackData, MP4TrackData, TrackData
+
+log = logger.get_logger(__name__)
 
 
 class MP3(MP3TrackData):
@@ -135,18 +136,18 @@ class MP4(MP4TrackData):
 
     async def _as_mp3(self) -> MP3:
         """Extract the MP4 file to an MP3 file."""
-        LOGGER.debug("MP3 audio extraction - %s", self.filename)
+        log.debug("MP3 audio extraction - %s", self.filename)
         mp3_path = self.path.with_suffix(".mp3")
         (
             ffmpeg.input(str(self.path))
             .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
             .run(overwrite_output=True)
         )
-        LOGGER.debug("extraction completed - %s", self.filename)
+        log.debug("extraction completed - %s", self.filename)
         mp3 = MP3(title=self.title, author=self.author, path=mp3_path, duration=self.duration)
         thumbnail = await self.get_thumbnail()
         await mp3.save(thumbnail=thumbnail)
-        LOGGER.debug("MP3 metadata saved - %s", mp3_path)
+        log.debug("MP3 metadata saved - %s", mp3_path)
         return mp3
 
     async def as_mp3(self) -> MP3:
