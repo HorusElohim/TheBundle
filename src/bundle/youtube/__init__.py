@@ -2,10 +2,6 @@ import os
 import platform
 from pathlib import Path
 
-from ..core import logger
-
-LOGGER = logger.setup_root_logger(name=__name__, level=logger.Level.DEBUG)
-
 
 def get_app_data_path(app_name: str) -> Path:
     system = platform.system()
