@@ -5,7 +5,7 @@ from random import randint
 
 import rich_click as click
 
-from bundle.youtube import LOGGER
+from bundle.core import logger, tracer
 from bundle.youtube.database import Database
 from bundle.youtube.media import MP3, MP4
 from bundle.youtube.resolver import resolve
@@ -15,7 +15,8 @@ from . import YOUTUBE_PATH
 
 
 @click.group()
-def youtube():
+@tracer.Sync.decorator.call_raise
+async def youtube():
     pass
 
 
@@ -67,12 +68,14 @@ async def download(url, directory, dry_run, mp3, mp3_only):
 
 
 @click.group()
-def track():
+@tracer.Sync.decorator.call_raise
+async def track():
     pass
 
 
 @track.command()
 @click.argument("track_path", type=click.Path(exists=True))
+@tracer.Sync.decorator.call_raise
 async def info(track_path: Path):
     track = None
     track_path = Path(track_path)
@@ -88,6 +91,7 @@ async def info(track_path: Path):
 
 @track.command()
 @click.argument("track_paths", nargs=-1, type=click.Path(exists=True))
+@tracer.Sync.decorator.call_raise
 async def extract_audio(track_paths):
     async def extract_mp4_audio(track_path: Path):
         track_path = Path(track_path)
@@ -112,12 +116,14 @@ async def extract_audio(track_paths):
 
 
 @click.group()
-def database():
+@tracer.Sync.decorator.call_raise
+async def database():
     pass
 
 
 @database.command()
 @click.option("-d", "directory", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination directory")
+@tracer.Sync.decorator.call_raise
 async def show(directory):
     db = Database(path=directory)
     await db.load()

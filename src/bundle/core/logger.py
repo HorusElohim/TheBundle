@@ -67,6 +67,7 @@ class Emoji:
 # Log Levels
 class Level(IntEnum):
     NOTSET = 0
+    EXPECTED_EXCEPTION = 3
     TESTING = 5
     VERBOSE = 7
     DEBUG = 10
@@ -77,6 +78,7 @@ class Level(IntEnum):
     FATAL = CRITICAL
 
 
+logging.addLevelName(Level.EXPECTED_EXCEPTION, "EXPECTED_EXCEPTION")
 logging.addLevelName(Level.TESTING, "TESTING")
 logging.addLevelName(Level.VERBOSE, "VERBOSE")
 

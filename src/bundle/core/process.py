@@ -63,7 +63,7 @@ class Process(Entity):
 
     _process: Optional[asyncio.subprocess.Process] = PrivateAttr(default=None)
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def __call__(self, command: str, **kwargs) -> ProcessResult:
         """
         Executes a shell command asynchronously and captures the output.
@@ -82,7 +82,7 @@ class Process(Entity):
 
     async def _internal_call_(self, command: str, **kwargs) -> ProcessResult:
 
-        self._process = await tracer.asyn.call_raise(
+        self._process = await tracer.Async.call_raise(
             asyncio.create_subprocess_shell,
             command,
             stdout=asyncio.subprocess.PIPE,
@@ -90,7 +90,7 @@ class Process(Entity):
             **kwargs,
         )
 
-        stdout, stderr = await tracer.asyn.call_raise(
+        stdout, stderr = await tracer.Async.call_raise(
             self._process.communicate,
         )
 
@@ -111,7 +111,7 @@ class Process(Entity):
 class ProcessStream(Process):
     """Executes a command asynchronously and streams output line by line."""
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def __call__(self, command: str, **kwargs) -> ProcessResult:
         """
         Executes the command and streams output line by line.
@@ -129,10 +129,10 @@ class ProcessStream(Process):
         stdout_lines = []
         stderr_lines = []
 
-        return await tracer.asyn.call_raise(self._internal_call_, command, stdout_lines, stderr_lines, **kwargs)
+        return await tracer.Async.call_raise(self._internal_call_, command, stdout_lines, stderr_lines, **kwargs)
 
     async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
-        self._process = await tracer.asyn.call_raise(
+        self._process = await tracer.Async.call_raise(
             asyncio.create_subprocess_shell,
             command,
             stdout=asyncio.subprocess.PIPE,
@@ -181,7 +181,7 @@ class ProcessStream(Process):
             async for line in stream:
                 str_line = line.decode("utf-8")
                 accumulator.append(str_line)
-                await tracer.asyn.call_raise(handler, str_line)
+                await tracer.Async.call_raise(handler, str_line)
         except Exception as e:
             logger.error(f"Exception while reading stream: {e}")
 

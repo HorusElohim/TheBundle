@@ -28,7 +28,7 @@ TTTTTT  T:::::T  TTTTTT h::::h hhhhh           eeeeeeeeeeee    B::::B     B:::::
 
 
 @click.group(name="bundle")
-@tracer.syn.decorator_call_raise
+@tracer.Sync.decorator.call_raise
 async def main():
     click.echo(click.style(banner, fg="green"))
 

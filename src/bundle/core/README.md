@@ -14,13 +14,13 @@ The `logger` module is a custom logging framework with enhanced features like co
 
 **Example Usage:**
 ```python
-from bundle.core import from bundle.core import logger
+from bundle.core import logger
 
-logger = get_logger("example")
-logger.testing("This is a testing message.")
-logger.verbose("This is a verbose message.")
-logger.info("This is an info message.")
-logger.error("This is an error message.")
+log = logger.get_logger("example")
+log.testing("This is a testing message.")
+log.verbose("This is a verbose message.")
+log.info("This is an info message.")
+log.error("This is an error message.")
 ```
 
 ### 2. `tracer` 📊
@@ -30,26 +30,41 @@ The `tracer` module facilitates unified tracing for synchronous and asynchronous
 - 🔎 Log success and failure of function calls.
 - 📊 Automatically capture stack traces for debugging.
 - 🔧 Decorators for seamless integration into functions and methods.
+- ✅ Supports separate logging levels for normal execution (`log_level`) and exceptions (`exc_log_level`).
 
 **Example Usage:**
+
+#### Synchronous Usage
 ```python
 from bundle.core import tracer
 
-async def my_function():
-    await tracer.asyn.call_raise(some_async_function, arg1, arg2)
+def my_function():
+    return tracer.Sync.call_raise(sum, [1, 2, 3])
 
-@tracer.asyn.decorator_call_raise
-async def my_function_decorated():
+@tracer.Sync.decorator.call_raise
+def decorated_function():
+    return sum([1, 2, 3])
+```
+
+#### Asynchronous Usage
+```python
+from bundle.core import tracer
+
+async def my_async_function():
+    return await tracer.Async.call_raise(some_async_function, arg1, arg2)
+
+@tracer.Async.decorator.call_raise
+async def my_async_function_decorated():
     await ...
 ```
 
-### 3. `data` 🔢
+### 3. `data` 💻
 The `data` module provides advanced data handling capabilities for serialization, validation, and JSON schema generation.
 
 **Features:**
 - ✅ Robust Pydantic-based data validation.
 - 🔄 Serialization to and from JSON.
-- 📜 JSON schema generation.
+- 📝 JSON schema generation.
 
 **Example Usage:**
 ```python
@@ -64,7 +79,7 @@ print(user.json())
 print(user.json_schema())
 ```
 
-### 4. `entity` 🪟
+### 4. `entity` 🫏️
 The `entity` module extends the `data` module, introducing lifecycle management for objects.
 
 **Features:**
@@ -116,7 +131,7 @@ downloader = downloader.Downloader(url="https://example.com/file.zip", destinati
 await downloader.download()
 ```
 
-### 7. `socket` 🪟
+### 7. `socket` ⚡
 The `socket` module implements a simplified interface for ZeroMQ sockets, supporting various communication patterns.
 
 **Features:**
@@ -137,7 +152,7 @@ The `browser` module is a wrapper for Playwright, simplifying browser automation
 
 **Features:**
 - 🔅 Launch headless browsers (Chromium, Firefox, WebKit).
-- 🗒 Create and manage contexts and pages.
+- 📒 Create and manage contexts and pages.
 - 🛡️ Streamlined error handling and logging.
 
 **Example Usage:**
@@ -155,16 +170,17 @@ The `utils` module provides utility functions for date formatting, path handling
 
 **Features:**
 - ⏳ Duration formatting in human-readable units.
-- 🔐 Path existence validation and creation.
+- 🔒 Path existence validation and creation.
 
 **Example Usage:**
 ```python
 from bundle.core import utils
 
 duration = utils.format_duration_ns(123456789)
-print(duration)  # Outputs: '2m:3s:456ms:789µs'
+print(duration)  # Outputs: '2m:3s:456ms:789μs'
 ```
 
 ---
 
 For a detailed breakdown of module capabilities and advanced configurations, refer to the respective module documentation.
+

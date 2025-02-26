@@ -7,20 +7,20 @@ log = logger.get_logger(__name__)
 
 
 @click.group()
-@tracer.syn.decorator_call
+@tracer.Sync.decorator.call_raise
 async def scraper():
     pass
 
 
 @click.group()
-@tracer.syn.decorator_call
+@tracer.Sync.decorator.call_raise
 async def torrent():
     pass
 
 
 @torrent.command()
 @click.argument("name", type=str)
-@tracer.syn.decorator_call
+@tracer.Sync.decorator.call_raise
 async def search(name: str):
     lib = sites.site_1337
     log.info(f"Searching {name} in 1337 ...")
