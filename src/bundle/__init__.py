@@ -27,7 +27,7 @@ from . import core
 
 BUNDLE_LOGGER = core.logger.setup_root_logger(
     name=__name__,
-    level=core.logger.Level.INFO,
+    level=core.logger.Level.DEBUG,
 )
 
 from . import testing
