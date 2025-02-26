@@ -145,7 +145,7 @@ class Data(BaseModel):
         Raises:
             Exception: If the model instantiation fails.
         """
-        return await tracer.asyn.call_raise(cls, **data)
+        return await tracer.Async.call_raise(cls, **data)
 
     async def as_dict(self) -> dict:
         """
@@ -160,11 +160,11 @@ class Data(BaseModel):
         Raises:
             Exception: If the model instantiation from the JSON file fails.
         """
-        return await tracer.asyn.call_raise(self.model_dump)
+        return await tracer.Async.call_raise(self.model_dump)
 
     @classmethod
     async def _from_json_path(cls: Type[D], json_path: Path) -> D:
-        json_str = await tracer.asyn.call_raise(json_path.read_text)
+        json_str = await tracer.Async.call_raise(json_path.read_text)
         return await cls._from_json_str(json_str)
 
     @classmethod
@@ -181,7 +181,7 @@ class Data(BaseModel):
         Raises:
             Exception: If the model instantiation from the JSON string fails.
         """
-        return await tracer.asyn.call_raise(cls.model_validate_json, json_str)
+        return await tracer.Async.call_raise(cls.model_validate_json, json_str)
 
     @classmethod
     async def from_json(cls: Type[D], json_source: str | Path) -> D:
@@ -215,7 +215,7 @@ class Data(BaseModel):
         Raises:
             Exception: If serialization to JSON fails.
         """
-        return await tracer.asyn.call_raise(self.model_dump_json, indent=4)
+        return await tracer.Async.call_raise(self.model_dump_json, indent=4)
 
     async def dump_json(self, path: Path) -> None:
         """
@@ -228,7 +228,7 @@ class Data(BaseModel):
             Exception: If writing to the file fails.
         """
         json_str = await self.as_json()
-        await tracer.asyn.call_raise(path.write_text, json_str, encoding="utf-8")
+        await tracer.Async.call_raise(path.write_text, json_str, encoding="utf-8")
 
     @classmethod
     async def as_jsonschema(cls, mode: json_schema.JsonSchemaMode = "serialization") -> dict:
@@ -244,7 +244,7 @@ class Data(BaseModel):
         Raises:
             Exception: If generating the JSON Schema fails.
         """
-        return await tracer.asyn.call_raise(cls.model_json_schema, mode=mode)
+        return await tracer.Async.call_raise(cls.model_json_schema, mode=mode)
 
     @classmethod
     async def as_jsonschema_str(cls, mode: json_schema.JsonSchemaMode = "serialization") -> str:
@@ -261,7 +261,7 @@ class Data(BaseModel):
             Exception: If serializing the JSON Schema to a string fails.
         """
         schema = await cls.as_jsonschema(mode)
-        return await tracer.asyn.call_raise(json.dumps, schema, indent=4)
+        return await tracer.Async.call_raise(json.dumps, schema, indent=4)
 
     async def dump_jsonschema(self, path: Path, mode: json_schema.JsonSchemaMode = "serialization") -> None:
         """
@@ -275,4 +275,4 @@ class Data(BaseModel):
             Exception: If writing the JSON Schema to the file fails.
         """
         schema_str = await self.as_jsonschema_str(mode)
-        await tracer.asyn.call_raise(path.write_text, schema_str)
+        await tracer.Async.call_raise(path.write_text, schema_str)

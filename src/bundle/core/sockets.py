@@ -96,7 +96,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
     async def __aexit__(self, exc_type, exc_value, traceback) -> None:
         await self.close()
 
-    @tracer.syn.decorator_call_raise
+    @tracer.Sync.decorator.call_raise
     def bind(self: T_Socket, endpoint: str) -> T_Socket:
         """
         Bind the socket to an endpoint.
@@ -112,7 +112,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         self.socket.bind(endpoint)
         return self
 
-    @tracer.syn.decorator_call_raise
+    @tracer.Sync.decorator.call_raise
     def connect(self: T_Socket, endpoint: str) -> T_Socket:
         """
         Connect the socket to an endpoint.
@@ -128,7 +128,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         self.socket.connect(endpoint)
         return self
 
-    @tracer.syn.decorator_call_raise
+    @tracer.Sync.decorator.call_raise
     def subscribe(self: T_Socket, topic: bytes = b"") -> T_Socket:
         """
         Subscribe to a topic (for SUB and DISH sockets).
@@ -151,17 +151,17 @@ class Socket(entity.Entity, Generic[T_Socket]):
         self.socket.setsockopt(zmq.SUBSCRIBE, topic)
         return self
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def close(self) -> None:
         """
         Close the ZeroMQ socket and clean up resources.
         """
         if self.is_closed:
             return
-        await tracer.asyn.call_raise(self.socket.close)
+        await tracer.Async.call_raise(self.socket.close)
         self.is_closed = True
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def send(self, data: bytes) -> None:
         """
         Send data through the ZeroMQ socket.
@@ -174,7 +174,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         """
         await self.socket.send(data)
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def recv(self) -> bytes:
         """
         Receive data from the ZeroMQ socket.
@@ -187,7 +187,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         """
         return await self.socket.recv()
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def send_multipart(self, data: list[bytes]) -> None:
         """
         Send a multipart message through the ZeroMQ socket.
@@ -203,7 +203,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
 
         await self.socket.send_multipart(data)
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def recv_multipart(self) -> list[bytes]:
         """
         Receive a multipart message from the ZeroMQ socket.
@@ -256,7 +256,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
             raise
 
     @classmethod
-    @tracer.syn.decorator_call_raise
+    @tracer.Sync.decorator.call_raise
     def pair(cls: Type[T_Socket]) -> T_Socket:
         """
         ZMQ PAIR

@@ -54,7 +54,7 @@ class MP3(MP3TrackData):
         mp3.save()
 
     async def save(self, thumbnail: None | bytes = None):
-        return await tracer.asyn.call_raise(self._save, thumbnail)
+        return await tracer.Async.call_raise(self._save, thumbnail)
 
     def _get_thumbnail(self) -> bytes:
         mp3 = MutagenMP3(self.path, ID3=ID3)
@@ -64,7 +64,7 @@ class MP3(MP3TrackData):
         return thumbnail_data
 
     async def get_thumbnail(self) -> bytes:
-        return await tracer.asyn.call_raise(self._get_thumbnail)
+        return await tracer.Async.call_raise(self._get_thumbnail)
 
     @classmethod
     def _load(cls, path: Path) -> MP3:
@@ -80,7 +80,7 @@ class MP3(MP3TrackData):
 
     @classmethod
     async def load(cls, path: Path) -> MP3 | None:
-        return await tracer.asyn.call_raise(cls._load, path)
+        return await tracer.Async.call_raise(cls._load, path)
 
 
 class MP4(MP4TrackData):
@@ -101,7 +101,7 @@ class MP4(MP4TrackData):
         mp4.save()
 
     async def save(self, thumbnail: None | bytes = None):
-        return await tracer.asyn.call_raise(self._save, thumbnail)
+        return await tracer.Async.call_raise(self._save, thumbnail, log_level=logger.Level.VERBOSE)
 
     @classmethod
     def _load(cls, path: Path) -> MP4 | None:
@@ -127,11 +127,11 @@ class MP4(MP4TrackData):
         return thumbnail_data
 
     async def get_thumbnail(self) -> bytes | None:
-        return await tracer.asyn.call_raise(self._get_thumbnail)
+        return await tracer.Async.call_raise(self._get_thumbnail)
 
     @classmethod
     async def load(cls, path: Path) -> MP4 | None:
-        return await tracer.asyn.call_raise(cls._load, path)
+        return await tracer.Async.call_raise(cls._load, path)
 
     async def _as_mp3(self) -> MP3:
         """Extract the MP4 file to an MP3 file."""
@@ -150,4 +150,4 @@ class MP4(MP4TrackData):
         return mp3
 
     async def as_mp3(self) -> MP3:
-        return await tracer.asyn.call_raise(self._as_mp3)
+        return await tracer.Async.call_raise(self._as_mp3)
