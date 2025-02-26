@@ -10,13 +10,13 @@ log = logger.get_logger(__name__)
 
 
 @click.group()
-@tracer.syn.decorator_call
+@tracer.Sync.decorator.call_raise
 async def testing():
     pass
 
 
 @click.group()
-@tracer.syn.decorator_call
+@tracer.Sync.decorator.call_raise
 async def python():
     pass
 
@@ -36,26 +36,31 @@ class TestProcess(process.Process):
 
 
 @python.command("pytest")
-@tracer.syn.decorator_call
-async def pytest_cmd():
+@tracer.Sync.decorator.call_raise
+@click.option("--show-exc", is_flag=True, help="Show expected trace Exceptions")
+async def pytest_cmd(show_exc: bool):
     """
     Run pytest directly from this CLI instance using pytest.main().
     This runs the tests in a separate thread.
     """
     # Lower the logger level to show all messages during testing.
-    bundle.BUNDLE_LOGGER.setLevel(logger.Level.NOTSET)
+    bundle.BUNDLE_LOGGER.setLevel(logger.Level.VERBOSE)
+
+    # Avoid show tracer expected exception
+    if not show_exc:
+        bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = logger.Level.EXPECTED_EXCEPTION
 
     bundle_folder = bundle.Path(bundle.__path__[0])
     tests_folder = bundle_folder.parent.parent / "tests"
     log.debug("bundle_folder=%s, tests_folder=%s", str(bundle_folder), tests_folder)
 
-    async def run_pytest():
+    def run_pytest():
         import nest_asyncio
 
         nest_asyncio.apply()
-        return tracer.syn.call_raise(pytest.main, [str(tests_folder)])
+        return tracer.Sync.call_raise(pytest.main, [str(tests_folder)])
 
-    await run_pytest()
+    run_pytest()
 
     log.info("All tests passed successfully.")
 

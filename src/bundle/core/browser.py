@@ -109,7 +109,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         """
         return cls(browser_type=BrowserType.WEBKIT, headless=headless, **kwargs)
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def __aenter__(self: T_Browser) -> T_Browser:
         """
         Enter the asynchronous context manager, starting Playwright and launching the browser.
@@ -145,11 +145,11 @@ class Browser(entity.Entity, Generic[T_Browser]):
 
         try:
             if self.browser_type == BrowserType.CHROMIUM:
-                self.browser = await tracer.asyn.call_raise(self._playwright.chromium.launch, headless=self.headless)
+                self.browser = await tracer.Async.call_raise(self._playwright.chromium.launch, headless=self.headless)
             elif self.browser_type == BrowserType.FIREFOX:
-                self.browser = await tracer.asyn.call_raise(self._playwright.firefox.launch, headless=self.headless)
+                self.browser = await tracer.Async.call_raise(self._playwright.firefox.launch, headless=self.headless)
             elif self.browser_type == BrowserType.WEBKIT:
-                self.browser = await tracer.asyn.call_raise(self._playwright.webkit.launch, headless=self.headless)
+                self.browser = await tracer.Async.call_raise(self._playwright.webkit.launch, headless=self.headless)
             else:
                 raise ValueError(f"Unsupported browser type: {self.browser_type.value}")
 
@@ -169,7 +169,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             )
             raise
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def new_context(self: T_Browser, *args, **kwargs) -> T_Browser:
         """
         Create a new browser context.
@@ -185,7 +185,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         logger.debug("%s New browser context created.", logger.Emoji.success)
         return self
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def new_page(self: T_Browser) -> Page:
         """
         Create a new page within a new browser context.
@@ -199,7 +199,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         logger.debug("%s New page created.", logger.Emoji.success)
         return page
 
-    @tracer.asyn.decorator_call_raise
+    @tracer.Async.decorator.call_raise
     async def close(self: T_Browser) -> T_Browser:
         """
         Close all browser contexts and the browser itself.

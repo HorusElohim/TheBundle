@@ -24,10 +24,9 @@ import aiohttp
 from aiofiles import open as aio_open
 from tqdm.asyncio import tqdm_asyncio
 
-from ..core import tracer
-from ..core.logger import Emoji, get_logger
+from ..core import tracer, logger
 
-logger = get_logger(__name__)
+log = logger.get_logger(__name__)
 
 
 class Downloader:
@@ -85,31 +84,31 @@ class Downloader:
             async with aiohttp.ClientSession() as session:
                 async with session.get(self.url) as response:
                     if response.status != 200:
-                        logger.error(f"Error downloading {self.url}. Status: {response.status}")
+                        log.error(f"Error downloading {self.url}. Status: {response.status}")
                         return False
 
                     byte_size = int(response.headers.get("content-length", 0))
-                    await tracer.asyn.call_raise(self.start, byte_size)
+                    await tracer.Async.call_raise(self.start, byte_size)
 
                     if self.destination:
                         self.destination.parent.mkdir(parents=True, exist_ok=True)
                         async with aio_open(self.destination, "wb") as fd:
                             async for chunk in response.content.iter_chunked(self.chunk_size):
                                 await fd.write(chunk)
-                                await tracer.asyn.call_raise(self.update, (len(chunk)))
+                                await tracer.Async.call_raise(self.update, len(chunk), log_level=logger.Level.VERBOSE)
                                 await asyncio.sleep(0)
                     else:
                         async for chunk in response.content.iter_chunked(self.chunk_size):
                             self.buffer.extend(chunk)
-                            await tracer.asyn.call_raise(self.update, len(chunk))
+                            await tracer.Async.call_raise(self.update, len(chunk))
                             await asyncio.sleep(0)
                     status = True
 
         except Exception as ex:
-            logger.error(f"Error downloading {self.url}. Exception: {ex}")
+            log.error(f"Error downloading {self.url}. Exception: {ex}")
         finally:
-            await tracer.asyn.call_raise(self.end)
-            logger.debug("%s", Emoji.status(status))
+            await tracer.Async.call_raise(self.end)
+            log.debug("%s", logger.Emoji.status(status))
             return status
 
 
@@ -133,8 +132,10 @@ class DownloaderTQDM(Downloader):
 
     def update(self, byte_count: int):
         """Updates the TQDM progress bar with the number of bytes downloaded."""
-        self.progress_bar.update(byte_count)
+        if hasattr(self, "progress_bar"):
+            self.progress_bar.update(byte_count)
 
     def end(self):
         """Closes the TQDM progress bar."""
-        self.progress_bar.close()
+        if hasattr(self, "progress_bar"):
+            self.progress_bar.close()
