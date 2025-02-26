@@ -2,15 +2,17 @@ import asyncio
 import os
 from pathlib import Path
 
-from ..core import data
-from . import LOGGER
+from ..core import data, tracer, logger
 from .media import MP3, MP4
+
+log = logger.get_logger(__name__)
 
 
 class Database(data.Data):
     path: Path
     tracks: dict[str, MP3 | MP4] = data.Field(default_factory=dict)
 
+    @tracer.Async.decorator.call_raise
     async def load(self):
         tasks = []
         for root, _, files in os.walk(self.path):
@@ -23,17 +25,14 @@ class Database(data.Data):
         loaded_tracks = filter(None, await asyncio.gather(*tasks))
         for track in loaded_tracks:
             self.tracks[track.identifier] = track
-        LOGGER.debug(f"load complete - {len(self.tracks)}")
+        log.debug(f"load complete - {len(self.tracks)}")
 
-    def _has(self, identifier):
+    @tracer.Sync.decorator.call_raise
+    def has(self, identifier):
         return identifier in self.tracks
 
-    async def has(self, identifier):
-        return await asyncio.to_thread(self._has, identifier)
-
-    def _add(self, track: MP4 | MP3):
-        if not self._has(track.identifier):
+    @tracer.Sync.decorator.call_raise
+    def add(self, track: MP4 | MP3):
+        assert isinstance(track, MP4 | MP3), f"received: {type(track)}"
+        if not self.has(track.identifier):
             self.tracks[track.identifier] = track
-
-    async def add(self, track: MP4 | MP3):
-        return await asyncio.to_thread(self._add, track)

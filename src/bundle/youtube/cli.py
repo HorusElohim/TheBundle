@@ -7,8 +7,7 @@ import rich_click as click
 
 from bundle.core import logger, tracer
 from bundle.youtube.database import Database
-from bundle.youtube.media import MP3, MP4
-from bundle.youtube.resolver import resolve, generate_token
+from bundle.youtube import media, pytube
 
 from ..core.downloader import Downloader, DownloaderTQDM
 from . import YOUTUBE_PATH
@@ -26,7 +25,7 @@ async def youtube():
 @tracer.Sync.decorator.call_raise
 async def new_token():
     log.info(f"generating poto token")
-    await generate_token()
+    await pytube.generate_token()
 
 
 @youtube.command()
@@ -41,39 +40,30 @@ async def download(url, directory, dry_run, mp3, mp3_only):
     directory = Path(directory)
     db = Database(path=directory)
     await db.load()
-
     semaphore = asyncio.Semaphore(1)
 
-    async for youtube_track in resolve(url):
-        if await db.has(youtube_track.identifier):
+    async for youtube_track in pytube.resolve(url):
+        # Check in Database
+        if db.has(youtube_track.identifier):
             log.info(f"✨ Already present - {youtube_track.filename}")
-            continue
+            return 0
+        # Dry run
         if dry_run:
             log.info(f"YoutubeTrack:\n{await youtube_track.as_json()}")
-            continue
-        log.info(f"🎶 - {youtube_track.filename}")
-        target_path = directory / f"{youtube_track.filename}.mp4"
-        audio_downloader = DownloaderTQDM(url=youtube_track.video_url, destination=target_path)
-        thumbnail_downloader = Downloader(url=youtube_track.thumbnail_url)
-
-        async with semaphore:
-            await asyncio.gather(audio_downloader.download(), thumbnail_downloader.download())
-
-        mp4 = MP4.from_track(path=target_path, track=youtube_track)
-        await mp4.save(thumbnail_downloader.buffer)
+            return 0
+        # Download MP4
+        mp4 = await media.MP4.download(youtube_track, directory)
+        db.add(mp4)
+        # In Mp3
         if mp3 or mp3_only:
-            # takes some times then no need to sleep afterwards (required to not be blocked)
-            as_mp3 = await mp4.as_mp3()
-            await db.add(mp4)
+            _mp3 = await mp4.extract_mp3()
+            db.add(_mp3)
             if mp3_only:
                 mp4.path.unlink()
-            await db.add(as_mp3)
-        else:
-            await db.add(mp4)
-
-        sleep_time = 2 + randint(10, 5200) / 1000
-        log.info(f"sleeping {sleep_time:.2f} seconds")
-        if not dry_run:
+        # Safe sleep (avoid been blocked)
+        if await pytube.is_playlist(url) and not dry_run:
+            sleep_time = 2 + randint(10, 5200) / 1000
+            log.info(f"sleeping {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
 
 
@@ -90,9 +80,9 @@ async def info(track_path: Path):
     track = None
     track_path = Path(track_path)
     if track_path.suffix == ".mp4":
-        track = await MP4.load(track_path)
+        track = await media.MP4.load(track_path)
     elif track_path.suffix == ".mp3":
-        track = await MP3.load(track_path)
+        track = await media.MP3.load(track_path)
     if track:
         log.info(await track.as_json())
         thumbnail = await track.get_thumbnail()
@@ -102,26 +92,20 @@ async def info(track_path: Path):
 @track.command()
 @click.argument("track_paths", nargs=-1, type=click.Path(exists=True))
 @tracer.Sync.decorator.call_raise
-async def extract_audio(track_paths):
+async def to_mp3(track_paths):
+
+    @tracer.Async.decorator.call_raise
     async def extract_mp4_audio(track_path: Path):
-        track_path = Path(track_path)
         if not track_path.suffix == ".mp4":
             log.warning(f"Only MP4 audio extraction to MP3 is supported. Skipping: {track_path}")
             return
-        try:
-            log.info(f"🎶 Audio extraction started on: {track_path}")
-            mp4 = await MP4.load(track_path)
-            if mp4:
-                mp3 = await mp4.as_mp3()
-                log.info(f"✨ Audio extraction completed: {mp3.filename}")
-                del mp3
-                del mp4
-            else:
-                log.error(f"Failed to load MP4: {track_path}")
-        except Exception as e:
-            log.error(f"Error processing {track_path}: {e}")
 
-    tasks = [extract_mp4_audio(track_path) for track_path in track_paths]
+        log.info(f"🎶 Audio extraction started on: {track_path}")
+        mp4 = await media.MP4.load(track_path)
+        mp3 = await mp4.extract_mp3()
+        del mp3, mp4
+
+    tasks = [extract_mp4_audio(Path(track_path)) for track_path in track_paths]
     await asyncio.gather(*tasks)
 
 
@@ -137,7 +121,7 @@ async def database():
 async def show(directory):
     db = Database(path=directory)
     await db.load()
-    log.info(await db.as_dict())
+    log.info(await db.as_json())
 
 
 youtube.add_command(track)

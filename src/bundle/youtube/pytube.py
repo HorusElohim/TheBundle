@@ -9,13 +9,14 @@ from bundle.core import logger, tracer
 
 from . import POTO_TOKEN_PATH
 from .browser import PotoTokenBrowser, PotoTokenEntity
-from .data import YoutubeTrackData
+from .track import YoutubeTrackData
 
 log = logger.get_logger(__name__)
 
 PLAYLIST_INDICATOR = "playlist"
 
 
+@tracer.Async.decorator.call_raise
 async def generate_token():
     async with PotoTokenBrowser.chromium(headless=False) as ptb:
         poto_entity = await ptb.extract_token()
@@ -26,6 +27,7 @@ async def generate_token():
             log.info("error generating the poto token")
 
 
+@tracer.Sync.decorator.call_raise
 def load_poto_token():
     if not POTO_TOKEN_PATH.exists():
         tracer.Sync.call_raise(generate_token)
@@ -34,6 +36,7 @@ def load_poto_token():
         return {"po_token": poto_entity.potoken, "visitor_data": poto_entity.visitor_data}
 
 
+@tracer.Async.decorator.call_raise
 async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
     try:
         # Preprocess the URL
@@ -79,18 +82,29 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
 
 
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
-    try:
-        playlist = await asyncio.to_thread(Playlist, url, use_po_token=True)
-        for video_url in playlist.video_urls:
-            yield video_url
+    playlist = await tracer.Async.call_raise(Playlist, url, use_po_token=True)
+    for video_url in playlist.video_urls:
+        yield video_url
 
-    except PytubeFixError as e:
-        log.error(f"Failed to fetch playlist data for {url}: {e}")
+
+@tracer.Async.decorator.call_raise
+async def is_playlist(url: str):
+    return PLAYLIST_INDICATOR in url
+
+
+@tracer.Async.decorator.call_raise
+async def resolve_single_url(url: str) -> YoutubeTrackData:
+    return await fetch_url_youtube_info(url)
+
+
+async def resolve_playlist_url(url: str) -> AsyncGenerator[YoutubeTrackData, None]:
+    async for playlist_url in fetch_playlist_urls(url):
+        yield await fetch_url_youtube_info(playlist_url)
 
 
 async def resolve(url: str) -> AsyncGenerator[YoutubeTrackData, None]:
     log.debug("Resolving: %s", url)
-    if PLAYLIST_INDICATOR in url:
+    if await is_playlist(url):
         async for playlist_url in fetch_playlist_urls(url):
             yield await fetch_url_youtube_info(playlist_url)
     else:
