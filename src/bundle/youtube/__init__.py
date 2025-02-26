@@ -23,3 +23,4 @@ def get_app_data_path(app_name: str) -> Path:
 
 
 YOUTUBE_PATH = get_app_data_path("bundle.youtube")
+POTO_TOKEN_PATH = YOUTUBE_PATH / "poto_token.json"
