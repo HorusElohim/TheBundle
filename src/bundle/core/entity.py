@@ -97,7 +97,7 @@ class Entity(Data):
         Returns:
             The unchanged Entity instance, ensuring it passes through the validation process without modifications.
         """
-        LOGGER.debug("%s  %s[%s]", logger.Emoji.born, entity.class_name, entity.name)
+        LOGGER.debug("%s  %s[%s]", logger.Emoji.start, entity.class_name, entity.name)
         return entity
 
     @property
@@ -114,4 +114,4 @@ class Entity(Data):
         """
         Destructor method for the Entity class logging the entity's deletion along with its age.
         """
-        LOGGER.debug("%s  %s[%s] age=%s", logger.Emoji.dead, self.class_name, self.name, utils.format_duration_ns(self.age))
+        LOGGER.debug("%s  %s[%s] age=%s", logger.Emoji.end, self.class_name, self.name, utils.format_duration_ns(self.age))

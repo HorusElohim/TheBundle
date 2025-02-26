@@ -45,14 +45,14 @@ def get_callable_name(callable_obj):
         return callable_obj.__class__.__qualname__
     elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):
         return callable_obj.__call__.__qualname__
-    return str(callable_obj)
+    return repr(callable_obj)
 
 
 class Emoji:
     """Emojis for logging status representation."""
 
-    born = "🔵"
-    dead = "🟣"
+    start = "🔵"
+    end = "🟣"
 
     success = "🟢"
     failed = "🔴"
