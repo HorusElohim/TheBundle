@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import IntEnum
-from typing import Generic, Type, TypeVar
+from typing import Generic, Type, TypeVar, Self
 
 import zmq
 import zmq.asyncio
@@ -88,7 +88,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
             raise RuntimeError("Cannot send data: Socket is closed.")
         return self._socket
 
-    async def __aenter__(self: T_Socket) -> T_Socket:
+    async def __aenter__(self: T_Socket) -> Self:
         if self.is_closed:
             logger.warning("Entering with closed socket")
         return self
@@ -97,7 +97,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         await self.close()
 
     @tracer.Sync.decorator.call_raise
-    def bind(self: T_Socket, endpoint: str) -> T_Socket:
+    def bind(self: T_Socket, endpoint: str) -> Self:
         """
         Bind the socket to an endpoint.
 
@@ -113,7 +113,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return self
 
     @tracer.Sync.decorator.call_raise
-    def connect(self: T_Socket, endpoint: str) -> T_Socket:
+    def connect(self: T_Socket, endpoint: str) -> Self:
         """
         Connect the socket to an endpoint.
 
@@ -129,7 +129,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return self
 
     @tracer.Sync.decorator.call_raise
-    def subscribe(self: T_Socket, topic: bytes = b"") -> T_Socket:
+    def subscribe(self: T_Socket, topic: bytes = b"") -> Self:
         """
         Subscribe to a topic (for SUB and DISH sockets).
 
@@ -257,7 +257,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
 
     @classmethod
     @tracer.Sync.decorator.call_raise
-    def pair(cls: Type[T_Socket]) -> T_Socket:
+    def pair(cls: Type[T_Socket]) -> Self:
         """
         ZMQ PAIR
 
@@ -290,7 +290,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.PAIR)
 
     @classmethod
-    def pub(cls: Type[T_Socket]) -> T_Socket:
+    def pub(cls: Type[T_Socket]) -> Self:
         """
         Create a PUB socket for publishing messages using ZeroMQ.
 
@@ -322,7 +322,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.PUB)
 
     @classmethod
-    def sub(cls: Type[T_Socket]) -> T_Socket:
+    def sub(cls: Type[T_Socket]) -> Self:
         """
         Create a SUB socket for subscribing to messages using ZeroMQ.
 
@@ -354,7 +354,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.SUB)
 
     @classmethod
-    def req(cls: Type[T_Socket]) -> T_Socket:
+    def req(cls: Type[T_Socket]) -> Self:
         """
         Create a REQ socket for sending requests using ZeroMQ.
 
@@ -386,7 +386,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.REQ)
 
     @classmethod
-    def rep(cls: Type[T_Socket]) -> T_Socket:
+    def rep(cls: Type[T_Socket]) -> Self:
         """
         Create a REP socket for replying to requests using ZeroMQ.
 
@@ -418,7 +418,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.REP)
 
     @classmethod
-    def dealer(cls: Type[T_Socket]) -> T_Socket:
+    def dealer(cls: Type[T_Socket]) -> Self:
         """
         Create a DEALER socket for asynchronous request routing using ZeroMQ.
 
@@ -447,7 +447,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.DEALER)
 
     @classmethod
-    def router(cls: Type[T_Socket]) -> T_Socket:
+    def router(cls: Type[T_Socket]) -> Self:
         """
         Create a ROUTER socket for advanced routing using ZeroMQ.
 
@@ -476,7 +476,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.ROUTER)
 
     @classmethod
-    def pull(cls: Type[T_Socket]) -> T_Socket:
+    def pull(cls: Type[T_Socket]) -> Self:
         """
         Create a PULL socket for receiving messages using ZeroMQ.
 
@@ -505,7 +505,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.PULL)
 
     @classmethod
-    def push(cls: Type[T_Socket]) -> T_Socket:
+    def push(cls: Type[T_Socket]) -> Self:
         """
         Create a PUSH socket for sending messages using ZeroMQ.
 
@@ -534,7 +534,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.PUSH)
 
     @classmethod
-    def xpub(cls: Type[T_Socket]) -> T_Socket:
+    def xpub(cls: Type[T_Socket]) -> Self:
         """
         Create an XPUB socket for extended publishing using ZeroMQ.
 
@@ -563,7 +563,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.XPUB)
 
     @classmethod
-    def xsub(cls: Type[T_Socket]) -> T_Socket:
+    def xsub(cls: Type[T_Socket]) -> Self:
         """
         Create an XSUB socket for extended subscribing using ZeroMQ.
 
@@ -592,7 +592,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.XSUB)
 
     @classmethod
-    def stream(cls: Type[T_Socket]) -> T_Socket:
+    def stream(cls: Type[T_Socket]) -> Self:
         """
         Create a STREAM socket for handling raw TCP connections using ZeroMQ.
 
@@ -621,7 +621,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.STREAM)
 
     @classmethod
-    def server(cls: Type[T_Socket]) -> T_Socket:
+    def server(cls: Type[T_Socket]) -> Self:
         """
         Create a SERVER socket for handling server-side communication using ZeroMQ.
 
@@ -650,7 +650,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.SERVER)
 
     @classmethod
-    def client(cls: Type[T_Socket]) -> T_Socket:
+    def client(cls: Type[T_Socket]) -> Self:
         """
         Create a CLIENT socket for handling client-side communication using ZeroMQ.
 
@@ -679,7 +679,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.CLIENT)
 
     @classmethod
-    def radio(cls: Type[T_Socket]) -> T_Socket:
+    def radio(cls: Type[T_Socket]) -> Self:
         """
         Create a RADIO socket for radio communication using ZeroMQ.
 
@@ -708,7 +708,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.RADIO)
 
     @classmethod
-    def dish(cls: Type[T_Socket]) -> T_Socket:
+    def dish(cls: Type[T_Socket]) -> Self:
         """
         Create a DISH socket for dish communication using ZeroMQ.
 
@@ -738,7 +738,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.DISH)
 
     @classmethod
-    def gather(cls: Type[T_Socket]) -> T_Socket:
+    def gather(cls: Type[T_Socket]) -> Self:
         """
         Create a GATHER socket for collecting messages using ZeroMQ.
 
@@ -767,7 +767,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.GATHER)
 
     @classmethod
-    def scatter(cls: Type[T_Socket]) -> T_Socket:
+    def scatter(cls: Type[T_Socket]) -> Self:
         """
         Create a SCATTER socket for distributing messages using ZeroMQ.
 
@@ -796,7 +796,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.SCATTER)
 
     @classmethod
-    def dgram(cls: Type[T_Socket]) -> T_Socket:
+    def dgram(cls: Type[T_Socket]) -> Self:
         """
         Create a DGRAM socket for datagram communication using ZeroMQ.
 
@@ -825,7 +825,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.DGRAM)
 
     @classmethod
-    def peer(cls: Type[T_Socket]) -> T_Socket:
+    def peer(cls: Type[T_Socket]) -> Self:
         """
         Create a PEER socket for peer-to-peer communication using ZeroMQ.
 
@@ -854,7 +854,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         return cls(type=zmq.SocketType.PEER)
 
     @classmethod
-    def channel(cls: Type[T_Socket]) -> T_Socket:
+    def channel(cls: Type[T_Socket]) -> Self:
         """
         Create a CHANNEL socket for channel-based communication using ZeroMQ.
 
