@@ -20,7 +20,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Generic, List, Type, TypeVar
+from typing import Generic, List, Self, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, Page, Playwright, ElementHandle, async_playwright
@@ -71,7 +71,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         raise ValueError(f"Invalid browser type: {v}")
 
     @classmethod
-    def chromium(cls: Type[T_Browser], headless: bool = True, **kwargs) -> T_Browser:
+    def chromium(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
         """
         Instantiate a Chromium browser.
 
@@ -84,7 +84,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return cls(browser_type=BrowserType.CHROMIUM, headless=headless, **kwargs)
 
     @classmethod
-    def firefox(cls: Type[T_Browser], headless: bool = True, **kwargs) -> T_Browser:
+    def firefox(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
         """
         Instantiate a Firefox browser.
 
@@ -97,7 +97,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return cls(browser_type=BrowserType.FIREFOX, headless=headless, **kwargs)
 
     @classmethod
-    def webkit(cls: Type[T_Browser], headless: bool = True, **kwargs) -> T_Browser:
+    def webkit(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
         """
         Instantiate a WebKit browser.
 
@@ -110,7 +110,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return cls(browser_type=BrowserType.WEBKIT, headless=headless, **kwargs)
 
     @tracer.Async.decorator.call_raise
-    async def __aenter__(self: T_Browser) -> T_Browser:
+    async def __aenter__(self: T_Browser) -> Self:
         """
         Enter the asynchronous context manager, starting Playwright and launching the browser.
         """
@@ -130,7 +130,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             await self._playwright.stop()
             logger.debug("Playwright stopped.")
 
-    async def launch(self: T_Browser) -> T_Browser:
+    async def launch(self: T_Browser) -> Self:
         """
         Launch the specified browser type.
 
@@ -170,7 +170,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             raise
 
     @tracer.Async.decorator.call_raise
-    async def new_context(self: T_Browser, *args, **kwargs) -> T_Browser:
+    async def new_context(self: T_Browser, *args, **kwargs) -> Self:
         """
         Create a new browser context.
 
@@ -200,7 +200,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return page
 
     @tracer.Async.decorator.call_raise
-    async def close(self: T_Browser) -> T_Browser:
+    async def close(self: T_Browser) -> Self:
         """
         Close all browser contexts and the browser itself.
 
