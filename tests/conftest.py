@@ -90,6 +90,14 @@ def assets_folder(bundle_folder):
     return bundle_folder / "src" / "bundle" / "testing" / "assets"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def trace_test_suite():
+    """Start and end the Tracy frame mark for the entire test session."""
+    import tracy_client
+
+    tracy_client.frame_mark()
+
+
 def pytest_configure(config):
     # CPROFILE
     config.addinivalue_line(

@@ -18,10 +18,10 @@
 # under the License.
 
 from __future__ import annotations
-from contextlib import asynccontextmanager
 
+from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Generic, List, Self, Type, TypeVar, AsyncIterator
+from typing import AsyncIterator, Generic, List, Self, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright

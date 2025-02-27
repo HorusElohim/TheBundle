@@ -21,6 +21,8 @@ import asyncio
 from functools import wraps
 from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
 
+import tracy_client
+
 from . import logger
 
 P = ParamSpec("P")
@@ -56,42 +58,43 @@ class Sync:
         log_level = log_level or DEFAULT_LOG_LEVEL
         exc_log_level = exc_log_level or DEFAULT_LOG_EXC_LEVEL
 
-        try:
-            if asyncio.iscoroutinefunction(func):
-                result = asyncio.run(func(*args, **kwargs))
-            else:
-                result = func(*args, **kwargs)
+        with tracy_client.ScopedZone(name=log.get_callable_name(func), stacklevel=stacklevel - 1):
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    result = asyncio.run(func(*args, **kwargs))
+                else:
+                    result = func(*args, **kwargs)
 
-            log.callable_success(
-                func,
-                args,
-                kwargs,
-                result,
-                stacklevel,
-                log_level,
-            )
-        except Exception as exception:
-            if isinstance(exception, asyncio.CancelledError):
-                log.callable_exception(
+                log.callable_success(
                     func,
                     args,
                     kwargs,
-                    exception,
+                    result,
                     stacklevel,
-                    exc_log_level,
+                    log_level,
                 )
-            else:
-                log.callable_cancel(
-                    func,
-                    args,
-                    kwargs,
-                    exception,
-                    stacklevel,
-                    exc_log_level,
-                )
-            return None, exception
+            except Exception as exception:
+                if isinstance(exception, asyncio.CancelledError):
+                    log.callable_exception(
+                        func,
+                        args,
+                        kwargs,
+                        exception,
+                        stacklevel,
+                        exc_log_level,
+                    )
+                else:
+                    log.callable_cancel(
+                        func,
+                        args,
+                        kwargs,
+                        exception,
+                        stacklevel,
+                        exc_log_level,
+                    )
+                return None, exception
 
-        return result, None
+            return result, None
 
     @staticmethod
     def call_raise(
@@ -195,40 +198,41 @@ class Async:
         log_level = log_level if log_level else DEFAULT_LOG_LEVEL
         exc_log_level = exc_log_level if exc_log_level else DEFAULT_LOG_EXC_LEVEL
 
-        try:
-            if asyncio.iscoroutinefunction(func):
-                result = await func(*args, **kwargs)
-            else:
-                result = await asyncio.to_thread(func, *args, **kwargs)
-            log.callable_success(
-                func,
-                args,
-                kwargs,
-                result,
-                stacklevel,
-                log_level,
-            )
-            return cast(R, result), None
-        except asyncio.CancelledError as cancel_exception:
-            log.callable_exception(
-                func,
-                args,
-                kwargs,
-                cancel_exception,
-                stacklevel,
-                exc_log_level,
-            )
-            return None, cancel_exception
-        except Exception as exception:
-            log.callable_cancel(
-                func,
-                args,
-                kwargs,
-                exception,
-                stacklevel,
-                exc_log_level,
-            )
-            return None, exception
+        with tracy_client.ScopedZone(name=log.get_callable_name(func), stacklevel=stacklevel - 1):
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    result = await func(*args, **kwargs)
+                else:
+                    result = await asyncio.to_thread(func, *args, **kwargs)
+                log.callable_success(
+                    func,
+                    args,
+                    kwargs,
+                    result,
+                    stacklevel,
+                    log_level,
+                )
+                return cast(R, result), None
+            except asyncio.CancelledError as cancel_exception:
+                log.callable_exception(
+                    func,
+                    args,
+                    kwargs,
+                    cancel_exception,
+                    stacklevel,
+                    exc_log_level,
+                )
+                return None, cancel_exception
+            except Exception as exception:
+                log.callable_cancel(
+                    func,
+                    args,
+                    kwargs,
+                    exception,
+                    stacklevel,
+                    exc_log_level,
+                )
+                return None, exception
 
     @staticmethod
     async def call_raise(
