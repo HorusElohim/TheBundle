@@ -21,7 +21,7 @@
 import json
 import warnings
 from pathlib import Path
-from typing import Callable, ClassVar, Type, TypeVar
+from typing import Callable, ClassVar, Self, Type, TypeVar
 
 from pydantic import (
     BaseModel,
@@ -132,7 +132,7 @@ class Data(BaseModel):
     __test_name: str = PrivateAttr(default="base")
 
     @classmethod
-    async def from_dict(cls: Type[D], data: dict) -> D:
+    async def from_dict(cls: Type[D], data: dict) -> Self:
         """
         Create an instance of the model from a dictionary.
 
@@ -163,12 +163,12 @@ class Data(BaseModel):
         return await tracer.Async.call_raise(self.model_dump)
 
     @classmethod
-    async def _from_json_path(cls: Type[D], json_path: Path) -> D:
+    async def _from_json_path(cls: Type[D], json_path: Path) -> Self:
         json_str = await tracer.Async.call_raise(json_path.read_text)
         return await cls._from_json_str(json_str)
 
     @classmethod
-    async def _from_json_str(cls: Type[D], json_str: str) -> D:
+    async def _from_json_str(cls: Type[D], json_str: str) -> Self:
         """
         Create an instance of the model from a JSON string.
 
@@ -184,7 +184,7 @@ class Data(BaseModel):
         return await tracer.Async.call_raise(cls.model_validate_json, json_str)
 
     @classmethod
-    async def from_json(cls: Type[D], json_source: str | Path) -> D:
+    async def from_json(cls: Type[D], json_source: str | Path) -> Self:
         """
         Create an instance of the model from either a JSON string or a path to a JSON file.
 
