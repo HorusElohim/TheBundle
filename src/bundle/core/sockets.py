@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import asyncio
 from enum import IntEnum
-from typing import Generic, Type, TypeVar, Self
+from typing import Generic, Self, Type, TypeVar
 
 import zmq
 import zmq.asyncio

@@ -17,14 +17,14 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import asyncio
 from pathlib import Path
 
-import asyncio
 import aiohttp
 from aiofiles import open as aio_open
 from tqdm.asyncio import tqdm_asyncio
 
-from ..core import tracer, logger
+from ..core import logger, tracer
 
 log = logger.get_logger(__name__)
 

@@ -23,11 +23,11 @@ import warnings
 from pathlib import Path
 from typing import Callable, ClassVar, Self, Type, TypeVar
 
+from pydantic import HttpUrl  # noqa
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
-    HttpUrl,  # noqa
     PrivateAttr,
     field_serializer,
     field_validator,

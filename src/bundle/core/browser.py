@@ -23,10 +23,10 @@ from enum import Enum
 from typing import Generic, List, Self, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
-from playwright.async_api import BrowserContext, Page, Playwright, ElementHandle, async_playwright
+from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
 
+from . import data, entity, tracer
 from .logger import get_logger
-from . import data, tracer, entity
 
 logger = get_logger(__name__)
 
@@ -114,12 +114,8 @@ class Browser(entity.Entity, Generic[T_Browser]):
         """
         Enter the asynchronous context manager, starting Playwright and launching the browser.
         """
-        try:
-            await self.launch()
-            return self
-        except Exception as e:
-            logger.error(f"Failed to start Playwright or launch browser: {e}")
-            raise
+        await self.launch()
+        return self
 
     async def __aexit__(self: T_Browser, exc_type, exc_val, exc_tb) -> None:
         """
@@ -130,6 +126,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             await self._playwright.stop()
             logger.debug("Playwright stopped.")
 
+    @tracer.Async.decorator.call_raise
     async def launch(self: T_Browser) -> Self:
         """
         Launch the specified browser type.
@@ -143,31 +140,22 @@ class Browser(entity.Entity, Generic[T_Browser]):
         if not self._playwright:
             raise RuntimeError("Playwright is not started.")
 
-        try:
-            if self.browser_type == BrowserType.CHROMIUM:
-                self.browser = await tracer.Async.call_raise(self._playwright.chromium.launch, headless=self.headless)
-            elif self.browser_type == BrowserType.FIREFOX:
-                self.browser = await tracer.Async.call_raise(self._playwright.firefox.launch, headless=self.headless)
-            elif self.browser_type == BrowserType.WEBKIT:
-                self.browser = await tracer.Async.call_raise(self._playwright.webkit.launch, headless=self.headless)
-            else:
-                raise ValueError(f"Unsupported browser type: {self.browser_type.value}")
+        if self.browser_type == BrowserType.CHROMIUM:
+            self.browser = await tracer.Async.call_raise(self._playwright.chromium.launch, headless=self.headless)
+        elif self.browser_type == BrowserType.FIREFOX:
+            self.browser = await tracer.Async.call_raise(self._playwright.firefox.launch, headless=self.headless)
+        elif self.browser_type == BrowserType.WEBKIT:
+            self.browser = await tracer.Async.call_raise(self._playwright.webkit.launch, headless=self.headless)
+        else:
+            raise ValueError(f"Unsupported browser type: {self.browser_type.value}")
 
-            logger.info(
-                "%s Browser[%s] launched.  Headless=%s",
-                logger.Emoji.success,
-                self.browser_type.value.capitalize(),
-                self.headless,
-            )
-            return self
-        except Exception as e:
-            logger.error(
-                "%s Failed to launch %s browser: %s",
-                logger.Emoji.failed,
-                self.browser_type.value,
-                e,
-            )
-            raise
+        logger.info(
+            "%s Browser[%s] launched.  Headless=%s",
+            logger.Emoji.success,
+            self.browser_type.value.capitalize(),
+            self.headless,
+        )
+        return self
 
     @tracer.Async.decorator.call_raise
     async def new_context(self: T_Browser, *args, **kwargs) -> Self:

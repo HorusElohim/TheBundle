@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import asyncio
+
 from tabulate import tabulate
+
 from ....core import browser, logger
 from .data import TorrentData
 

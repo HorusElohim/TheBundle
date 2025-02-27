@@ -258,7 +258,7 @@ class Async:
             """
 
             def actual_decorator(
-                f: Callable[P, R] | Callable[P, Awaitable[R]]
+                f: Callable[P, R] | Callable[P, Awaitable[R]],
             ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
                 @wraps(f)
                 async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
