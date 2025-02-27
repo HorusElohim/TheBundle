@@ -10,6 +10,7 @@ PROTOCOLS = ["tcp", "ipc", "inproc"]
 HAS_DRAFT_SUPPORT = zmq.has("draft")
 IS_WINDOWS = platform.system() == "Windows"
 
+
 # Mark all tests in this module as asynchronous
 pytestmark = pytest.mark.asyncio
 

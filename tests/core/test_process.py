@@ -32,7 +32,6 @@ FAILING_COMMANDS = [
 PROCESS_CLASSES = [Process, ProcessStream]
 PROCESS_CLASS_TYPE = Type[Process] | Type[ProcessStream]
 
-
 # Mark all tests in this module as asynchronous
 pytestmark = pytest.mark.asyncio
 
