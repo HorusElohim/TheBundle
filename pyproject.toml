@@ -64,5 +64,10 @@ line-length = 128
 target-version = ['py310']
 include = '\.pyi?$'
 
+[tool.isort]
+profile = "black"
+line_length = 120
+skip = ["__init__.py"]
+
 [tool.flake8]
 max-line-length = 128
