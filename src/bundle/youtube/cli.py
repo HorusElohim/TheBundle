@@ -6,8 +6,8 @@ from random import randint
 import rich_click as click
 
 from bundle.core import logger, tracer
-from bundle.youtube.database import Database
 from bundle.youtube import media, pytube
+from bundle.youtube.database import Database
 
 from ..core.downloader import Downloader, DownloaderTQDM
 from . import YOUTUBE_PATH
