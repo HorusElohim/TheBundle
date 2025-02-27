@@ -2,7 +2,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from ..core import data, tracer, logger
+from ..core import data, logger, tracer
 from .media import MP3, MP4
 
 log = logger.get_logger(__name__)

@@ -7,9 +7,9 @@ from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from bundle.core.downloader import Downloader
-from bundle.youtube.track import YoutubeTrackData
 from bundle.youtube.media import MP4
 from bundle.youtube.pytube import resolve
+from bundle.youtube.track import YoutubeTrackData
 
 from ...common.downloader import DownloaderWebSocket
 from ...common.sections import get_logger, get_static_path, get_template_path
