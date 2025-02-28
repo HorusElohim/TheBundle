@@ -32,7 +32,7 @@ def load_poto_token():
     if not POTO_TOKEN_PATH.exists():
         tracer.Sync.call_raise(generate_token)
     if POTO_TOKEN_PATH.exists():
-        poto_entity = tracer.Sync.call_raise(PotoTokenEntity.from_json(POTO_TOKEN_PATH))
+        poto_entity = tracer.Sync.call_raise(PotoTokenEntity.from_json, POTO_TOKEN_PATH)
         return {"po_token": poto_entity.potoken, "visitor_data": poto_entity.visitor_data}
 
 

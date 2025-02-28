@@ -58,7 +58,6 @@ class Sync:
 
         try:
             if asyncio.iscoroutinefunction(func):
-                stacklevel += 3
                 result = asyncio.run(func(*args, **kwargs))
             else:
                 result = func(*args, **kwargs)
