@@ -51,16 +51,19 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
     tmp_dir = utils.ensure_path(tmp_dir)
     cprofile_dir = utils.ensure_path(cprofile_folder)
 
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     @cprofile(cprofile_folder=cprofile_dir)
     async def test_pydantic_data_as_dict(class_instance: core.Data):
         logger.testing(f"test_pydantic_data_as_dict: {utils.class_instance_name(class_instance)}")
         return class_instance, await class_instance.as_dict()
 
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     @cprofile(cprofile_folder=cprofile_dir)
     async def test_pydantic_data_from_dict(class_instance: core.Data, class_instance_dict: dict):
         logger.testing(f"test_pydantic_data_from_dict: {utils.class_instance_name(class_instance)}")
         return class_instance, await class_instance.from_dict(class_instance_dict)
 
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     @cprofile(cprofile_folder=cprofile_dir)
     async def test_pydantic_data_compare(class_instance: core.Data, class_instance_from_dict: core.Data):
         logger.testing(f"test_pydantic_data_compare: {utils.class_instance_name(class_instance)}")
@@ -68,6 +71,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
         return class_instance
 
     @cprofile(cprofile_folder=cprofile_dir)
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_as_json(
         class_instance: core.Data, tmp_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
     ):
@@ -82,6 +86,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
             raise ex
 
     @cprofile(cprofile_folder=cprofile_dir)
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_dump_json(
         class_instance: core.Data, tmp_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
     ):
@@ -96,6 +101,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
             raise ex
 
     @cprofile(cprofile_folder=cprofile_dir)
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_from_json(
         class_instance: core.Data, ref_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
     ):
@@ -109,12 +115,14 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
             raise ex
 
     @cprofile(cprofile_folder=cprofile_dir)
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_dump_jsonschema(class_instance: core.Data, ref_jsonschema_path: Path):
         logger.testing(f"test_pydantic_data_dump_jsonschema: {utils.class_instance_name(class_instance)}")
         await class_instance.dump_jsonschema(ref_jsonschema_path)
         return class_instance
 
     @cprofile(cprofile_folder=cprofile_dir)
+    @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_validate_dict_with_jsonschema(
         class_instance: core.Data,
         data_dict: dict,

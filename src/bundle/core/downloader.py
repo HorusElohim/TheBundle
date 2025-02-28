@@ -94,7 +94,7 @@ class Downloader:
                         self.destination.parent.mkdir(parents=True, exist_ok=True)
                         async with aio_open(self.destination, "wb") as fd:
                             async for chunk in response.content.iter_chunked(self.chunk_size):
-                                await fd.write(chunk)
+                                await tracer.Async.call_raise(fd.write, chunk, log_level=logger.Level.VERBOSE)
                                 await tracer.Async.call_raise(self.update, len(chunk), log_level=logger.Level.VERBOSE)
                                 await asyncio.sleep(0)
                     else:

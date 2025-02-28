@@ -1,5 +1,3 @@
-import asyncio
-
 import pytest
 import rich_click as click
 
