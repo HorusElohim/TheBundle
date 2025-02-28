@@ -132,6 +132,7 @@ class Data(BaseModel):
     __test_name: str = PrivateAttr(default="base")
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def from_dict(cls: Type[D], data: dict) -> Self:
         """
         Create an instance of the model from a dictionary.
@@ -145,8 +146,9 @@ class Data(BaseModel):
         Raises:
             Exception: If the model instantiation fails.
         """
-        return await tracer.Async.call_raise(cls, **data)
+        return cls(**data)
 
+    @tracer.Async.decorator.call_raise
     async def as_dict(self) -> dict:
         """
         Create an instance of the model from a JSON file.
@@ -160,14 +162,16 @@ class Data(BaseModel):
         Raises:
             Exception: If the model instantiation from the JSON file fails.
         """
-        return await tracer.Async.call_raise(self.model_dump)
+        return self.model_dump()
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def _from_json_path(cls: Type[D], json_path: Path) -> Self:
         json_str = await tracer.Async.call_raise(json_path.read_text)
         return await cls._from_json_str(json_str)
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def _from_json_str(cls: Type[D], json_str: str) -> Self:
         """
         Create an instance of the model from a JSON string.
@@ -184,6 +188,7 @@ class Data(BaseModel):
         return await tracer.Async.call_raise(cls.model_validate_json, json_str)
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def from_json(cls: Type[D], json_source: str | Path) -> Self:
         """
         Create an instance of the model from either a JSON string or a path to a JSON file.
@@ -205,6 +210,7 @@ class Data(BaseModel):
         else:
             raise RuntimeError(f"Unsupported json_source={json_source}")
 
+    @tracer.Async.decorator.call_raise
     async def as_json(self) -> str:
         """
         Serialize the model instance to a JSON string.
@@ -215,8 +221,9 @@ class Data(BaseModel):
         Raises:
             Exception: If serialization to JSON fails.
         """
-        return await tracer.Async.call_raise(self.model_dump_json, indent=4)
+        return self.model_dump_json(indent=4)
 
+    @tracer.Async.decorator.call_raise
     async def dump_json(self, path: Path) -> None:
         """
         Write the JSON representation of the model instance to a file.
@@ -231,6 +238,7 @@ class Data(BaseModel):
         await tracer.Async.call_raise(path.write_text, json_str, encoding="utf-8")
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def as_jsonschema(cls, mode: json_schema.JsonSchemaMode = "serialization") -> dict:
         """
         Generate the JSON Schema of the model.
@@ -244,9 +252,10 @@ class Data(BaseModel):
         Raises:
             Exception: If generating the JSON Schema fails.
         """
-        return await tracer.Async.call_raise(cls.model_json_schema, mode=mode)
+        return cls.model_json_schema(mode=mode)
 
     @classmethod
+    @tracer.Async.decorator.call_raise
     async def as_jsonschema_str(cls, mode: json_schema.JsonSchemaMode = "serialization") -> str:
         """
         Serialize the JSON Schema of the model to a JSON string.
@@ -261,8 +270,9 @@ class Data(BaseModel):
             Exception: If serializing the JSON Schema to a string fails.
         """
         schema = await cls.as_jsonschema(mode)
-        return await tracer.Async.call_raise(json.dumps, schema, indent=4)
+        return await json.dumps(schema, indent=4)
 
+    @tracer.Async.decorator.call_raise
     async def dump_jsonschema(self, path: Path, mode: json_schema.JsonSchemaMode = "serialization") -> None:
         """
         Write the JSON Schema of the model to a file.
@@ -275,4 +285,4 @@ class Data(BaseModel):
             Exception: If writing the JSON Schema to the file fails.
         """
         schema_str = await self.as_jsonschema_str(mode)
-        await tracer.Async.call_raise(path.write_text, schema_str)
+        await path.write_text(schema_str)
