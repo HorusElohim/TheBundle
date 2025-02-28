@@ -30,6 +30,7 @@ logger = core.logger.get_logger(__name__)
 # Setting default values for expected duration and performance threshold in nanoseconds
 EXPECTED_DURATION_NS = 100_000_000  # 100 ms
 PERFORMANCE_THRESHOLD_NS = 100_000_000  # 100 ms
+ENABLED = True
 
 
 def cprofile(
@@ -42,8 +43,9 @@ def cprofile(
         async def wrapper(*args, **kwds):
             # Enable profiling
             logger.testing(f"[{func.__name__}] profiling async function ...")
-            pr = cProfile.Profile()
-            pr.enable()
+            if ENABLED:
+                pr = cProfile.Profile()
+                pr.enable()
 
             # Record start time in nanoseconds
             start_ns = time.perf_counter_ns()
@@ -55,8 +57,9 @@ def cprofile(
             except Exception as e:
                 exception = e
             finally:
-                # Stop profiling
-                pr.disable()
+                if ENABLED:
+                    # Stop profiling
+                    pr.disable()
 
                 # Record end time in nanoseconds
                 end_ns = time.perf_counter_ns()
@@ -80,7 +83,7 @@ def cprofile(
                     )
 
                 # Dump stats if a directory is provided
-                if cprofile_folder:
+                if ENABLED and cprofile_folder:
                     # Ensure that `result` has a meaningful identifier
                     result_identifier = utils.class_instance_name(result) if result else "result"
                     dump_file = cprofile_folder / f"{func.__name__}.{result_identifier}.prof"
