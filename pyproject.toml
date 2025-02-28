@@ -26,6 +26,9 @@ dependencies = [
     "tornado>=6.1; sys_platform == 'win32'",
 ]
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"
 
