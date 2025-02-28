@@ -26,6 +26,10 @@ import tempfile
 logger = bundle.core.logger.get_logger(__name__)
 
 bundle.BUNDLE_LOGGER.setLevel(bundle.core.logger.Level.TESTING)
+
+# Avoid show expected exception
+bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = bundle.core.logger.Level.EXPECTED_EXCEPTION
+
 logger.parent = bundle.BUNDLE_LOGGER
 
 logger.testing("Loading conftest.py")
