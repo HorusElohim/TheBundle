@@ -18,7 +18,9 @@ log = logger.get_logger(__name__)
 @click.group()
 @tracer.Sync.decorator.call_raise
 async def youtube():
-    pass
+    import nest_asyncio
+
+    nest_asyncio.apply()
 
 
 @youtube.command("new-token")
