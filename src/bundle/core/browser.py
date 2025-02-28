@@ -18,9 +18,10 @@
 # under the License.
 
 from __future__ import annotations
+from contextlib import asynccontextmanager
 
 from enum import Enum
-from typing import Generic, List, Self, Type, TypeVar
+from typing import Generic, List, Self, Type, TypeVar, AsyncIterator
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
@@ -71,43 +72,43 @@ class Browser(entity.Entity, Generic[T_Browser]):
         raise ValueError(f"Invalid browser type: {v}")
 
     @classmethod
-    def chromium(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
+    @asynccontextmanager
+    async def chromium(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
-        Instantiate a Chromium browser.
-
-        Args:
-            headless (bool): Whether to run the browser in headless mode.
-
-        Returns:
-            Browser: An instance of the Browser wrapper.
+        Context manager to instantiate a Chromium browser.
         """
-        return cls(browser_type=BrowserType.CHROMIUM, headless=headless, **kwargs)
+        instance = cls(browser_type=BrowserType.CHROMIUM, headless=headless, **kwargs)
+        try:
+            await instance.__aenter__()
+            yield instance
+        finally:
+            await instance.__aexit__(None, None, None)
 
     @classmethod
-    def firefox(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
+    @asynccontextmanager
+    async def firefox(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
-        Instantiate a Firefox browser.
-
-        Args:
-            headless (bool): Whether to run the browser in headless mode.
-
-        Returns:
-            Browser: An instance of the Browser wrapper.
+        Context manager to instantiate a Firefox browser.
         """
-        return cls(browser_type=BrowserType.FIREFOX, headless=headless, **kwargs)
+        instance = cls(browser_type=BrowserType.FIREFOX, headless=headless, **kwargs)
+        try:
+            await instance.__aenter__()
+            yield instance
+        finally:
+            await instance.__aexit__(None, None, None)
 
     @classmethod
-    def webkit(cls: Type[T_Browser], headless: bool = True, **kwargs) -> Self:
+    @asynccontextmanager
+    async def webkit(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
-        Instantiate a WebKit browser.
-
-        Args:
-            headless (bool): Whether to run the browser in headless mode.
-
-        Returns:
-            Browser: An instance of the Browser wrapper.
+        Context manager to instantiate a WebKit browser.
         """
-        return cls(browser_type=BrowserType.WEBKIT, headless=headless, **kwargs)
+        instance = cls(browser_type=BrowserType.WEBKIT, headless=headless, **kwargs)
+        try:
+            await instance.__aenter__()
+            yield instance
+        finally:
+            await instance.__aexit__(None, None, None)
 
     @tracer.Async.decorator.call_raise
     async def __aenter__(self: T_Browser) -> Self:
