@@ -29,25 +29,6 @@ from colorama import Fore, Style
 from rich.logging import RichHandler  # Use Rich's handler for improved console output
 
 
-def get_callable_name(callable_obj):
-    """
-    Helper function to retrieve the name of a callable for logging purposes.
-
-    Args:
-        callable_obj: The callable object whose name is to be retrieved.
-
-    Returns:
-        str: The qualified name of the callable.
-    """
-    if hasattr(callable_obj, "__qualname__"):
-        return callable_obj.__qualname__
-    elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
-        return callable_obj.__class__.__qualname__
-    elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):
-        return callable_obj.__call__.__qualname__
-    return repr(callable_obj)
-
-
 class Emoji:
     """Emojis for logging status representation."""
 
@@ -91,6 +72,25 @@ class BundleLogger(logging.getLoggerClass()):
 
     """Custom Logger with a verbose method."""
 
+    @staticmethod
+    def get_callable_name(callable_obj):
+        """
+        Helper function to retrieve the name of a callable for logging purposes.
+
+        Args:
+            callable_obj: The callable object whose name is to be retrieved.
+
+        Returns:
+            str: The qualified name of the callable.
+        """
+        if hasattr(callable_obj, "__qualname__"):
+            return callable_obj.__qualname__
+        elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
+            return callable_obj.__class__.__qualname__
+        elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):
+            return callable_obj.__call__.__qualname__
+        return repr(callable_obj)
+
     def verbose(self, msg: str, *args, stacklevel=2, **kwargs) -> None:
         if self.isEnabledFor(Level.VERBOSE):
             self._log(Level.VERBOSE, msg, args, stacklevel=stacklevel, **kwargs)
@@ -123,7 +123,7 @@ class BundleLogger(logging.getLoggerClass()):
             self._log(
                 level,
                 "%s  %s.%s(%s, %s) -> %s",
-                (Emoji.success, func.__module__, get_callable_name(func), args, kwargs, result),
+                (Emoji.success, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, result),
                 stacklevel=stacklevel,
             )
 
@@ -151,7 +151,7 @@ class BundleLogger(logging.getLoggerClass()):
             self._log(
                 level,
                 "%s  %s.%s(%s, %s). Exception: %s",
-                (Emoji.failed, func.__module__, get_callable_name(func), args, kwargs, exception),
+                (Emoji.failed, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, exception),
                 exc_info=True,
                 stacklevel=stacklevel,
             )
@@ -180,7 +180,7 @@ class BundleLogger(logging.getLoggerClass()):
             self._log(
                 level,
                 "%s  %s.%s(%s, %s) -> async cancel exception: %s",
-                (Emoji.warning, func.__module__, get_callable_name(func), args, kwargs, exception),
+                (Emoji.warning, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, exception),
                 exc_info=True,
                 stacklevel=stacklevel - 1,
             )
