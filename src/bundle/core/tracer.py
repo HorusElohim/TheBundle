@@ -30,6 +30,14 @@ log = logger.get_logger(__name__)
 
 DEFAULT_LOG_LEVEL = logger.Level.DEBUG
 DEFAULT_LOG_EXC_LEVEL = logger.Level.ERROR
+DEFAULT_SYNC_CALL_STACKLEVEL = 3
+DEFAULT_SYNC_CALL_RAISE_STACKLEVEL = 4
+DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL = 4
+DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
+DEFAULT_ASYNC_CALL_STACKLEVEL = 3
+DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL = 4
+DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL = 4
+DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
 
 
 # --- Synchronous Implementation ---
@@ -38,7 +46,7 @@ class Sync:
     def call(
         func: Callable[P, R] | Callable[P, Awaitable[R]],
         *args: P.args,
-        stacklevel: int = 3,
+        stacklevel: int = DEFAULT_SYNC_CALL_STACKLEVEL,
         log_level: logger.Level | None = None,
         exc_log_level: logger.Level | None = None,
         **kwargs: P.kwargs,
@@ -90,7 +98,7 @@ class Sync:
     def call_raise(
         func: Callable[Concatenate[P], R],
         *args: P.args,
-        stacklevel: int = 3,
+        stacklevel: int = DEFAULT_SYNC_CALL_RAISE_STACKLEVEL,
         log_level: logger.Level | None = None,
         exc_log_level: logger.Level | None = None,
         **kwargs: P.kwargs,
@@ -112,6 +120,7 @@ class Sync:
         def call(
             func: Callable[P, R] | None = None,
             *,
+            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL,
             log_level: logger.Level | None = None,
             exc_log_level: logger.Level | None = None,
         ) -> Callable[..., object]:
@@ -127,7 +136,7 @@ class Sync:
                     return Sync.call(
                         f,
                         *args,
-                        stacklevel=5,
+                        stacklevel=stacklevel,
                         log_level=log_level,
                         exc_log_level=exc_log_level,
                         **kwargs,
@@ -143,6 +152,7 @@ class Sync:
         def call_raise(
             func: Callable[P, R] | None = None,
             *,
+            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL,
             log_level: logger.Level | None = None,
             exc_log_level: logger.Level | None = None,
         ) -> Callable[..., R]:
@@ -158,7 +168,7 @@ class Sync:
                     return Sync.call_raise(
                         f,
                         *args,
-                        stacklevel=5,
+                        stacklevel=stacklevel,
                         log_level=log_level,
                         exc_log_level=exc_log_level,
                         **kwargs,
@@ -177,7 +187,7 @@ class Async:
     async def call(
         func: Callable[P, R] | Callable[P, Awaitable[R]],
         *args: P.args,
-        stacklevel: int = 3,  # type: ignore
+        stacklevel: int = DEFAULT_ASYNC_CALL_STACKLEVEL,  # type: ignore
         log_level: logger.Level | None = None,
         exc_log_level: logger.Level | None = None,
         **kwargs: P.kwargs,
@@ -189,16 +199,14 @@ class Async:
         try:
             if asyncio.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
-                extra = 3
             else:
                 result = await asyncio.to_thread(func, *args, **kwargs)
-                extra = 0
             log.callable_success(
                 func,
                 args,
                 kwargs,
                 result,
-                stacklevel + extra,
+                stacklevel,
                 log_level,
             )
             return cast(R, result), None
@@ -227,7 +235,7 @@ class Async:
     async def call_raise(
         func: Callable[P, R] | Callable[P, Awaitable[R]],
         *args: P.args,
-        stacklevel: int = 4,  # type: ignore
+        stacklevel: int = DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL,
         log_level: logger.Level | None = None,
         exc_log_level: logger.Level | None = None,
         **kwargs: P.kwargs,
@@ -249,6 +257,7 @@ class Async:
         def call(
             func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
             *,
+            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL,
             log_level: logger.Level | None = None,
             exc_log_level: logger.Level | None = None,
         ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
@@ -265,7 +274,7 @@ class Async:
                     return await Async.call(
                         f,
                         *args,
-                        stacklevel=5,
+                        stacklevel=stacklevel,
                         log_level=log_level,
                         exc_log_level=exc_log_level,
                         **kwargs,
@@ -281,6 +290,7 @@ class Async:
         def call_raise(
             func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
             *,
+            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL,
             log_level: logger.Level | None = None,
             exc_log_level: logger.Level | None = None,
         ) -> Callable[P, Awaitable[R]]:
@@ -296,7 +306,7 @@ class Async:
                     return await Async.call_raise(
                         f,
                         *args,
-                        stacklevel=5,
+                        stacklevel=stacklevel,
                         log_level=log_level,
                         exc_log_level=exc_log_level,
                         **kwargs,
