@@ -18,10 +18,16 @@
 # under the License.
 
 from __future__ import annotations
-from contextlib import asynccontextmanager
 
+from contextlib import asynccontextmanager
 from enum import Enum
-from typing import Generic, List, Self, Type, TypeVar, AsyncIterator
+
+try:
+    from typing import Self
+except ImportError:
+    from typing_extensions import Self
+
+from typing import AsyncIterator, List, Type
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
@@ -31,9 +37,6 @@ from .logger import get_logger
 
 logger = get_logger(__name__)
 
-# Define a TypeVar for the Browser class
-T_Browser = TypeVar("T_Browser", bound="Browser")
-
 
 class BrowserType(Enum):
     CHROMIUM = "chromium"
@@ -41,7 +44,7 @@ class BrowserType(Enum):
     WEBKIT = "webkit"
 
 
-class Browser(entity.Entity, Generic[T_Browser]):
+class Browser(entity.Entity):
     """
     Simplified asynchronous Playwright browser wrapper with dynamic configuration,
     chainable methods, and robust error handling.
@@ -60,7 +63,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
     contexts: List[BrowserContext] = data.Field(default_factory=list, exclude=True)
 
     @data.field_validator("browser_type", mode="before")
-    def validate_browser_type(cls, v):
+    def validate_browser_type(cls, v: str | BrowserType) -> BrowserType:
         if isinstance(v, str):
             try:
                 return BrowserType(v.lower())
@@ -73,7 +76,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
 
     @classmethod
     @asynccontextmanager
-    async def chromium(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def chromium(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Chromium browser.
         """
@@ -86,7 +89,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
 
     @classmethod
     @asynccontextmanager
-    async def firefox(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def firefox(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Firefox browser.
         """
@@ -99,7 +102,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
 
     @classmethod
     @asynccontextmanager
-    async def webkit(cls: Type[T_Browser], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def webkit(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a WebKit browser.
         """
@@ -110,15 +113,14 @@ class Browser(entity.Entity, Generic[T_Browser]):
         finally:
             await instance.__aexit__(None, None, None)
 
-    @tracer.Async.decorator.call_raise
-    async def __aenter__(self: T_Browser) -> Self:
+    async def __aenter__(self) -> Self:
         """
         Enter the asynchronous context manager, starting Playwright and launching the browser.
         """
         await self.launch()
         return self
 
-    async def __aexit__(self: T_Browser, exc_type, exc_val, exc_tb) -> None:
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         """
         Exit the asynchronous context manager, closing the browser and stopping Playwright.
         """
@@ -128,7 +130,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
             logger.debug("Playwright stopped.")
 
     @tracer.Async.decorator.call_raise
-    async def launch(self: T_Browser) -> Self:
+    async def launch(self) -> Self:
         """
         Launch the specified browser type.
 
@@ -159,7 +161,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return self
 
     @tracer.Async.decorator.call_raise
-    async def new_context(self: T_Browser, *args, **kwargs) -> Self:
+    async def new_context(self, *args, **kwargs) -> Self:
         """
         Create a new browser context.
 
@@ -175,7 +177,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return self
 
     @tracer.Async.decorator.call_raise
-    async def new_page(self: T_Browser) -> Page:
+    async def new_page(self) -> Page:
         """
         Create a new page within a new browser context.
 
@@ -189,7 +191,7 @@ class Browser(entity.Entity, Generic[T_Browser]):
         return page
 
     @tracer.Async.decorator.call_raise
-    async def close(self: T_Browser) -> Self:
+    async def close(self) -> Self:
         """
         Close all browser contexts and the browser itself.
 
