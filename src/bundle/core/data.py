@@ -18,10 +18,12 @@
 # under the License.
 # flake8: noqa: F401
 
+from __future__ import annotations
+
 import json
 import warnings
 from pathlib import Path
-from typing import Callable, ClassVar, Self, Type, TypeVar
+from typing import Callable, Type, TypeVar
 
 from pydantic import HttpUrl  # noqa
 from pydantic import (
@@ -87,7 +89,7 @@ def _internal_configuration(**kwargs):
         if kwargs["json_encoders"] is not None:
             assert isinstance(
                 kwargs["json_encoders"], dict
-            ), "json_encoder must be dict[type, Callable[value]] where the callable define de serialization function"
+            ), "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
     return ConfigDict(**kwargs)
 
 
@@ -128,12 +130,12 @@ class Data(BaseModel):
 
     model_config = configuration()
 
-    # Test name is used to differenciate the same Data with different test result
+    # Test name is used to differentiate the same Data with different test results
     __test_name: str = PrivateAttr(default="base")
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def from_dict(cls: Type[D], data: dict) -> Self:
+    async def from_dict(cls: Type[D], data: dict) -> D:
         """
         Create an instance of the model from a dictionary.
 
@@ -166,13 +168,13 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def _from_json_path(cls: Type[D], json_path: Path) -> Self:
+    async def _from_json_path(cls: Type[D], json_path: Path) -> D:
         json_str = await tracer.Async.call_raise(json_path.read_text)
         return await cls._from_json_str(json_str)
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def _from_json_str(cls: Type[D], json_str: str) -> Self:
+    async def _from_json_str(cls: Type[D], json_str: str) -> D:
         """
         Create an instance of the model from a JSON string.
 
@@ -189,7 +191,7 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def from_json(cls: Type[D], json_source: str | Path) -> Self:
+    async def from_json(cls: Type[D], json_source: str | Path) -> D:
         """
         Create an instance of the model from either a JSON string or a path to a JSON file.
 
@@ -270,7 +272,7 @@ class Data(BaseModel):
             Exception: If serializing the JSON Schema to a string fails.
         """
         schema = await cls.as_jsonschema(mode)
-        return await json.dumps(schema, indent=4)
+        return await tracer.Async.call_raise(json.dumps, schema, indent=4)
 
     @tracer.Async.decorator.call_raise
     async def dump_jsonschema(self, path: Path, mode: json_schema.JsonSchemaMode = "serialization") -> None:
@@ -285,4 +287,4 @@ class Data(BaseModel):
             Exception: If writing the JSON Schema to the file fails.
         """
         schema_str = await self.as_jsonschema_str(mode)
-        await path.write_text(schema_str)
+        await tracer.Async.call_raise(path.write_text, schema_str, encoding="utf-8")

@@ -19,7 +19,15 @@
 
 import asyncio
 from functools import wraps
-from typing import Awaitable, Callable, Concatenate, ParamSpec, TypeVar, cast
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Coroutine,
+    ParamSpec,
+    TypeVar,
+    cast,
+)
 
 import tracy_client
 
@@ -48,9 +56,9 @@ class Sync:
     def call(
         func: Callable[P, R] | Callable[P, Awaitable[R]],
         *args: P.args,
-        stacklevel: int = DEFAULT_SYNC_CALL_STACKLEVEL,
-        log_level: logger.Level | None = None,
-        exc_log_level: logger.Level | None = None,
+        stacklevel: int = DEFAULT_SYNC_CALL_STACKLEVEL,  # type: ignore
+        log_level: logger.Level | None = None,  # type: ignore
+        exc_log_level: logger.Level | None = None,  # type: ignore
         **kwargs: P.kwargs,
     ) -> tuple[R | None, Exception | None]:
         result: R | None = None
@@ -61,195 +69,30 @@ class Sync:
         with tracy_client.ScopedZone(name=log.get_callable_name(func), stacklevel=stacklevel - 1):
             try:
                 if asyncio.iscoroutinefunction(func):
-                    result = asyncio.run(func(*args, **kwargs))
+                    result = asyncio.run(cast(Coroutine[Any, Any, R], func(*args, **kwargs)))
                 else:
-                    result = func(*args, **kwargs)
-
-                log.callable_success(
-                    func,
-                    args,
-                    kwargs,
-                    result,
-                    stacklevel,
-                    log_level,
-                )
+                    result = cast(R, func(*args, **kwargs))
+                log.callable_success(func, args, kwargs, result, stacklevel, log_level)
             except Exception as exception:
                 if isinstance(exception, asyncio.CancelledError):
-                    log.callable_exception(
-                        func,
-                        args,
-                        kwargs,
-                        exception,
-                        stacklevel,
-                        exc_log_level,
-                    )
+                    log.callable_exception(func, args, kwargs, exception, stacklevel, exc_log_level)
                 else:
-                    log.callable_cancel(
-                        func,
-                        args,
-                        kwargs,
-                        exception,
-                        stacklevel,
-                        exc_log_level,
-                    )
+                    log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
                 return None, exception
 
             return result, None
 
     @staticmethod
     def call_raise(
-        func: Callable[Concatenate[P], R],
+        func: Callable[P, R] | Callable[P, Awaitable[R]],
         *args: P.args,
-        stacklevel: int = DEFAULT_SYNC_CALL_RAISE_STACKLEVEL,
-        log_level: logger.Level | None = None,
-        exc_log_level: logger.Level | None = None,
+        stacklevel: int = DEFAULT_SYNC_CALL_RAISE_STACKLEVEL,  # type: ignore
+        log_level: logger.Level | None = None,  # type: ignore
+        exc_log_level: logger.Level | None = None,  # type: ignore
         **kwargs: P.kwargs,
     ) -> R:
         result, exception = Sync.call(
-            func,
-            *args,
-            stacklevel=stacklevel,
-            log_level=log_level,
-            exc_log_level=exc_log_level,
-            **kwargs,
-        )
-        if exception is not None:
-            raise exception
-        return cast(R, result)
-
-    class decorator:
-        @staticmethod
-        def call(
-            func: Callable[P, R] | None = None,
-            *,
-            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL,
-            log_level: logger.Level | None = None,
-            exc_log_level: logger.Level | None = None,
-        ) -> Callable[..., object]:
-            """
-            Decorator that wraps a synchronous callable to log its outcome.
-            Returns a tuple (result, exception).
-            Can be used with or without parameters.
-            """
-
-            def actual_decorator(f: Callable[P, R]) -> Callable[P, tuple[R | None, Exception | None]]:
-                @wraps(f)
-                def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
-                    return Sync.call(
-                        f,
-                        *args,
-                        stacklevel=stacklevel,
-                        log_level=log_level,
-                        exc_log_level=exc_log_level,
-                        **kwargs,
-                    )
-
-                return wrapper
-
-            if func is None:
-                return actual_decorator
-            return actual_decorator(func)
-
-        @staticmethod
-        def call_raise(
-            func: Callable[P, R] | None = None,
-            *,
-            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL,
-            log_level: logger.Level | None = None,
-            exc_log_level: logger.Level | None = None,
-        ) -> Callable[..., R]:
-            """
-            Decorator that wraps a synchronous callable to log its outcome.
-            Returns the result directly or raises the logged exception.
-            Can be used with or without parameters.
-            """
-
-            def actual_decorator(f: Callable[P, R]) -> Callable[P, R]:
-                @wraps(f)
-                def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
-                    return Sync.call_raise(
-                        f,
-                        *args,
-                        stacklevel=stacklevel,
-                        log_level=log_level,
-                        exc_log_level=exc_log_level,
-                        **kwargs,
-                    )
-
-                return wrapper
-
-            if func is None:
-                return actual_decorator
-            return actual_decorator(func)
-
-
-# --- Asynchronous Implementation ---
-class Async:
-    @staticmethod
-    async def call(
-        func: Callable[P, R] | Callable[P, Awaitable[R]],
-        *args: P.args,
-        stacklevel: int = DEFAULT_ASYNC_CALL_STACKLEVEL,  # type: ignore
-        log_level: logger.Level | None = None,
-        exc_log_level: logger.Level | None = None,
-        **kwargs: P.kwargs,
-    ) -> tuple[R | None, BaseException | None]:
-
-        log_level = log_level if log_level else DEFAULT_LOG_LEVEL
-        exc_log_level = exc_log_level if exc_log_level else DEFAULT_LOG_EXC_LEVEL
-
-        with tracy_client.ScopedZone(name=log.get_callable_name(func), stacklevel=stacklevel - 1):
-            try:
-                if asyncio.iscoroutinefunction(func):
-                    result = await func(*args, **kwargs)
-                else:
-                    result = await asyncio.to_thread(func, *args, **kwargs)
-                log.callable_success(
-                    func,
-                    args,
-                    kwargs,
-                    result,
-                    stacklevel,
-                    log_level,
-                )
-                return cast(R, result), None
-            except asyncio.CancelledError as cancel_exception:
-                log.callable_exception(
-                    func,
-                    args,
-                    kwargs,
-                    cancel_exception,
-                    stacklevel,
-                    exc_log_level,
-                )
-                return None, cancel_exception
-            except Exception as exception:
-                log.callable_cancel(
-                    func,
-                    args,
-                    kwargs,
-                    exception,
-                    stacklevel,
-                    exc_log_level,
-                )
-                return None, exception
-
-    @staticmethod
-    async def call_raise(
-        func: Callable[P, R] | Callable[P, Awaitable[R]],
-        *args: P.args,
-        stacklevel: int = DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL,
-        log_level: logger.Level | None = None,
-        exc_log_level: logger.Level | None = None,
-        **kwargs: P.kwargs,
-    ) -> R:
-        result, exception = await Async.call(
-            func,
-            *args,
-            stacklevel=stacklevel,
-            log_level=log_level,
-            exc_log_level=exc_log_level,
-            **kwargs,
+            func, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
         )
         if exception is not None:
             raise exception
@@ -260,9 +103,110 @@ class Async:
         def call(
             func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
             *,
-            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL,
+            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL,
             log_level: logger.Level | None = None,
             exc_log_level: logger.Level | None = None,
+        ) -> Callable[P, tuple[R | None, Exception | None]]:
+            """
+            Decorator that wraps a synchronous callable to log its outcome.
+            Returns a tuple (result, exception). Can be used with or without parameters.
+            """
+
+            def actual_decorator(
+                f: Callable[P, R] | Callable[P, Awaitable[R]],
+            ) -> Callable[P, tuple[R | None, Exception | None]]:
+                @wraps(f)
+                def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
+                    return Sync.call(
+                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                    )
+
+                return wrapper
+
+            return cast(
+                Callable[P, tuple[R | None, Exception | None]],
+                actual_decorator if func is None else actual_decorator(func),
+            )
+
+        @staticmethod
+        def call_raise(
+            func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
+            *,
+            stacklevel: int = DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL,
+            log_level: logger.Level | None = None,
+            exc_log_level: logger.Level | None = None,
+        ) -> Callable[P, R]:
+            """
+            Decorator that wraps a synchronous callable to log its outcome.
+            Returns the result directly or raises the logged exception.
+            Can be used with or without parameters.
+            """
+
+            def actual_decorator(f: Callable[P, R] | Callable[P, Awaitable[R]]) -> Callable[P, R]:
+                @wraps(f)
+                def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
+                    return Sync.call_raise(
+                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                    )
+
+                return wrapper
+
+            return cast(Callable[P, R], actual_decorator if func is None else actual_decorator(func))
+
+
+# --- Asynchronous Implementation ---
+class Async:
+    @staticmethod
+    async def call(
+        func: Callable[P, R] | Callable[P, Awaitable[R]],
+        *args: P.args,
+        stacklevel: int = DEFAULT_ASYNC_CALL_STACKLEVEL,  # type: ignore
+        log_level: logger.Level | None = None,  # type: ignore
+        exc_log_level: logger.Level | None = None,  # type: ignore
+        **kwargs: P.kwargs,
+    ) -> tuple[R | None, BaseException | None]:
+        log_level = log_level if log_level else DEFAULT_LOG_LEVEL
+        exc_log_level = exc_log_level if exc_log_level else DEFAULT_LOG_EXC_LEVEL
+
+        with tracy_client.ScopedZone(name=log.get_callable_name(func), stacklevel=stacklevel - 1):
+            try:
+                if asyncio.iscoroutinefunction(func):
+                    result = await func(*args, **kwargs)
+                else:
+                    result = await asyncio.to_thread(func, *args, **kwargs)
+                log.callable_success(func, args, kwargs, result, stacklevel, log_level)
+                return cast(R, result), None
+            except asyncio.CancelledError as cancel_exception:
+                log.callable_exception(func, args, kwargs, cancel_exception, stacklevel, exc_log_level)
+                return None, cancel_exception
+            except Exception as exception:
+                log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
+                return None, exception
+
+    @staticmethod
+    async def call_raise(
+        func: Callable[P, R] | Callable[P, Awaitable[R]],
+        *args: P.args,
+        stacklevel: int = DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL,  # type: ignore
+        log_level: logger.Level | None = None,  # type: ignore
+        exc_log_level: logger.Level | None = None,  # type: ignore
+        **kwargs: P.kwargs,
+    ) -> R:
+        result, exception = await Async.call(
+            func, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+        )
+        if exception is not None:
+            raise exception
+        return cast(R, result)
+
+    class decorator:
+        @staticmethod
+        def call(
+            func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
+            *,
+            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL,  # type: ignore
+            log_level: logger.Level | None = None,  # type: ignore
+            exc_log_level: logger.Level | None = None,  # type: ignore
         ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
             """
             Decorator that wraps an asynchronous callable to log its outcome.
@@ -275,27 +219,23 @@ class Async:
                 @wraps(f)
                 async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
                     return await Async.call(
-                        f,
-                        *args,
-                        stacklevel=stacklevel,
-                        log_level=log_level,
-                        exc_log_level=exc_log_level,
-                        **kwargs,
+                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
                     )
 
                 return wrapper
 
-            if func is None:
-                return actual_decorator
-            return actual_decorator(func)
+            return cast(
+                Callable[P, Awaitable[tuple[R | None, BaseException | None]]],
+                actual_decorator if func is None else actual_decorator(func),
+            )
 
         @staticmethod
         def call_raise(
             func: Callable[P, R] | Callable[P, Awaitable[R]] | None = None,
             *,
-            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL,
-            log_level: logger.Level | None = None,
-            exc_log_level: logger.Level | None = None,
+            stacklevel: int = DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL,  # type: ignore
+            log_level: logger.Level | None = None,  # type: ignore
+            exc_log_level: logger.Level | None = None,  # type: ignore
         ) -> Callable[P, Awaitable[R]]:
             """
             Decorator that wraps an asynchronous callable to log its outcome.
@@ -307,16 +247,12 @@ class Async:
                 @wraps(f)
                 async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     return await Async.call_raise(
-                        f,
-                        *args,
-                        stacklevel=stacklevel,
-                        log_level=log_level,
-                        exc_log_level=exc_log_level,
-                        **kwargs,
+                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
                     )
 
                 return wrapper
 
-            if func is None:
-                return actual_decorator
-            return actual_decorator(func)
+            return cast(
+                Callable[P, Awaitable[R]],
+                actual_decorator if func is None else actual_decorator(func),
+            )
