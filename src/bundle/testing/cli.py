@@ -48,7 +48,7 @@ async def pytest_cmd(show_exc: bool):
     if not show_exc:
         bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = logger.Level.EXPECTED_EXCEPTION
 
-    bundle_folder = bundle.Path(bundle.__path__[0])
+    bundle_folder = bundle.Path(list(bundle.__path__)[0])
     tests_folder = bundle_folder.parent.parent / "tests"
     log.debug("bundle_folder=%s, tests_folder=%s", str(bundle_folder), tests_folder)
 

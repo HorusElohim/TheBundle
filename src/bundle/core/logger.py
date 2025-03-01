@@ -132,7 +132,7 @@ class BundleLogger(logging.getLoggerClass()):
         func: Callable[..., Any],
         args: Any,
         kwargs: Mapping[str, Any],
-        exception: Exception,
+        exception: BaseException,
         stacklevel: int = 2,
         level: Level = Level.ERROR,
     ) -> None:
@@ -161,7 +161,7 @@ class BundleLogger(logging.getLoggerClass()):
         func: Callable[..., Any],
         args: Any,
         kwargs: Mapping[str, Any],
-        exception: Exception,
+        exception: BaseException,
         stacklevel: int = 2,
         level: Level = Level.WARNING,
     ) -> None:
@@ -235,7 +235,7 @@ def setup_file_handler(log_path: Path, to_json: bool) -> logging.FileHandler:
     return file_handler
 
 
-def setup_console_handler(colored_output: bool) -> logging.StreamHandler:
+def setup_console_handler(colored_output: bool) -> logging.Handler:
     """
     Set up a console handler for logging.
 
@@ -352,6 +352,6 @@ if __name__ == "__main__":
 
     # Example: Log an exception.
     try:
-        1 / 0
+        x = 1 / 0
     except Exception as e:
         logger.error("This is an error with an exception.", exc_info=True)
