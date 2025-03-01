@@ -24,6 +24,7 @@ dependencies = [
     "jsonschema",
     "asyncclick",
     "playwright",
+    "typing-extensions",
     "tornado>=6.1; sys_platform == 'win32'",
 ]
 
