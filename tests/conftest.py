@@ -25,8 +25,8 @@ import pytest
 
 import bundle
 
-PERFORMANCE = os.getenv("PERFORMANCE", "false").lower() in {"1", "true"}
-LOG_LEVEL = bundle.core.logger.Level.FATAL if PERFORMANCE else bundle.core.logger.Level.TESTING
+NO_LOGS = os.getenv("NO_LOGS", "false").lower() in {"1", "true"}
+LOG_LEVEL = bundle.core.logger.Level.FATAL if NO_LOGS else bundle.core.logger.Level.TESTING
 
 # Avoid show expected exception
 bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = bundle.core.logger.Level.EXPECTED_EXCEPTION
