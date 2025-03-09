@@ -16,21 +16,25 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
-import pytest
-import bundle
+import os
 import platform
 import shutil
 import tempfile
 
-log = bundle.core.logger.get_logger(__name__)
+import pytest
 
-bundle.BUNDLE_LOGGER.setLevel(bundle.core.logger.Level.TESTING)
+import bundle
+
+PERFORMANCE = os.getenv("PERFORMANCE", "false").lower() in {"1", "true"}
+LOG_LEVEL = bundle.core.logger.Level.FATAL if PERFORMANCE else bundle.core.logger.Level.TESTING
 
 # Avoid show expected exception
 bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = bundle.core.logger.Level.EXPECTED_EXCEPTION
 
+log = bundle.core.logger.get_logger(__name__)
 log.parent = bundle.BUNDLE_LOGGER
+
+bundle.BUNDLE_LOGGER.setLevel(LOG_LEVEL)
 
 log.testing("Loading conftest.py")
 
