@@ -18,14 +18,14 @@
 # under the License.
 
 import asyncio
+import sys
 from typing import Optional
 
-from . import tracer
+from . import logger, tracer
 from .data import Data, PrivateAttr
 from .entity import Entity
-from .logger import get_logger
 
-logger = get_logger(__name__)
+log = logger.get_logger(__name__)
 
 
 class ProcessResult(Data):
@@ -54,7 +54,7 @@ class ProcessError(Exception):
             msg_lines.append("StdErr:")
             msg_lines.append(stderr_clean)
         message = "\n".join(msg_lines)
-        logger.error(message)
+        log.error(message)
         super().__init__(exc_message)
 
 
@@ -129,7 +129,9 @@ class ProcessStream(Process):
         stdout_lines = []
         stderr_lines = []
 
-        return await tracer.Async.call_raise(self._internal_call_, command, stdout_lines, stderr_lines, **kwargs)
+        return await tracer.Async.call_raise(
+            self._internal_call_, command, stdout_lines, stderr_lines, **kwargs, log_level=logger.Level.VERBOSE
+        )
 
     async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
         self._process = await tracer.Async.call_raise(
@@ -181,24 +183,16 @@ class ProcessStream(Process):
             async for line in stream:
                 str_line = line.decode("utf-8")
                 accumulator.append(str_line)
-                await tracer.Async.call_raise(handler, str_line)
+                await handler(str_line)
         except Exception as e:
-            logger.error(f"Exception while reading stream: {e}")
+            log.error(f"Exception while reading stream: {e}")
 
     async def callback_stdout(self, line: str):
-        """
-        Processes a line from stdout.
-
-        Override this method to customize stdout line handling.
-        """
-        # Default implementation: log the stdout line
-        logger.verbose("STDOUT: %s", line.strip())
+        """Default stdout handler: writes directly to sys.stdout."""
+        sys.stdout.write(line)
+        sys.stdout.flush()
 
     async def callback_stderr(self, line: str):
-        """
-        Processes a line from stderr.
-
-        Override this method to customize stderr line handling.
-        """
-        # Default implementation: log the stderr line
-        logger.error("STDERR: %s", line.strip())
+        """Default stderr handler: writes directly to sys.stderr."""
+        sys.stderr.write(line)
+        sys.stderr.flush()
