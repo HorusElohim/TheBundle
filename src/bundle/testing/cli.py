@@ -23,28 +23,40 @@ async def python():
 
 @python.command("pytest")
 @tracer.Sync.decorator.call_raise
-@click.option("--show-exc", is_flag=True, help="Show expected trace Exceptions")
-@click.option("--perf", is_flag=True, help="Show expected trace Exceptions")
-async def pytest_cmd(show_exc: bool, perf: bool):
+@click.option("--show-exc", is_flag=True, default=False, help="Show expected trace Exceptions")
+@click.option("--no-logs", is_flag=True, default=False, help="Set log to FATAL avoiding log overhead")
+@click.option("--no-cprof", is_flag=True, default=False, help="Disable cprofile")
+@click.option("-s", "--capture", is_flag=True, default=False, help="Caputre stdout")
+async def pytest_cmd(show_exc: bool, no_logs: bool, no_cprof: bool, capture: bool):
     """
-    Run pytest directly from this CLI instance using pytest.main().
-    This runs the tests in a separate thread.
+    Run the bundle test suite.
     """
     # Avoid show tracer expected exception
     if not show_exc:
         bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = logger.Level.EXPECTED_EXCEPTION
 
     # Avoid logger overhead
-    if perf:
-        os.environ["PERFORMANCE"] = "true"
+    if no_logs:
+        log.info("disable logs")
+        os.environ["NO_LOGS"] = "true"
+
+    if no_cprof:
+        log.info("disable cprofile")
+        bundle.testing.decorators.set_cprofile_enabled(False)
 
     bundle_folder = bundle.Path(list(bundle.__path__)[0])
     tests_folder = bundle_folder.parent.parent / "tests"
-    log.debug("bundle_folder=%s, tests_folder=%s", str(bundle_folder), tests_folder)
+    log.info("bundle_folder=%s, tests_folder=%s", str(bundle_folder), tests_folder)
+
+    cmd = [str(tests_folder)]
+    if capture:
+        log.info("enable capture stdout")
+        cmd += ["-s"]
 
     # Run pytest.main() in a separate thread so that its event loop
     # creation and teardown is isolated from the current (running) loop.
-    test_result = await asyncio.to_thread(pytest.main, [str(tests_folder)])
+    # NB: The thread cannot be interrupted in Python.
+    test_result = await asyncio.to_thread(pytest.main, cmd)
 
     if test_result == 0:
         log.info("Test success")
