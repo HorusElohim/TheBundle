@@ -23,16 +23,16 @@ import platform
 import shutil
 import tempfile
 
-logger = bundle.core.logger.get_logger(__name__)
+log = bundle.core.logger.get_logger(__name__)
 
 bundle.BUNDLE_LOGGER.setLevel(bundle.core.logger.Level.TESTING)
 
 # Avoid show expected exception
 bundle.core.tracer.DEFAULT_LOG_EXC_LEVEL = bundle.core.logger.Level.EXPECTED_EXCEPTION
 
-logger.parent = bundle.BUNDLE_LOGGER
+log.parent = bundle.BUNDLE_LOGGER
 
-logger.testing("Loading conftest.py")
+log.testing("Loading conftest.py")
 
 
 def _get_bundle_folder():
@@ -120,25 +120,20 @@ def pytest_collection_modifyitems(session, config, items):
     for item in items:
         # Bundle cprofile marker
         if cprofile_marker := item.get_closest_marker("bundle_cprofile"):
-            logger.testing(f"added @cprofile marker to {item.name}")
+            log.testing(f"added @cprofile marker to {item.name}")
             expected_duration = cprofile_marker.kwargs.get("expected_duration", 0)
             performance_threshold = cprofile_marker.kwargs.get("performance_threshold", 10_000_000)  # Default 10 ms
 
-            original_func = item.obj
-
             # Apply the cprofile_decorator with parameters, excluding cprofile_folder
-            decorated_func = bundle.testing.decorators.cprofile(
+            item.obj = bundle.testing.decorators.cprofile(
                 expected_duration=expected_duration,
                 performance_threshold=performance_threshold,
                 cprofile_folder=cprofile_folder,
-            )(original_func)
-
-            # Replace the test function with the decorated one
-            item.obj = decorated_func
+            )(item.obj)
 
         # Bundle data marker
         if data_marker := item.get_closest_marker("bundle_data"):
-            logger.testing(f"added @data marker to {item.name}")
+            log.testing(f"added @data marker to {item.name}")
             ref_dir = data_marker.kwargs.get("ref_dir", str(reference_folder))
             # Create a temporary directory for data decoration
             tmp_dir = bundle.Path(tempfile.mkdtemp(prefix=f"data_{item.name}"))
@@ -147,23 +142,20 @@ def pytest_collection_modifyitems(session, config, items):
             cprofile_dir = data_marker.kwargs.get("cprofile_folder", str(cprofile_folder))
 
             # Apply the data_decorator with parameters
-            decorated_func = bundle.testing.decorators.data(
+            item.obj = bundle.testing.decorators.data(
                 ref_dir=ref_dir,
                 tmp_dir=tmp_dir,
                 cprofile_folder=cprofile_dir,
             )(item.obj)
 
-            # Replace the test function with the decorated one
-            item.obj = decorated_func
-
 
 def pytest_sessionfinish(session, exitstatus):
     # Cleanup all temp dirs
-    logger.testing("Cleaning up temporary directories.")
+    log.testing("Cleaning up temporary directories.")
     temp_dirs = getattr(session, "collected_temp_dirs", [])
     for temp_dir in temp_dirs:
         try:
             shutil.rmtree(temp_dir)
-            logger.testing(f"Cleaned up temporary directory: {temp_dir}")
+            log.testing(f"Cleaned up temporary directory: {temp_dir}")
         except Exception as e:
-            logger.error(f"Failed to delete temporary directory {temp_dir}: {e}")
+            log.error(f"Failed to delete temporary directory {temp_dir}: {e}")
