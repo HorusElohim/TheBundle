@@ -16,7 +16,7 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+import sys
 import asyncio
 from functools import wraps
 from typing import (
@@ -37,14 +37,34 @@ log = logger.get_logger(__name__)
 
 DEFAULT_LOG_LEVEL = logger.Level.DEBUG
 DEFAULT_LOG_EXC_LEVEL = logger.Level.ERROR
-DEFAULT_SYNC_CALL_STACKLEVEL = 3
-DEFAULT_SYNC_CALL_RAISE_STACKLEVEL = 4
-DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL = 4
-DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
-DEFAULT_ASYNC_CALL_STACKLEVEL = 3
-DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL = 4
-DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL = 4
-DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
+
+# Conditionally adjusting the stacklevel.
+# The following stacklevel constants are tuned based on the Python version.
+# In Python versions earlier than 3.11, the call stack tends to have fewer frames when logging,
+# so a lower stacklevel is sufficient to capture the correct external caller.
+#
+# Starting with Python 3.11 (and some changes seen in Python 3.10), internal wrappers and changes
+# in the logging module and async frameworks introduce extra frames. This causes the default stacklevel
+# value used by the logging methods to point to an internal module (like pytest's or asyncio's modules)
+# instead of the expected caller.
+if sys.version_info < (3, 11):
+    DEFAULT_SYNC_CALL_STACKLEVEL = 2
+    DEFAULT_SYNC_CALL_RAISE_STACKLEVEL = 3
+    DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL = 3
+    DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 4
+    DEFAULT_ASYNC_CALL_STACKLEVEL = 2
+    DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL = 3
+    DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL = 3
+    DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 4
+else:
+    DEFAULT_SYNC_CALL_STACKLEVEL = 3
+    DEFAULT_SYNC_CALL_RAISE_STACKLEVEL = 4
+    DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL = 4
+    DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
+    DEFAULT_ASYNC_CALL_STACKLEVEL = 3
+    DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL = 4
+    DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL = 4
+    DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL = 5
 
 
 # --- Synchronous Implementation ---
