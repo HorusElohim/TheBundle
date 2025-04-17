@@ -33,7 +33,7 @@ async def search(name: str):
         url_1 = await browser.get_search_url(name, page=1)
         await page.goto(url_1, wait_until="commit")
         torrents = await browser.get_torrents(page)
-        log.info(browser.tabulate_torrents(torrents))
+        log.info(await browser.tabulate_torrents(torrents))
 
 
 scraper.add_command(torrent)
