@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools", "wheel", "setuptools_scm", "thebundle"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "realpkg"
+dynamic = ["version"]
+description = "Example Python package with pybind11 bindings."
+authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["bindings/python"]
+
+[tool.pybind11]
+# shape submodule
+[[tool.pybind11.modules]]
+name = "example_module.shape"
+sources = ["bindings/python/example_module/shape_bindings.cpp"]
+pkg_config_packages = ["example_module"]
+
+# geometry submodule
+[[tool.pybind11.modules]]
+name = "example_module.geometry"
+sources = ["bindings/python/example_module/geometry_bindings.cpp"]
+pkg_config_packages = ["example_module"]

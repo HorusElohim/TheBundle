@@ -290,6 +290,13 @@ def setup_root_logger(
     logger = get_logger(logger_name)
     logger.setLevel(level)
 
+    if logger.hasHandlers():
+        # Check if File and Console handlers are already set up
+        for handler in logger.handlers:
+            if isinstance(handler, logging.FileHandler) or isinstance(handler, RichHandler):
+                logger.removeHandler(handler)
+                handler.close()
+
     if log_path:
         file_handler = setup_file_handler(log_path, to_json)
         logger.addHandler(file_handler)
