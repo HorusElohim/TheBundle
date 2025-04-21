@@ -25,7 +25,7 @@ from uuid import UUID, uuid5
 from .. import version
 from . import Data, data, logger, utils
 
-LOGGER = logger.logging.getLogger(__name__)
+LOGGER = logger.get_logger(__name__)
 
 __doc__ = """
 This module introduces the `Entity` class, an extension of the `Data` model designed to represent
