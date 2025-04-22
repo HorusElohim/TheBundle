@@ -5,6 +5,7 @@ from typing import List, Tuple
 
 from bundle.core import logger
 from bundle.core.process import Process
+from bundle.core import tracer
 
 log = logger.get_logger(__name__)
 
@@ -50,10 +51,10 @@ def run_pkg_config_cached(
 
     # run them
     process = Process()
-    result_c = process(cflags_cmd)
+    result_c = tracer.Sync.call_raise(process.__call__, cflags_cmd, env=env)
     if result_c.returncode != 0:
         raise RuntimeError(f"pkg-config cflags failed: {result_c.stderr.strip()}")
-    result_l = process(libs_cmd)
+    result_l = tracer.Sync.call_raise(process.__call__, libs_cmd, env=env)
     if result_l.returncode != 0:
         raise RuntimeError(f"pkg-config libs failed: {result_l.stderr.strip()}")
 
