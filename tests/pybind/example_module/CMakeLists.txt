@@ -8,6 +8,9 @@ project(example_module
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# Enable generation of position-independent code (e.g., -fPIC) for all targets by default.
+# Required for building shared libraries and for compatibility with ASLR.
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Collect all .cpp sources
