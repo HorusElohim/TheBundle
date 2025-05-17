@@ -2,6 +2,8 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
+import sys
+import sysconfig
 import pytest
 import tempfile
 import shutil
@@ -169,18 +171,24 @@ def built_example_module():
         temp_example = temp_path / "example_module"
         shutil.copytree(example_dir, temp_example)
 
-        # Build using CMake with Process and tracer.Sync.call_raise
-        tracer.Sync.call_raise(
-            proc.__call__,
-            "cmake -S . -B build -DCMAKE_INSTALL_PREFIX=install",
-            cwd=str(temp_example),
-        )
+        cmake_conf_cmd = ["cmake", "-S", ".", "-B", "build", "-DCMAKE_INSTALL_PREFIX=install"]
 
-        tracer.Sync.call_raise(
-            proc.__call__,
-            "cmake --build build --target install",
-            cwd=str(temp_example),
-        )
+        # Append macOS-specific flag if needed
+        if sys.platform == "darwin":
+            import platform
+
+            arch = platform.machine()
+            cmake_conf_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
+
+            env = os.environ.copy()
+            env["ARCHFLAGS"] = f"-arch {arch}"
+            env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
+        else:
+            env = None
+
+        # Build using CMake with Process and tracer.Sync.call_raise
+        tracer.Sync.call_raise(proc.__call__, " ".join(cmake_conf_cmd), cwd=str(temp_example), env=env)
+        tracer.Sync.call_raise(proc.__call__, "cmake --build build --target install", cwd=str(temp_example), env=env)
 
         # Verify the .pc file was created and has content
         pc_file = temp_example / "install" / "lib" / "pkgconfig" / "example_module.pc"
