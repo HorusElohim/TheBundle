@@ -1,9 +1,11 @@
 import logging
 from pathlib import Path
+
 import pybind11
 from setuptools import Extension
-from .pkgconfig import run_pkg_config_cached
+
 from .config import ModuleConfig
+from .pkgconfig import run_pkg_config_cached
 
 logger = logging.getLogger(__name__)
 
