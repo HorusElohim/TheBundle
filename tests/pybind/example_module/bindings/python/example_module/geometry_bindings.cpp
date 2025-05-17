@@ -3,7 +3,6 @@
 
 #include "example_module/geometry/Utils.hpp"
 #include "example_module/geometry/Composite.hpp"
-#include "example_module/geometry/Utils.hpp"
 #include "example_module/shape/Shape.hpp" // for shared_ptr<Shape>
 
 namespace py = pybind11;
