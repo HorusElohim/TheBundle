@@ -60,8 +60,10 @@ async def pytest_cmd(show_exc: bool, no_logs: bool, no_cprof: bool, capture: boo
 
     if test_result == 0:
         log.info("Test success")
+        exit(0)
     else:
         log.error("Test failed")
+        exit(1)
 
 
 testing.add_command(python)
