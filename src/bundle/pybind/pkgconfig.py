@@ -1,12 +1,31 @@
 import functools
 import os
 import shlex
+import sys
+from pathlib import Path
 from typing import List, Tuple
 
 from bundle.core import logger, tracer
 from bundle.core.process import Process
 
 log = logger.get_logger(__name__)
+
+
+def set_pkg_config_path(*paths: Path) -> None:
+    """
+    Sets the PKG_CONFIG_PATH environment variable in a cross-platform manner.
+
+    Parameters:
+    - paths: One or more Path objects representing directories to include in PKG_CONFIG_PATH.
+    """
+    path_sep = ";" if sys.platform == "win32" else ":"
+    new_paths = [str(p) for p in paths]
+    existing = os.environ.get("PKG_CONFIG_PATH", "")
+    if existing:
+        combined = path_sep.join(new_paths + [existing])
+    else:
+        combined = path_sep.join(new_paths)
+    os.environ["PKG_CONFIG_PATH"] = combined
 
 
 def parse_cflags(cflags: str) -> Tuple[List[str], List[str]]:
@@ -38,10 +57,7 @@ def run_pkg_config_cached(
     """
     env = os.environ.copy()
     if pkg_dirs:
-        orig = env.get("PKG_CONFIG_PATH", "")
-        path = ":".join(pkg_dirs)
-        env["PKG_CONFIG_PATH"] = f"{orig}:{path}" if orig else path
-        log.debug(f"PKG_CONFIG_PATH set to: {env['PKG_CONFIG_PATH']}")
+        set_pkg_config_path(*pkg_dirs)
 
     pkgs = " ".join(pkg_packages)
     # build the commands

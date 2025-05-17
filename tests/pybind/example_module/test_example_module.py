@@ -37,14 +37,7 @@ def built(tmp_path_factory):
     )
 
     # 3) Build Python extensions via bundle CLI
-    env = os.environ.copy()
-    pkg_config_path = str(dest / "install" / "lib" / "pkgconfig")
-    env["PKG_CONFIG_PATH"] = pkg_config_path
-
-    # Also modify os.environ to ensure child processes inherit the variable
-    orig_pkg_config = os.environ.get("PKG_CONFIG_PATH", "")
-    os.environ["PKG_CONFIG_PATH"] = f"{orig_pkg_config}:{pkg_config_path}" if orig_pkg_config else pkg_config_path
-
+    api.set_pkg_config_path(dest / "install" / "lib" / "pkgconfig")
     tracer.Sync.call_raise(api.build, dest)
 
     # 4) Prepend the bindings/python folder so imports work
