@@ -6,11 +6,17 @@ import pytest
 import tempfile
 import shutil
 from pathlib import Path
-from typing import List, Tuple
 
 import bundle.pybind.pkgconfig as pkgconfig
 from bundle.core import tracer
 from bundle.core.process import Process
+from bundle.core import logger
+
+log = logger.get_logger(__name__)
+
+
+def _as_posix_path(path: Path | str) -> str:
+    return Path(path).as_posix()
 
 
 @pytest.mark.parametrize(
@@ -20,7 +26,7 @@ from bundle.core.process import Process
         ("-Ione -Itwo", ["one", "two"], []),
     ],
 )
-def test_parse_cflags(cflags: str, exp_inc: List[str], exp_other: List[str]):
+def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
     inc, other = pkgconfig.parse_cflags(cflags)
     assert inc == exp_inc
     assert other == exp_other
@@ -33,7 +39,7 @@ def test_parse_cflags(cflags: str, exp_inc: List[str], exp_other: List[str]):
         ("-Lfoo -lbar -Xlinker arg", ["foo"], ["bar"], ["-Xlinker", "arg"]),
     ],
 )
-def test_parse_libs(libs: str, exp_libdirs: List[str], exp_libs: List[str], exp_other: List[str]):
+def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str], exp_other: list[str]):
     libdirs, libs_, other = pkgconfig.parse_libs(libs)
     assert libdirs == exp_libdirs
     assert libs_ == exp_libs
@@ -114,10 +120,13 @@ def test_run_pkg_config_real(pkg_config_fixture):
         # Run pkg-config directly
         inc_dirs, compile_flags, lib_dirs, libraries, link_flags = run_pkg_config_direct("testpkg")
 
-        # Verify the parsed results
-        assert str(pkg_config_fixture["include_dir"]) in inc_dirs
+        # Verify the parsed result
+        expected_inc = _as_posix_path(pkg_config_fixture["include_dir"])
+        expected_lib = _as_posix_path(pkg_config_fixture["lib_dir"])
+
+        assert expected_inc in [_as_posix_path(i) for i in inc_dirs]
         assert "-DTEST_DEFINE" in compile_flags
-        assert str(pkg_config_fixture["lib_dir"]) in lib_dirs
+        assert expected_lib in [_as_posix_path(l) for l in lib_dirs]
         assert "testlib" in libraries
         assert "m" in libraries
 
@@ -196,15 +205,15 @@ def test_run_pkg_config_with_example_module(built_example_module):
 
     # Debug: Print information about the .pc file and path
     pc_file = Path(pkg_config_path) / "example_module.pc"
-    print(f"\nPKG_CONFIG_PATH={pkg_config_path}")
-    print(f"PC file exists: {pc_file.exists()}")
+    log.testing(f"\nPKG_CONFIG_PATH={pkg_config_path}")
+    log.testing(f"PC file exists: {pc_file.exists()}")
 
     if pc_file.exists():
         pc_content = pc_file.read_text()
         if pc_content.strip():
-            print(f"PC file content:\n{pc_content}")
+            log.testing(f"PC file content:\n{pc_content}")
         else:
-            print("Warning: PC file exists but is empty!")
+            log.warning("Warning: PC file exists but is empty!")
 
     # Set up the environment
     env = os.environ.copy()
@@ -224,27 +233,27 @@ def test_run_pkg_config_with_example_module(built_example_module):
                 "pkg-config --list-all",
                 env=env,
             )
-            print(f"\npkg-config --list-all output:\n{list_result.stdout}")
+            log.testing(f"\npkg-config --list-all output:\n{list_result.stdout}")
         except Exception as e:
-            print(f"pkg-config --list-all failed: {e}")
+            log.error(f"pkg-config --list-all failed: {e}")
 
         # Run pkg-config commands
         inc_dirs, compile_flags, lib_dirs, libraries, link_flags = run_pkg_config_direct(
             "example_module", pkg_config_path=pkg_config_path
         )
 
-        # Verify the results
-        expected_include = str(temp_example / "install" / "include")
-        expected_lib = str(temp_example / "install" / "lib")
+        # Normalize expected paths for cross-platform assertions
+        expected_include = _as_posix_path(temp_example / "install" / "include")
+        expected_lib = _as_posix_path(temp_example / "install" / "lib")
 
-        assert any(expected_include in inc for inc in inc_dirs)
-        assert any(expected_lib in lib for lib in lib_dirs)
+        assert any(expected_include in _as_posix_path(inc) for inc in inc_dirs)
+        assert any(expected_lib in _as_posix_path(lib) for lib in lib_dirs)
         assert "example_module" in libraries
 
     except Exception as e:
         # Fall back to verifying the file paths directly without pkg-config
-        print(f"\nWarning: pkg-config failed: {str(e)}")
-        print("Testing file paths directly as fallback")
+        log.warning(f"\nWarning: pkg-config failed: {str(e)}")
+        log.warning("Testing file paths directly as fallback")
 
         include_dir = temp_example / "install" / "include"
         lib_dir = temp_example / "install" / "lib"
