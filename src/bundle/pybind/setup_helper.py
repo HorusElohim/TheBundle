@@ -1,6 +1,7 @@
-import os
 import logging
+import os
 from pathlib import Path
+
 from setuptools import setup as standard_setup
 
 from .config import PybindConfig

@@ -1,11 +1,10 @@
+import functools
 import os
 import shlex
-import functools
 from typing import List, Tuple
 
-from bundle.core import logger
+from bundle.core import logger, tracer
 from bundle.core.process import Process
-from bundle.core import tracer
 
 log = logger.get_logger(__name__)
 
