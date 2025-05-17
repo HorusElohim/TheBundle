@@ -21,6 +21,11 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - name: Install pkg-config (via MSYS2)
+        shell: bash
+        run: |
+          pacman -Sy --noconfirm pkgconf
+
       - name: Install BUNDLE dependencies
         run: |
             python -m pip install --upgrade pip
