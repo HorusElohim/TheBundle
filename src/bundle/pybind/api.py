@@ -3,6 +3,10 @@
 CLI for pybind setuptools helper module, leveraging pkgconfig and pybind11.
 """
 import multiprocessing
+import os
+import platform
+import sysconfig
+import sys
 from pathlib import Path
 
 from bundle.core import logger, tracer
@@ -24,10 +28,17 @@ async def build(path: str, parallel: int = multiprocessing.cpu_count()):
         cmd += f" --parallel {parallel}"
 
     log.info(f"Running build command in {proj}:")
-    log.debug(cmd)
+
+    if sys.platform == "darwin":
+        arch = platform.machine()
+        env = os.environ.copy()
+        env["ARCHFLAGS"] = f"-arch {arch}"
+        env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
+    else:
+        env = None
 
     proc = Process()
-    result = await proc(cmd, cwd=str(proj))
+    result = await proc(cmd, cwd=str(proj), env=env)
     log.info(f"Build completed with return code {result.returncode}")
 
 
