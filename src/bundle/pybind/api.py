@@ -8,6 +8,7 @@ from pathlib import Path
 from bundle.core import logger, tracer
 from bundle.core.process import Process
 from bundle.pybind.config import PybindConfig
+from bundle.pybind.pkgconfig import set_pkg_config_path  # type: ignore
 
 log = logger.get_logger(__name__)
 
