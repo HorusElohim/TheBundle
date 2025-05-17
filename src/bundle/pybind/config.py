@@ -1,6 +1,8 @@
 from __future__ import annotations
-from typing import List, Union
+
 from pathlib import Path
+from typing import List, Union
+
 import toml
 
 from bundle.core import data
