@@ -1,8 +1,10 @@
 import os
 import sys
 import shutil
+import sysconfig
 import pytest
 from pathlib import Path
+import platform
 
 from bundle.core import logger
 from bundle.core import tracer
@@ -24,17 +26,23 @@ def built(tmp_path_factory):
 
     proc = Process()
 
+    cmake_conf_cmd = ["cmake", "-S", ".", "-B", "build", "-DCMAKE_INSTALL_PREFIX=install"]
+
+    # Append macOS-specific flag if needed
+    if sys.platform == "darwin":
+        import platform
+
+        arch = platform.machine()
+        cmake_conf_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
+        env = os.environ.copy()
+        env["ARCHFLAGS"] = f"-arch {arch}"
+        env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
+    else:
+        env = None
+
     # 2) Build & install C++ via CMake
-    tracer.Sync.call_raise(
-        proc.__call__,
-        f"cmake -S . -B build -DCMAKE_INSTALL_PREFIX=install",
-        cwd=str(dest),
-    )
-    tracer.Sync.call_raise(
-        proc.__call__,
-        "cmake --build build --target install",
-        cwd=str(dest),
-    )
+    tracer.Sync.call_raise(proc.__call__, " ".join(cmake_conf_cmd), cwd=str(dest), env=env)
+    tracer.Sync.call_raise(proc.__call__, "cmake --build build --target install", cwd=str(dest), env=env)
 
     # 3) Build Python extensions via bundle CLI
     api.set_pkg_config_path(dest / "install" / "lib" / "pkgconfig")
