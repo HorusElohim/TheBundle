@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+import pytest_asyncio
 
 from bundle.core import logger, tracer
 from bundle.core.process import Process
@@ -15,6 +16,8 @@ from bundle.pybind.cmake import CMake
 from bundle.pybind.pkgconfig import PkgConfig
 
 log = logger.get_logger(__name__)
+
+pytestmark = pytest.mark.asyncio
 
 
 def _as_posix_path(path: Path | str) -> str:
@@ -28,8 +31,8 @@ def _as_posix_path(path: Path | str) -> str:
         ("-Ione -Itwo", ["one", "two"], []),
     ],
 )
-def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
-    inc, other = PkgConfig.parse_cflags(cflags)
+async def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
+    inc, other = await PkgConfig.parse_cflags(cflags)
     assert inc == exp_inc
     assert other == exp_other
 
@@ -41,15 +44,15 @@ def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
         ("-Lfoo -lbar -Xlinker arg", ["foo"], ["bar"], ["-Xlinker", "arg"]),
     ],
 )
-def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str], exp_other: list[str]):
-    libdirs, libs_, other = PkgConfig.parse_libs(libs)
+async def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str], exp_other: list[str]):
+    libdirs, libs_, other = await PkgConfig.parse_libs(libs)
     assert libdirs == exp_libdirs
     assert libs_ == exp_libs
     assert other == exp_other
 
 
-def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Result:
-    """Run pkg-config directly using Process and tracer.Sync.call_raise"""
+async def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Result:
+    """Run pkg-config directly using Process and tracer.Async.call_raise"""
     proc = Process()
     env = os.environ.copy()
 
@@ -57,7 +60,7 @@ def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Resu
         env["PKG_CONFIG_PATH"] = pkg_config_path
 
     # Run pkg-config --cflags
-    cflags_result = tracer.Sync.call_raise(
+    cflags_result = await tracer.Async.call_raise(
         proc.__call__,
         f"pkg-config --cflags {pkg_name}",
         env=env,
@@ -65,7 +68,7 @@ def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Resu
     cflags_output = cflags_result.stdout.strip()
 
     # Run pkg-config --libs
-    libs_result = tracer.Sync.call_raise(
+    libs_result = await tracer.Async.call_raise(
         proc.__call__,
         f"pkg-config --libs {pkg_name}",
         env=env,
@@ -73,8 +76,8 @@ def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Resu
     libs_output = libs_result.stdout.strip()
 
     # Parse the outputs
-    inc_dirs, compile_flags = PkgConfig.parse_cflags(cflags_output)
-    lib_dirs, libraries, link_flags = PkgConfig.parse_libs(libs_output)
+    inc_dirs, compile_flags = await PkgConfig.parse_cflags(cflags_output)
+    lib_dirs, libraries, link_flags = await PkgConfig.parse_libs(libs_output)
 
     return PkgConfig.Result(
         include_dirs=inc_dirs,
@@ -117,8 +120,8 @@ Cflags: -I${{includedir}} -DTEST_DEFINE
     return {"tmp_path": tmp_path, "include_dir": include_dir, "lib_dir": lib_dir, "pc_dir": pc_dir, "pc_file": pc_file}
 
 
-def test_run_pkg_config_real(pkg_config_fixture):
-    """Test pkg-config with a real .pc file using Process and tracer.Sync.call_raise"""
+async def test_run_pkg_config_real(pkg_config_fixture):
+    """Test pkg-config with a real .pc file using Process and tracer.Async.call_raise"""
     # Set the PKG_CONFIG_PATH to our temporary directory
     pc_dir = pkg_config_fixture["pc_dir"]
     orig_env = os.environ.get("PKG_CONFIG_PATH", "")
@@ -126,7 +129,7 @@ def test_run_pkg_config_real(pkg_config_fixture):
 
     try:
         # Run pkg-config directly
-        result = run_pkg_config_direct("testpkg")
+        result = await run_pkg_config_direct("testpkg")
 
         # Verify the parsed result
         expected_inc = _as_posix_path(pkg_config_fixture["include_dir"])
@@ -148,16 +151,13 @@ def test_run_pkg_config_real(pkg_config_fixture):
             os.environ.pop("PKG_CONFIG_PATH", None)
 
 
-@pytest.fixture(scope="module")
-def built_example_module():
+@pytest_asyncio.fixture(scope="module")  # Changed from @pytest.fixture
+async def built_example_module():
     """Build and install the example module in a temporary directory using CMake"""
     # Check if pkg-config is available
     proc = Process()
     try:
-        tracer.Sync.call_raise(
-            proc.__call__,
-            "pkg-config --version",
-        )
+        await proc("pkg-config --version")
     except Exception:
         pytest.skip("pkg-config command not available, skipping test")
 
@@ -181,11 +181,11 @@ def built_example_module():
 
     try:
         # Build using CMake class
-        CMake.configure(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, install_prefix=install_dir)
-        CMake.build(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, target="install")
+        await CMake.configure(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, install_prefix=install_dir)
+        await CMake.build(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, target="install")
 
         # Explicitly set PKG_CONFIG_PATH using the Pybind method
-        Pybind.set_pkgconfig_path(install_dir)
+        await Pybind.set_pkgconfig_path(install_dir)
 
         # Verify the .pc file was created and has content
         pc_file = install_dir / "lib" / "pkgconfig" / "example_module.pc"
@@ -202,8 +202,8 @@ def built_example_module():
         shutil.rmtree(tempdir, ignore_errors=True)
 
 
-def test_run_pkg_config_with_example_module(built_example_module):
-    """Test pkg-config with the example_module using Process and tracer.Sync.call_raise"""
+async def test_run_pkg_config_with_example_module(built_example_module):
+    """Test pkg-config with the example_module using Process and tracer.Async.call_raise"""
     # Set PKG_CONFIG_PATH to find the installed .pc file
     temp_example_src_dir = built_example_module
     pkg_config_path_val = str(temp_example_src_dir / "install" / "lib" / "pkgconfig")
@@ -232,8 +232,7 @@ def test_run_pkg_config_with_example_module(built_example_module):
 
         # Try running pkg-config --list-all first to debug
         try:
-            list_result = tracer.Sync.call_raise(
-                proc.__call__,
+            list_result = await proc(
                 "pkg-config --list-all",
                 env=env,
             )
@@ -242,7 +241,7 @@ def test_run_pkg_config_with_example_module(built_example_module):
             log.error(f"pkg-config --list-all failed: {e}")
 
         # Run pkg-config commands
-        result = run_pkg_config_direct("example_module", pkg_config_path=pkg_config_path_val)
+        result = await run_pkg_config_direct("example_module", pkg_config_path=pkg_config_path_val)
 
         # Normalize expected paths for cross-platform assertions
         expected_include = _as_posix_path(temp_example_src_dir / "install" / "include")

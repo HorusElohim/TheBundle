@@ -6,12 +6,14 @@ import pytest
 
 from bundle.pybind.cmake import CMake
 
+pytestmark = pytest.mark.asyncio
+
 # Helper to get the example_module path relative to this test file
 EXAMPLE_MODULE_SRC_DIR = Path(__file__).parent / "example_module"
 
 
 @pytest.fixture(scope="module")
-def cmake_test_project(tmp_path_factory):
+def cmake_test_project(tmp_path_factory): # This fixture can remain synchronous
     """Copies the example_module to a temporary directory for CMake testing."""
     if not EXAMPLE_MODULE_SRC_DIR.exists():
         pytest.skip(f"example_module directory not found at {EXAMPLE_MODULE_SRC_DIR}")
@@ -21,13 +23,13 @@ def cmake_test_project(tmp_path_factory):
     return dest_proj_dir
 
 
-def test_cmake_configure(cmake_test_project: Path):
+async def test_cmake_configure(cmake_test_project: Path):
     """Tests the CMake.configure method."""
     source_dir = cmake_test_project
     build_dir_name = "build_configure_test"
     install_prefix = source_dir / "install_configure_test"
 
-    CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
 
     build_path = source_dir / build_dir_name
     assert build_path.is_dir(), "Build directory was not created"
@@ -38,17 +40,17 @@ def test_cmake_configure(cmake_test_project: Path):
     assert f"CMAKE_INSTALL_PREFIX:PATH={install_prefix.resolve()}" in cache_content
 
 
-def test_cmake_build_and_install(cmake_test_project: Path):
+async def test_cmake_build_and_install(cmake_test_project: Path):
     """Tests the CMake.build method, including the install target."""
     source_dir = cmake_test_project
     build_dir_name = "build_and_install_test"
     install_prefix = source_dir / "install_dir_for_build_test"
 
     # 1. Configure the project
-    CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
 
     # 2. Build the default target
-    CMake.build(source_dir, build_dir_name)
+    await CMake.build(source_dir, build_dir_name)
     # Check for an expected artifact (specific to example_module)
     # This assumes example_module produces libexample_module.a or similar in the build tree.
     # A more generic check is that the command doesn't fail.
@@ -60,7 +62,7 @@ def test_cmake_build_and_install(cmake_test_project: Path):
     original_pkg_config_path_env = os.environ.get("PKG_CONFIG_PATH")
 
     try:
-        CMake.build(source_dir, build_dir_name, target="install")
+        await CMake.build(source_dir, build_dir_name, target="install")
 
         assert install_prefix.is_dir(), "Install directory was not created"
 
