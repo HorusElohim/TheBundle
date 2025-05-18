@@ -2,8 +2,6 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
-import sys
-import sysconfig
 import pytest
 import tempfile
 import shutil
@@ -13,6 +11,8 @@ import bundle.pybind.pkgconfig as pkgconfig
 from bundle.core import tracer
 from bundle.core.process import Process
 from bundle.core import logger
+from bundle.pybind.cmake import CMake
+from bundle.pybind.api import Pybind  # Added import
 
 log = logger.get_logger(__name__)
 
@@ -144,7 +144,7 @@ def test_run_pkg_config_real(pkg_config_fixture):
 
 @pytest.fixture(scope="module")
 def built_example_module():
-    """Build and install the example module in a temporary directory using Process and tracer.Sync.call_raise"""
+    """Build and install the example module in a temporary directory using CMake"""
     # Check if pkg-config is available
     proc = Process()
     try:
@@ -166,32 +166,31 @@ def built_example_module():
     tempdir = tempfile.mkdtemp()
     temp_path = Path(tempdir)
 
+    # Define source, build, and install paths
+    temp_example_src_dir = temp_path / "example_module_src"
+    shutil.copytree(example_dir, temp_example_src_dir)
+
+    build_dir_name = "build"
+    install_dir = temp_example_src_dir / "install"
+
     try:
-        # Copy the example_module to the temp directory
-        temp_example = temp_path / "example_module"
-        shutil.copytree(example_dir, temp_example)
+        # Build using CMake class
+        CMake.configure(
+            source_dir=temp_example_src_dir,
+            build_dir_name=build_dir_name,
+            install_prefix=install_dir
+        )
+        CMake.build(
+            source_dir=temp_example_src_dir,
+            build_dir_name=build_dir_name,
+            target="install"
+        )
 
-        cmake_conf_cmd = ["cmake", "-S", ".", "-B", "build", "-DCMAKE_INSTALL_PREFIX=install"]
-
-        # Append macOS-specific flag if needed
-        if sys.platform == "darwin":
-            import platform
-
-            arch = platform.machine()
-            cmake_conf_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
-
-            env = os.environ.copy()
-            env["ARCHFLAGS"] = f"-arch {arch}"
-            env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
-        else:
-            env = None
-
-        # Build using CMake with Process and tracer.Sync.call_raise
-        tracer.Sync.call_raise(proc.__call__, " ".join(cmake_conf_cmd), cwd=str(temp_example), env=env)
-        tracer.Sync.call_raise(proc.__call__, "cmake --build build --target install", cwd=str(temp_example), env=env)
+        # Explicitly set PKG_CONFIG_PATH using the Pybind method
+        Pybind.set_pkgconfig_path(install_dir)
 
         # Verify the .pc file was created and has content
-        pc_file = temp_example / "install" / "lib" / "pkgconfig" / "example_module.pc"
+        pc_file = install_dir / "lib" / "pkgconfig" / "example_module.pc"
         if not pc_file.exists():
             pytest.fail(f".pc file not created: {pc_file}")
 
@@ -199,7 +198,7 @@ def built_example_module():
         pc_content = pc_file.read_text().strip()
         if not pc_content:
             raise ValueError(f".pc file is empty: {pc_file}")
-        yield temp_example
+        yield temp_example_src_dir
     finally:
         # Clean up
         shutil.rmtree(tempdir, ignore_errors=True)
@@ -208,12 +207,12 @@ def built_example_module():
 def test_run_pkg_config_with_example_module(built_example_module):
     """Test pkg-config with the example_module using Process and tracer.Sync.call_raise"""
     # Set PKG_CONFIG_PATH to find the installed .pc file
-    temp_example = built_example_module
-    pkg_config_path = str(temp_example / "install" / "lib" / "pkgconfig")
+    temp_example_src_dir = built_example_module
+    pkg_config_path_val = str(temp_example_src_dir / "install" / "lib" / "pkgconfig")
 
     # Debug: Print information about the .pc file and path
-    pc_file = Path(pkg_config_path) / "example_module.pc"
-    log.testing(f"\nPKG_CONFIG_PATH={pkg_config_path}")
+    pc_file = Path(pkg_config_path_val) / "example_module.pc"
+    log.testing(f"\nPKG_CONFIG_PATH={pkg_config_path_val}")
     log.testing(f"PC file exists: {pc_file.exists()}")
 
     if pc_file.exists():
@@ -225,11 +224,10 @@ def test_run_pkg_config_with_example_module(built_example_module):
 
     # Set up the environment
     env = os.environ.copy()
-    env["PKG_CONFIG_PATH"] = pkg_config_path
+    env["PKG_CONFIG_PATH"] = pkg_config_path_val
 
-    # Set this in os.environ too for other processes
-    orig_pkg_config = os.environ.get("PKG_CONFIG_PATH", "")
-    os.environ["PKG_CONFIG_PATH"] = pkg_config_path
+    orig_pkg_config_env = os.environ.get("PKG_CONFIG_PATH")
+    os.environ["PKG_CONFIG_PATH"] = pkg_config_path_val
 
     try:
         proc = Process()
@@ -247,12 +245,12 @@ def test_run_pkg_config_with_example_module(built_example_module):
 
         # Run pkg-config commands
         inc_dirs, compile_flags, lib_dirs, libraries, link_flags = run_pkg_config_direct(
-            "example_module", pkg_config_path=pkg_config_path
+            "example_module", pkg_config_path=pkg_config_path_val
         )
 
         # Normalize expected paths for cross-platform assertions
-        expected_include = _as_posix_path(temp_example / "install" / "include")
-        expected_lib = _as_posix_path(temp_example / "install" / "lib")
+        expected_include = _as_posix_path(temp_example_src_dir / "install" / "include")
+        expected_lib = _as_posix_path(temp_example_src_dir / "install" / "lib")
 
         assert any(expected_include in _as_posix_path(inc) for inc in inc_dirs)
         assert any(expected_lib in _as_posix_path(lib) for lib in lib_dirs)
@@ -263,19 +261,18 @@ def test_run_pkg_config_with_example_module(built_example_module):
         log.warning(f"\nWarning: pkg-config failed: {str(e)}")
         log.warning("Testing file paths directly as fallback")
 
-        include_dir = temp_example / "install" / "include"
-        lib_dir = temp_example / "install" / "lib"
+        include_dir = temp_example_src_dir / "install" / "include"
+        lib_dir = temp_example_src_dir / "install" / "lib"
         lib_file = lib_dir / "libexample_module.a"
 
         assert include_dir.exists(), f"Include directory doesn't exist: {include_dir}"
         assert lib_dir.exists(), f"Library directory doesn't exist: {lib_dir}"
         assert lib_file.exists(), f"Library file doesn't exist: {lib_file}"
 
-        # Skip the pkg-config specific assertions since we're bypassing it
         pytest.skip("pkg-config test skipped, but file verification passed")
     finally:
         # Restore original PKG_CONFIG_PATH
-        if orig_pkg_config:
-            os.environ["PKG_CONFIG_PATH"] = orig_pkg_config
+        if orig_pkg_config_env:
+            os.environ["PKG_CONFIG_PATH"] = orig_pkg_config_env
         else:
             os.environ.pop("PKG_CONFIG_PATH", None)

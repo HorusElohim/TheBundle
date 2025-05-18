@@ -26,7 +26,7 @@ async def python():
 @click.option("--show-exc", is_flag=True, default=False, help="Show expected trace Exceptions")
 @click.option("--no-logs", is_flag=True, default=False, help="Set log to FATAL avoiding log overhead")
 @click.option("--no-cprof", is_flag=True, default=False, help="Disable cprofile")
-@click.option("-s", "--capture", is_flag=True, default=False, help="Caputre stdout")
+@click.option("-s", "--capture", is_flag=True, default=False, help="Capture stdout")
 async def pytest_cmd(show_exc: bool, no_logs: bool, no_cprof: bool, capture: bool):
     """
     Run the bundle test suite.
