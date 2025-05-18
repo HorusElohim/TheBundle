@@ -1,5 +1,6 @@
-from typing import List, Optional, Union, TypeAlias
-from example_module.shape import Shape, Circle, Square, Triangle
+from typing import List, Optional, TypeAlias, Union
+
+from example_module.shape import Circle, Shape, Square, Triangle
 
 def wrap_shapes(shapes: List[Shape]) -> float: ...
 def maybe_make_circle(flag: bool) -> Optional[Circle]: ...

@@ -4,8 +4,8 @@
 
 from setuptools import Extension
 
-from bundle.pybind.core import PybindModule
 from bundle.pybind.config import ModuleConfig
+from bundle.pybind.core import PybindModule
 from bundle.pybind.pkgconfig import PkgConfig
 
 
@@ -29,8 +29,14 @@ def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
     # Clear cache in case PkgConfig.run was previously called
     PkgConfig.run.cache_clear()
 
-    def fake_run(pkgs, dirs):
-        return (["inc"], ["-O3"], ["ld"], ["foo"], ["-Wl"])
+    def fake_run(pkgs, dirs) -> PkgConfig.Result:
+        return PkgConfig.Result(
+            include_dirs=["inc"],
+            compile_flags=["-O3"],
+            library_dirs=["ld"],
+            libraries=["foo"],
+            link_flags=["-Wl"],
+        )
 
     # Patch the function on the PkgConfig class
     monkeypatch.setattr(PkgConfig, "run", fake_run)

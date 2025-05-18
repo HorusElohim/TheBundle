@@ -1,5 +1,3 @@
-import pytest
-from pathlib import Path
 import toml
 
 from bundle.pybind import ModuleConfig, PybindConfig
