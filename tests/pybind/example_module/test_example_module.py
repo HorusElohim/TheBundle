@@ -1,10 +1,10 @@
-import sys
 import shutil
-import pytest
+import sys
 from pathlib import Path
 
-from bundle.core import logger
-from bundle.core import tracer
+import pytest
+
+from bundle.core import logger, tracer
 from bundle.pybind.api import Pybind
 from bundle.pybind.cmake import CMake
 
@@ -27,11 +27,7 @@ def built(tmp_path_factory):
 
     # 2) Build & install C++ via CMake using the new CMake class
     CMake.configure(source_dir=dest, build_dir_name=build_dir_name, install_prefix=install_dir)
-    CMake.build(
-        source_dir=dest,
-        build_dir_name=build_dir_name,
-        target="install"
-    )
+    CMake.build(source_dir=dest, build_dir_name=build_dir_name, target="install")
     # Note: api.set_pkg_config_path is now called by Pybind.set_pkg_config_path_from_install_prefix
 
     # Set PKG_CONFIG_PATH using the new Pybind method before building Python extensions

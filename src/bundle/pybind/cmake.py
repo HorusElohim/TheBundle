@@ -80,6 +80,6 @@ class CMake:
         if extra_args:
             cmd.extend(extra_args)
 
-        _platform_args, env = CMake._get_platform_specific_cmake_args_env()
+        _platform_args, env = _get_platform_specific_cmake_args_env()
 
         tracer.Sync.call_raise(proc.__call__, " ".join(cmd), cwd=str(source_dir), env=env)

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import functools
 import os
 import shlex
@@ -5,7 +7,10 @@ import sys
 from pathlib import Path
 from typing import List, Tuple
 
+from pydantic import Field
+
 from bundle.core import logger, tracer
+from bundle.core.data import Data
 from bundle.core.process import Process
 
 log = logger.get_logger(__name__)
@@ -13,6 +18,15 @@ log = logger.get_logger(__name__)
 
 class PkgConfig:
     """A utility class for pkg-config operations."""
+
+    class Result(Data):
+        """Data model for the results of a pkg-config query."""
+
+        include_dirs: List[str] = Field(default_factory=list)
+        compile_flags: List[str] = Field(default_factory=list)
+        library_dirs: List[str] = Field(default_factory=list)
+        libraries: List[str] = Field(default_factory=list)
+        link_flags: List[str] = Field(default_factory=list)
 
     @staticmethod
     def set_path(*paths: Path) -> None:
@@ -61,14 +75,12 @@ class PkgConfig:
 
     @staticmethod
     @functools.lru_cache()
-    def run(
-        pkg_packages: Tuple[str, ...], pkg_dirs: Tuple[str, ...]
-    ) -> Tuple[List[str], List[str], List[str], List[str], List[str]]:
+    def run(pkg_packages: Tuple[str, ...], pkg_dirs: Tuple[str, ...]) -> PkgConfig.Result:
         """
         Run pkg-config via the Process wrapper for the given packages and search dirs.
         Caches results to avoid redundant calls.
 
-        Returns: (include_dirs, compile_flags, library_dirs, libraries, link_flags)
+        Returns: A PkgConfig.Result object.
         """
         env = os.environ.copy()  # Captures current PKG_CONFIG_PATH state for the subprocess
         # If pkg_dirs are provided, PkgConfig.set_path will modify the *current* process's
@@ -101,4 +113,10 @@ class PkgConfig:
         inc_dirs, compile_flags = PkgConfig.parse_cflags(result_c.stdout.strip())
         lib_dirs, libraries, link_flags = PkgConfig.parse_libs(result_l.stdout.strip())
 
-        return inc_dirs, compile_flags, lib_dirs, libraries, link_flags
+        return PkgConfig.Result(
+            include_dirs=inc_dirs,
+            compile_flags=compile_flags,
+            library_dirs=lib_dirs,
+            libraries=libraries,
+            link_flags=link_flags,
+        )
