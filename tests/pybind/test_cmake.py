@@ -1,11 +1,10 @@
 import os
-import pytest
-from pathlib import Path
 import shutil
-import sysconfig
+from pathlib import Path
+
+import pytest
 
 from bundle.pybind.cmake import CMake
-from bundle.pybind import api # For checking side effects on PKG_CONFIG_PATH
 
 # Helper to get the example_module path relative to this test file
 EXAMPLE_MODULE_SRC_DIR = Path(__file__).parent / "example_module"
@@ -59,16 +58,12 @@ def test_cmake_build_and_install(cmake_test_project: Path):
 
     # 3. Build the install target
     original_pkg_config_path_env = os.environ.get("PKG_CONFIG_PATH")
-    
+
     try:
-        CMake.build(
-            source_dir,
-            build_dir_name,
-            target="install"
-        )
+        CMake.build(source_dir, build_dir_name, target="install")
 
         assert install_prefix.is_dir(), "Install directory was not created"
-        
+
         # Check for an installed file (specific to example_module)
         pc_file = install_prefix / "lib" / "pkgconfig" / "example_module.pc"
         assert pc_file.is_file(), f".pc file not found at {pc_file}"

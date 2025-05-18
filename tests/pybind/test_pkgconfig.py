@@ -2,18 +2,17 @@
 # Licensed under the Apache License, Version 2.0
 
 import os
-import pytest
-import tempfile
 import shutil
+import tempfile
 from pathlib import Path
 
-import bundle.pybind.pkgconfig as old_pkgconfig_module  # Keep for direct .pc file content if needed, or remove if not used
-from bundle.pybind.pkgconfig import PkgConfig  # New import
-from bundle.core import tracer
+import pytest
+
+from bundle.core import logger, tracer
 from bundle.core.process import Process
-from bundle.core import logger
+from bundle.pybind.api import Pybind
 from bundle.pybind.cmake import CMake
-from bundle.pybind.api import Pybind  # Added import
+from bundle.pybind.pkgconfig import PkgConfig
 
 log = logger.get_logger(__name__)
 
@@ -30,7 +29,7 @@ def _as_posix_path(path: Path | str) -> str:
     ],
 )
 def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
-    inc, other = PkgConfig.parse_cflags(cflags)  # Updated call
+    inc, other = PkgConfig.parse_cflags(cflags)
     assert inc == exp_inc
     assert other == exp_other
 
@@ -43,13 +42,13 @@ def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
     ],
 )
 def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str], exp_other: list[str]):
-    libdirs, libs_, other = PkgConfig.parse_libs(libs)  # Updated call
+    libdirs, libs_, other = PkgConfig.parse_libs(libs)
     assert libdirs == exp_libdirs
     assert libs_ == exp_libs
     assert other == exp_other
 
 
-def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> tuple:
+def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Result:
     """Run pkg-config directly using Process and tracer.Sync.call_raise"""
     proc = Process()
     env = os.environ.copy()
@@ -74,10 +73,16 @@ def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> tuple:
     libs_output = libs_result.stdout.strip()
 
     # Parse the outputs
-    inc_dirs, compile_flags = PkgConfig.parse_cflags(cflags_output)  # Updated call
-    lib_dirs, libraries, link_flags = PkgConfig.parse_libs(libs_output)  # Updated call
+    inc_dirs, compile_flags = PkgConfig.parse_cflags(cflags_output)
+    lib_dirs, libraries, link_flags = PkgConfig.parse_libs(libs_output)
 
-    return inc_dirs, compile_flags, lib_dirs, libraries, link_flags
+    return PkgConfig.Result(
+        include_dirs=inc_dirs,
+        compile_flags=compile_flags,
+        library_dirs=lib_dirs,
+        libraries=libraries,
+        link_flags=link_flags,
+    )
 
 
 @pytest.fixture
@@ -121,17 +126,17 @@ def test_run_pkg_config_real(pkg_config_fixture):
 
     try:
         # Run pkg-config directly
-        inc_dirs, compile_flags, lib_dirs, libraries, link_flags = run_pkg_config_direct("testpkg")
+        result = run_pkg_config_direct("testpkg")
 
         # Verify the parsed result
         expected_inc = _as_posix_path(pkg_config_fixture["include_dir"])
         expected_lib = _as_posix_path(pkg_config_fixture["lib_dir"])
 
-        assert expected_inc in [_as_posix_path(i) for i in inc_dirs]
-        assert "-DTEST_DEFINE" in compile_flags
-        assert expected_lib in [_as_posix_path(l) for l in lib_dirs]
-        assert "testlib" in libraries
-        assert "m" in libraries
+        assert expected_inc in [_as_posix_path(i) for i in result.include_dirs]
+        assert "-DTEST_DEFINE" in result.compile_flags
+        assert expected_lib in [_as_posix_path(l) for l in result.library_dirs]
+        assert "testlib" in result.libraries
+        assert "m" in result.libraries
 
     except Exception as e:
         pytest.fail(f"Failed to run pkg-config: {e}")
@@ -176,16 +181,8 @@ def built_example_module():
 
     try:
         # Build using CMake class
-        CMake.configure(
-            source_dir=temp_example_src_dir,
-            build_dir_name=build_dir_name,
-            install_prefix=install_dir
-        )
-        CMake.build(
-            source_dir=temp_example_src_dir,
-            build_dir_name=build_dir_name,
-            target="install"
-        )
+        CMake.configure(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, install_prefix=install_dir)
+        CMake.build(source_dir=temp_example_src_dir, build_dir_name=build_dir_name, target="install")
 
         # Explicitly set PKG_CONFIG_PATH using the Pybind method
         Pybind.set_pkgconfig_path(install_dir)
@@ -245,17 +242,15 @@ def test_run_pkg_config_with_example_module(built_example_module):
             log.error(f"pkg-config --list-all failed: {e}")
 
         # Run pkg-config commands
-        inc_dirs, compile_flags, lib_dirs, libraries, link_flags = run_pkg_config_direct(
-            "example_module", pkg_config_path=pkg_config_path_val
-        )
+        result = run_pkg_config_direct("example_module", pkg_config_path=pkg_config_path_val)
 
         # Normalize expected paths for cross-platform assertions
         expected_include = _as_posix_path(temp_example_src_dir / "install" / "include")
         expected_lib = _as_posix_path(temp_example_src_dir / "install" / "lib")
 
-        assert any(expected_include in _as_posix_path(inc) for inc in inc_dirs)
-        assert any(expected_lib in _as_posix_path(lib) for lib in lib_dirs)
-        assert "example_module" in libraries
+        assert any(expected_include in _as_posix_path(inc) for inc in result.include_dirs)
+        assert any(expected_lib in _as_posix_path(lib) for lib in result.library_dirs)
+        assert "example_module" in result.libraries
 
     except Exception as e:
         # Fall back to verifying the file paths directly without pkg-config
