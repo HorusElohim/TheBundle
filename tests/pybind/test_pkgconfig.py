@@ -7,7 +7,8 @@ import tempfile
 import shutil
 from pathlib import Path
 
-import bundle.pybind.pkgconfig as pkgconfig
+import bundle.pybind.pkgconfig as old_pkgconfig_module  # Keep for direct .pc file content if needed, or remove if not used
+from bundle.pybind.pkgconfig import PkgConfig  # New import
 from bundle.core import tracer
 from bundle.core.process import Process
 from bundle.core import logger
@@ -29,7 +30,7 @@ def _as_posix_path(path: Path | str) -> str:
     ],
 )
 def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
-    inc, other = pkgconfig.parse_cflags(cflags)
+    inc, other = PkgConfig.parse_cflags(cflags)  # Updated call
     assert inc == exp_inc
     assert other == exp_other
 
@@ -42,7 +43,7 @@ def test_parse_cflags(cflags: str, exp_inc: list[str], exp_other: list[str]):
     ],
 )
 def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str], exp_other: list[str]):
-    libdirs, libs_, other = pkgconfig.parse_libs(libs)
+    libdirs, libs_, other = PkgConfig.parse_libs(libs)  # Updated call
     assert libdirs == exp_libdirs
     assert libs_ == exp_libs
     assert other == exp_other
@@ -73,8 +74,8 @@ def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> tuple:
     libs_output = libs_result.stdout.strip()
 
     # Parse the outputs
-    inc_dirs, compile_flags = pkgconfig.parse_cflags(cflags_output)
-    lib_dirs, libraries, link_flags = pkgconfig.parse_libs(libs_output)
+    inc_dirs, compile_flags = PkgConfig.parse_cflags(cflags_output)  # Updated call
+    lib_dirs, libraries, link_flags = PkgConfig.parse_libs(libs_output)  # Updated call
 
     return inc_dirs, compile_flags, lib_dirs, libraries, link_flags
 

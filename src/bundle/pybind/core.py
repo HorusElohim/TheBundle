@@ -5,7 +5,7 @@ import pybind11
 from setuptools import Extension
 
 from .config import ModuleConfig
-from .pkgconfig import run_pkg_config_cached
+from .pkgconfig import PkgConfig
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +19,7 @@ class PybindModule:
             return
         pkgs = tuple(self.cfg.pkg_config_packages)
         dirs = tuple(self.cfg.pkg_config_dirs)
-        inc, cflags, libd, libs, lflags = run_pkg_config_cached(pkgs, dirs)
+        inc, cflags, libd, libs, lflags = PkgConfig.run(pkgs, dirs)
         self.cfg.include_dirs += inc
         self.cfg.extra_compile_args += cflags
         self.cfg.library_dirs += libd

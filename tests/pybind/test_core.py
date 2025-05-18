@@ -1,13 +1,12 @@
 # Copyright 2024 HorusElohim
 # Licensed under the Apache License, Version 2.0
 
-import pytest
-from pathlib import Path
+
 from setuptools import Extension
 
 from bundle.pybind.core import PybindModule
 from bundle.pybind.config import ModuleConfig
-import bundle.pybind.core as core_mod
+from bundle.pybind.pkgconfig import PkgConfig
 
 
 def test_to_extension_basic(tmp_path):
@@ -24,17 +23,17 @@ def test_to_extension_basic(tmp_path):
 
 def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
     """
-    Monkey-patch run_pkg_config_cached so that to_extension
+    Monkey-patch PkgConfig.run so that to_extension
     incorporates pkg-config flags into the Extension.
     """
-    # Clear cache in case run_pkg_config_cached was previously called
-    core_mod.run_pkg_config_cached.cache_clear()
+    # Clear cache in case PkgConfig.run was previously called
+    PkgConfig.run.cache_clear()
 
     def fake_run(pkgs, dirs):
         return (["inc"], ["-O3"], ["ld"], ["foo"], ["-Wl"])
 
-    # Patch the function on the core module
-    monkeypatch.setattr(core_mod, "run_pkg_config_cached", fake_run)
+    # Patch the function on the PkgConfig class
+    monkeypatch.setattr(PkgConfig, "run", fake_run)
 
     cfg = ModuleConfig(
         name="m",
