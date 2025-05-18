@@ -1,15 +1,12 @@
-import os
 import sys
 import shutil
-import sysconfig
 import pytest
 from pathlib import Path
-import platform
 
 from bundle.core import logger
 from bundle.core import tracer
-from bundle.core.process import Process
-from bundle.pybind import api
+from bundle.pybind.api import Pybind
+from bundle.pybind.cmake import CMake
 
 log = logger.get_logger(__name__)
 
@@ -24,29 +21,24 @@ def built(tmp_path_factory):
     dest = tmp_path_factory.mktemp("example_module")
     shutil.copytree(src, dest, dirs_exist_ok=True)
 
-    proc = Process()
+    # Define build and install paths
+    build_dir_name = "build"
+    install_dir = dest / "install"
 
-    cmake_conf_cmd = ["cmake", "-S", ".", "-B", "build", "-DCMAKE_INSTALL_PREFIX=install"]
+    # 2) Build & install C++ via CMake using the new CMake class
+    CMake.configure(source_dir=dest, build_dir_name=build_dir_name, install_prefix=install_dir)
+    CMake.build(
+        source_dir=dest,
+        build_dir_name=build_dir_name,
+        target="install"
+    )
+    # Note: api.set_pkg_config_path is now called by Pybind.set_pkg_config_path_from_install_prefix
 
-    # Append macOS-specific flag if needed
-    if sys.platform == "darwin":
-        import platform
-
-        arch = platform.machine()
-        cmake_conf_cmd.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
-        env = os.environ.copy()
-        env["ARCHFLAGS"] = f"-arch {arch}"
-        env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
-    else:
-        env = None
-
-    # 2) Build & install C++ via CMake
-    tracer.Sync.call_raise(proc.__call__, " ".join(cmake_conf_cmd), cwd=str(dest), env=env)
-    tracer.Sync.call_raise(proc.__call__, "cmake --build build --target install", cwd=str(dest), env=env)
+    # Set PKG_CONFIG_PATH using the new Pybind method before building Python extensions
+    Pybind.set_pkgconfig_path(install_dir)
 
     # 3) Build Python extensions via bundle CLI
-    api.set_pkg_config_path(dest / "install" / "lib" / "pkgconfig")
-    tracer.Sync.call_raise(api.build, dest)
+    tracer.Sync.call_raise(Pybind.build, dest)
 
     # 4) Prepend the bindings/python folder so imports work
     bindings_dir = dest / "bindings" / "python"
