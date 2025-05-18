@@ -1,6 +1,4 @@
 from __future__ import annotations
-
-import functools
 import os
 import shlex
 import sys
@@ -9,7 +7,7 @@ from typing import List, Tuple
 
 from pydantic import Field
 
-from bundle.core import logger, tracer
+from bundle.core import logger
 from bundle.core.data import Data
 from bundle.core.process import Process
 
@@ -21,7 +19,6 @@ class PkgConfig:
 
     class Result(Data):
         """Data model for the results of a pkg-config query."""
-
         include_dirs: List[str] = Field(default_factory=list)
         compile_flags: List[str] = Field(default_factory=list)
         library_dirs: List[str] = Field(default_factory=list)
@@ -29,7 +26,7 @@ class PkgConfig:
         link_flags: List[str] = Field(default_factory=list)
 
     @staticmethod
-    def set_path(*paths: Path) -> None:
+    async def set_path(*paths: Path) -> None:
         """
         Sets the PKG_CONFIG_PATH environment variable in a cross-platform manner.
 
@@ -57,7 +54,7 @@ class PkgConfig:
         log.debug(f"PKG_CONFIG_PATH set to: {os.environ['PKG_CONFIG_PATH']}")
 
     @staticmethod
-    def parse_cflags(cflags: str) -> Tuple[List[str], List[str]]:
+    async def parse_cflags(cflags: str) -> Tuple[List[str], List[str]]:
         flags = shlex.split(cflags)
         inc = [f[2:] for f in flags if f.startswith("-I")]
         other = [f for f in flags if not f.startswith("-I")]
@@ -65,7 +62,7 @@ class PkgConfig:
         return inc, other
 
     @staticmethod
-    def parse_libs(libs: str) -> Tuple[List[str], List[str], List[str]]:
+    async def parse_libs(libs: str) -> Tuple[List[str], List[str], List[str]]:
         flags = shlex.split(libs)
         lib_dirs = [f[2:] for f in flags if f.startswith("-L")]
         names = [f[2:] for f in flags if f.startswith("-l")]
@@ -74,11 +71,11 @@ class PkgConfig:
         return lib_dirs, names, other
 
     @staticmethod
-    @functools.lru_cache()
-    def run(pkg_packages: Tuple[str, ...], pkg_dirs: Tuple[str, ...]) -> PkgConfig.Result:
+    async def run(
+        pkg_packages: Tuple[str, ...], pkg_dirs: Tuple[str, ...]
+    ) -> PkgConfig.Result:
         """
         Run pkg-config via the Process wrapper for the given packages and search dirs.
-        Caches results to avoid redundant calls.
 
         Returns: A PkgConfig.Result object.
         """
@@ -88,7 +85,7 @@ class PkgConfig:
         if pkg_dirs:
             # Convert tuple of strings to tuple of Path objects for set_path
             path_objects = tuple(Path(p) for p in pkg_dirs)
-            PkgConfig.set_path(*path_objects)
+            await PkgConfig.set_path(*path_objects)
             # Update env for the subprocess to reflect changes made by set_path
             env["PKG_CONFIG_PATH"] = os.environ.get("PKG_CONFIG_PATH", "")
 
@@ -99,19 +96,18 @@ class PkgConfig:
 
         # run them
         process = Process()
-        # Pass the potentially modified env to the subprocess
-        result_c = tracer.Sync.call_raise(process.__call__, cflags_cmd, env=env)
+        result_c = await process(cflags_cmd, env=env)
         if result_c.returncode != 0:
             raise RuntimeError(f"pkg-config cflags failed: {result_c.stderr.strip()}")
-        result_l = tracer.Sync.call_raise(process.__call__, libs_cmd, env=env)
+        result_l = await process(libs_cmd, env=env)
         if result_l.returncode != 0:
             raise RuntimeError(f"pkg-config libs failed: {result_l.stderr.strip()}")
 
         log.debug(f"pkg-config cflags output: {result_c.stdout.strip()}")
         log.debug(f"pkg-config libs   output: {result_l.stdout.strip()}")
 
-        inc_dirs, compile_flags = PkgConfig.parse_cflags(result_c.stdout.strip())
-        lib_dirs, libraries, link_flags = PkgConfig.parse_libs(result_l.stdout.strip())
+        inc_dirs, compile_flags = await PkgConfig.parse_cflags(result_c.stdout.strip())
+        lib_dirs, libraries, link_flags = await PkgConfig.parse_libs(result_l.stdout.strip())
 
         return PkgConfig.Result(
             include_dirs=inc_dirs,

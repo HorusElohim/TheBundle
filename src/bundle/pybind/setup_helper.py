@@ -6,6 +6,7 @@ from setuptools import setup as standard_setup
 
 from .config import PybindConfig
 from .core import PybindProject
+from bundle.core import tracer
 
 logger = logging.getLogger(__name__)
 
@@ -41,7 +42,7 @@ def setup(invoking_file: str | Path, **kwargs):
 
     # collect extensions
     ext_modules = kwargs.setdefault("ext_modules", [])
-    ext_modules.extend(project.get_extensions())
+    ext_modules.extend(tracer.Sync.call_raise(project.get_extensions))
 
     # delegate to setuptools
     standard_setup(**kwargs)

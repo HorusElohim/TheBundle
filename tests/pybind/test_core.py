@@ -1,7 +1,7 @@
 # Copyright 2024 HorusElohim
 # Licensed under the Apache License, Version 2.0
 
-
+import pytest
 from setuptools import Extension
 
 from bundle.pybind.config import ModuleConfig
@@ -9,10 +9,13 @@ from bundle.pybind.core import PybindModule
 from bundle.pybind.pkgconfig import PkgConfig
 
 
-def test_to_extension_basic(tmp_path):
+pytestmark = pytest.mark.asyncio
+
+
+async def test_to_extension_basic(tmp_path):
     cfg = ModuleConfig(name="m", sources=["src/a.cpp"], cpp_std="17")
     module = PybindModule(cfg)
-    ext = module.to_extension(tmp_path)
+    ext = await module.to_extension(tmp_path)
     assert isinstance(ext, Extension)
     assert ext.name == "m"
     # Check C++ std flag included
@@ -21,15 +24,13 @@ def test_to_extension_basic(tmp_path):
     assert str((tmp_path / "src/a.cpp").resolve()) in ext.sources
 
 
-def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
+async def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
     """
     Monkey-patch PkgConfig.run so that to_extension
     incorporates pkg-config flags into the Extension.
     """
-    # Clear cache in case PkgConfig.run was previously called
-    PkgConfig.run.cache_clear()
 
-    def fake_run(pkgs, dirs) -> PkgConfig.Result:
+    async def fake_run(pkgs, dirs) -> PkgConfig.Result:
         return PkgConfig.Result(
             include_dirs=["inc"],
             compile_flags=["-O3"],
@@ -49,7 +50,7 @@ def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
         extra_compile_args=[],
     )
     module = PybindModule(cfg)
-    ext = module.to_extension(tmp_path)
+    ext = await module.to_extension(tmp_path)
 
     assert "inc" in ext.include_dirs
     assert "-O3" in ext.extra_compile_args

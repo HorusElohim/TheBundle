@@ -21,7 +21,8 @@ class Pybind:
     """A utility class for Pybind11 related operations."""
 
     @staticmethod
-    def set_pkgconfig_path(install_prefix: Path):
+    @tracer.Async.decorator.call_raise
+    async def set_pkgconfig_path(install_prefix: Path):
         """
         Sets the PKG_CONFIG_PATH environment variable based on the C++ install prefix.
         This helps setup.py find the .pc files for the just-built C++ libraries.
@@ -32,7 +33,7 @@ class Pybind:
         pkg_config_dir = install_prefix.resolve() / "lib" / "pkgconfig"
         if pkg_config_dir.is_dir():
             log.info(f"Setting PKG_CONFIG_PATH to include: {pkg_config_dir}")
-            PkgConfig.set_path(pkg_config_dir)
+            await PkgConfig.set_path(pkg_config_dir)
         else:
             log.warning(
                 f"PKG_CONFIG_PATH not set: Directory {pkg_config_dir} does not exist. "

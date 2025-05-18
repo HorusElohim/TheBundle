@@ -3,7 +3,6 @@ import sys
 import sysconfig
 from pathlib import Path
 
-from bundle.core import tracer
 from bundle.core.process import Process
 
 
@@ -25,7 +24,7 @@ class CMake:
     """A utility class for running CMake commands."""
 
     @staticmethod
-    def configure(
+    async def configure(
         source_dir: Path,
         build_dir_name: str,
         install_prefix: Path | None = None,
@@ -52,10 +51,10 @@ class CMake:
         if extra_args:
             cmd.extend(extra_args)
 
-        tracer.Sync.call_raise(proc.__call__, " ".join(cmd), cwd=str(source_dir), env=env)
+        await proc(" ".join(cmd), cwd=str(source_dir), env=env)
 
     @staticmethod
-    def build(
+    async def build(
         source_dir: Path,
         build_dir_name: str,
         target: str | None = None,
@@ -82,4 +81,4 @@ class CMake:
 
         _platform_args, env = _get_platform_specific_cmake_args_env()
 
-        tracer.Sync.call_raise(proc.__call__, " ".join(cmd), cwd=str(source_dir), env=env)
+        await proc(" ".join(cmd), cwd=str(source_dir), env=env)

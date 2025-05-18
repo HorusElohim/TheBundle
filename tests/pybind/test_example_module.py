@@ -3,8 +3,9 @@ import sys
 from pathlib import Path
 
 import pytest
+import pytest_asyncio  # Added import
 
-from bundle.core import logger, tracer
+from bundle.core import logger
 from bundle.pybind.api import Pybind
 from bundle.pybind.cmake import CMake
 
@@ -13,8 +14,8 @@ log = logger.get_logger(__name__)
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.fixture(scope="session")
-def built(tmp_path_factory):
+@pytest_asyncio.fixture(scope="session")
+async def built(tmp_path_factory):
     # 1) Copy entire example_module into a temp dir
     src = Path(__file__).parent / "example_module"
     log.testing(f"Copying example_module from {src} to temp dir")
@@ -26,15 +27,15 @@ def built(tmp_path_factory):
     install_dir = dest / "install"
 
     # 2) Build & install C++ via CMake using the new CMake class
-    CMake.configure(source_dir=dest, build_dir_name=build_dir_name, install_prefix=install_dir)
-    CMake.build(source_dir=dest, build_dir_name=build_dir_name, target="install")
+    await CMake.configure(source_dir=dest, build_dir_name=build_dir_name, install_prefix=install_dir)  # await async method
+    await CMake.build(source_dir=dest, build_dir_name=build_dir_name, target="install")  # await async method
     # Note: api.set_pkg_config_path is now called by Pybind.set_pkg_config_path_from_install_prefix
 
     # Set PKG_CONFIG_PATH using the new Pybind method before building Python extensions
-    Pybind.set_pkgconfig_path(install_dir)
+    await Pybind.set_pkgconfig_path(install_dir)
 
     # 3) Build Python extensions via bundle CLI
-    tracer.Sync.call_raise(Pybind.build, dest)
+    await Pybind.build(dest)
 
     # 4) Prepend the bindings/python folder so imports work
     bindings_dir = dest / "bindings" / "python"
