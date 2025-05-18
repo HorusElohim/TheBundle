@@ -16,7 +16,7 @@ pytestmark = pytest.mark.asyncio
 @pytest.fixture(scope="session")
 def built(tmp_path_factory):
     # 1) Copy entire example_module into a temp dir
-    src = Path(__file__).parent
+    src = Path(__file__).parent / "example_module"
     log.testing(f"Copying example_module from {src} to temp dir")
     dest = tmp_path_factory.mktemp("example_module")
     shutil.copytree(src, dest, dirs_exist_ok=True)
