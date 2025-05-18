@@ -17,10 +17,14 @@ where = ["bindings/python"]
 [[tool.pybind11.modules]]
 name = "example_module.shape"
 sources = ["bindings/python/example_module/shape_bindings.cpp"]
-pkg_config_packages = ["example_module"]
+pkgconfig = { packages = ["example_module"], extra_dirs = [] }
+extra_compile_args = ["-O3"]
+extra_link_args = []
 
 # geometry submodule
 [[tool.pybind11.modules]]
 name = "example_module.geometry"
 sources = ["bindings/python/example_module/geometry_bindings.cpp"]
-pkg_config_packages = ["example_module"]
+pkgconfig = { packages = ["example_module"], extra_dirs = [] }
+extra_compile_args = ["-O3"]
+extra_link_args = []

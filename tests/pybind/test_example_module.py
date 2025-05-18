@@ -1,50 +1,53 @@
-import shutil
-import sys
+import os
 from pathlib import Path
 
 import pytest
-import pytest_asyncio  # Added import
 
 from bundle.core import logger
-from bundle.pybind.api import Pybind
-from bundle.pybind.cmake import CMake
+from bundle.pybind.pybind import Pybind
 
 log = logger.get_logger(__name__)
 
 pytestmark = pytest.mark.asyncio
 
-
-@pytest_asyncio.fixture(scope="session")
-async def built(tmp_path_factory):
-    # 1) Copy entire example_module into a temp dir
-    src = Path(__file__).parent / "example_module"
-    log.testing(f"Copying example_module from {src} to temp dir")
-    dest = tmp_path_factory.mktemp("example_module")
-    shutil.copytree(src, dest, dirs_exist_ok=True)
-
-    # Define build and install paths
-    build_dir_name = "build"
-    install_dir = dest / "install"
-
-    # 2) Build & install C++ via CMake using the new CMake class
-    await CMake.configure(source_dir=dest, build_dir_name=build_dir_name, install_prefix=install_dir)  # await async method
-    await CMake.build(source_dir=dest, build_dir_name=build_dir_name, target="install")  # await async method
-    # Note: api.set_pkg_config_path is now called by Pybind.set_pkg_config_path_from_install_prefix
-
-    # Set PKG_CONFIG_PATH using the new Pybind method before building Python extensions
-    await Pybind.set_pkgconfig_path(install_dir)
-
-    # 3) Build Python extensions via bundle CLI
-    await Pybind.build(dest)
-
-    # 4) Prepend the bindings/python folder so imports work
-    bindings_dir = dest / "bindings" / "python"
-    sys.path.insert(0, str(bindings_dir))
-
-    return dest
+# Remove the built fixture and use built_example_module from conftest.py
 
 
-async def test_shape_module(built):
+@pytest.mark.bundle_data()
+@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
+async def test_project_resolved(built_example_module_pybind, built_example_module, request):
+    pc_dir = built_example_module / "lib" / "pkgconfig"
+    _bindings_dir, pyproject_path = built_example_module_pybind
+    # Set PKG_CONFIG_PATH to the correct directory containing the .pc file
+    os.environ["PKG_CONFIG_PATH"] = str(pc_dir)
+    project_resolved = await Pybind.info(pyproject_path.parent)
+
+    # Make all relevant paths relative to the project root for stable references
+    project_root = pyproject_path.parent
+
+    # Fix module specs and resolved pkgconfig paths
+    for module in project_resolved.modules:
+        spec = module.spec
+        # sources
+        spec.sources = [str(Path(s).relative_to(project_root)) if Path(s).is_absolute() else s for s in spec.sources]
+        # extra_compile_args and extra_link_args are usually flags, not paths, so skip
+        # pkgconfig resolved paths
+        pkg = module.pkgconfig
+        for pkg_result in pkg.resolved:
+            pkg_result.include_dirs = [
+                str(Path(d).relative_to(project_root)) if Path(d).is_relative_to(str(project_root)) else d
+                for d in pkg_result.include_dirs
+            ]
+            pkg_result.library_dirs = [
+                str(Path(d).relative_to(project_root)) if Path(d).is_relative_to(str(project_root)) else d
+                for d in pkg_result.library_dirs
+            ]
+
+    project_resolved.__test_name = request.node.name.strip()
+    return project_resolved
+
+
+async def test_shape_module(built_example_module_pybind):
     import example_module.shape as sm
 
     c = sm.Circle(1.0)
@@ -57,7 +60,7 @@ async def test_shape_module(built):
     assert t.area() == 0.5 * 3.0 * 4.0
 
 
-async def test_geometry_module(built):
+async def test_geometry_module(built_example_module_pybind):
     import example_module.geometry as gm
     from example_module.shape import Circle, Square, Triangle
 

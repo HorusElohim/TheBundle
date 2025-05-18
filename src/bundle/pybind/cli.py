@@ -8,7 +8,7 @@ import multiprocessing
 import rich_click as click
 
 from bundle.core import logger, tracer
-from bundle.pybind import api
+from bundle.pybind import Pybind
 
 log = logger.get_logger(__name__)
 
@@ -40,7 +40,7 @@ async def build(path: str, parallel: int):
     """
     Build the pybind11 extensions in-place for the given project path.
     """
-    await api.build(path, parallel)
+    await Pybind.build(path, parallel=parallel)
 
 
 @pybind.command()
@@ -56,4 +56,4 @@ async def info(path: str):
     """
     Show the current pybind11 configuration for the given project path.
     """
-    await api.info(path)
+    await Pybind.info(path)

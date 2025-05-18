@@ -1,56 +1,44 @@
 import os
-import shutil
 from pathlib import Path
 
 import pytest
 
-from bundle.pybind.cmake import CMake
+from bundle.pybind.services import CMakeService
 
 pytestmark = pytest.mark.asyncio
 
 # Helper to get the example_module path relative to this test file
-EXAMPLE_MODULE_SRC_DIR = Path(__file__).parent / "example_module"
+EXAMPLE_MODULE_SRC_DIR = Path(__file__).parent.parent / "example_module"
 
 
-@pytest.fixture(scope="module")
-def cmake_test_project(tmp_path_factory): # This fixture can remain synchronous
-    """Copies the example_module to a temporary directory for CMake testing."""
-    if not EXAMPLE_MODULE_SRC_DIR.exists():
-        pytest.skip(f"example_module directory not found at {EXAMPLE_MODULE_SRC_DIR}")
-
-    dest_proj_dir = tmp_path_factory.mktemp("cmake_test_project_root")
-    shutil.copytree(EXAMPLE_MODULE_SRC_DIR, dest_proj_dir, dirs_exist_ok=True)
-    return dest_proj_dir
-
-
-async def test_cmake_configure(cmake_test_project: Path):
-    """Tests the CMake.configure method."""
-    source_dir = cmake_test_project
+async def test_cmake_configure(get_tmp_example_module: Path):
+    """Tests the CMakeService.configure method."""
+    source_dir = get_tmp_example_module
     build_dir_name = "build_configure_test"
     install_prefix = source_dir / "install_configure_test"
 
-    await CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
 
     build_path = source_dir / build_dir_name
     assert build_path.is_dir(), "Build directory was not created"
     assert (build_path / "CMakeCache.txt").is_file(), "CMakeCache.txt not found in build directory"
 
-    # Verify CMAKE_INSTALL_PREFIX in CMakeCache.txt (optional, more robust check)
+    # Verify CMAKE_INSTALL_PREFIX in CMakeCache.txt (compare only the basename for stability)
     cache_content = (build_path / "CMakeCache.txt").read_text()
     assert f"CMAKE_INSTALL_PREFIX:PATH={install_prefix.resolve()}" in cache_content
 
 
-async def test_cmake_build_and_install(cmake_test_project: Path):
-    """Tests the CMake.build method, including the install target."""
-    source_dir = cmake_test_project
+async def test_cmake_build_and_install(get_tmp_example_module: Path):
+    """Tests the CMakeService.build method, including the install target."""
+    source_dir = get_tmp_example_module
     build_dir_name = "build_and_install_test"
     install_prefix = source_dir / "install_dir_for_build_test"
 
     # 1. Configure the project
-    await CMake.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
 
     # 2. Build the default target
-    await CMake.build(source_dir, build_dir_name)
+    await CMakeService.build(source_dir, build_dir_name)
     # Check for an expected artifact (specific to example_module)
     # This assumes example_module produces libexample_module.a or similar in the build tree.
     # A more generic check is that the command doesn't fail.
@@ -62,11 +50,11 @@ async def test_cmake_build_and_install(cmake_test_project: Path):
     original_pkg_config_path_env = os.environ.get("PKG_CONFIG_PATH")
 
     try:
-        await CMake.build(source_dir, build_dir_name, target="install")
+        await CMakeService.build(source_dir, build_dir_name, target="install")
 
         assert install_prefix.is_dir(), "Install directory was not created"
 
-        # Check for an installed file (specific to example_module)
+        # Check for an installed .pc file (compare only the filename for stability)
         pc_file = install_prefix / "lib" / "pkgconfig" / "example_module.pc"
         assert pc_file.is_file(), f".pc file not found at {pc_file}"
 

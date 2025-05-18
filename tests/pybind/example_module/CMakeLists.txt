@@ -13,6 +13,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# Set minimum macOS deployment target for std::variant support
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13" CACHE STRING "Minimum OS X deployment version")
+endif()
+
 # Collect all .cpp sources
 file(GLOB_RECURSE sources src/*.cpp)
 add_library(${PROJECT_NAME} ${sources})

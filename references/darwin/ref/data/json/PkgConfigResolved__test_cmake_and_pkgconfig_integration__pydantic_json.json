@@ -1,0 +1,26 @@
+{
+    "spec": {
+        "packages": [
+            "example_module"
+        ],
+        "extra_dirs": [
+            "lib/pkgconfig"
+        ]
+    },
+    "resolved": [
+        {
+            "name": "example_module",
+            "include_dirs": [
+                "include"
+            ],
+            "compile_flags": [],
+            "library_dirs": [
+                "lib"
+            ],
+            "libraries": [
+                "example_module"
+            ],
+            "link_flags": []
+        }
+    ]
+}
