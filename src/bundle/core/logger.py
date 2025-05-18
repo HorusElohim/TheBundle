@@ -26,7 +26,8 @@ from pathlib import Path
 from typing import Any, Callable, Mapping, cast
 
 from colorama import Fore, Style
-from rich.logging import RichHandler  # Use Rich's handler for improved console output
+from rich.logging import RichHandler
+from rich.pretty import pretty_repr
 
 
 class Emoji:
@@ -119,13 +120,17 @@ class BundleLogger(logging.getLoggerClass()):
             stacklevel: The stack level for the log record.
             level: The logging level to use (default: DEBUG).
         """
-        if self.isEnabledFor(level):
-            self._log(
-                level,
-                "%s  %s.%s(%s, %s) -> %s",
-                (Emoji.success, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, result),
-                stacklevel=stacklevel,
-            )
+        if not self.isEnabledFor(level):
+            return
+
+        caller = f"{func.__module__}.{BundleLogger.get_callable_name(func)}"
+        payload = {
+            "args": args,
+            "kwargs": kwargs,
+            "result": result,
+        }
+        message = f"{Emoji.success} {caller}({pretty_repr(payload)})"
+        self._log(level, message, (), stacklevel=stacklevel)
 
     def callable_exception(
         self,
