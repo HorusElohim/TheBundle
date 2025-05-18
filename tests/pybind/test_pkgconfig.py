@@ -51,7 +51,7 @@ async def test_parse_libs(libs: str, exp_libdirs: list[str], exp_libs: list[str]
     assert other == exp_other
 
 
-async def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Result:
+async def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfig.Config:
     """Run pkg-config directly using Process and tracer.Async.call_raise"""
     proc = Process()
     env = os.environ.copy()
@@ -79,7 +79,7 @@ async def run_pkg_config_direct(pkg_name: str, pkg_config_path=None) -> PkgConfi
     inc_dirs, compile_flags = await PkgConfig.parse_cflags(cflags_output)
     lib_dirs, libraries, link_flags = await PkgConfig.parse_libs(libs_output)
 
-    return PkgConfig.Result(
+    return PkgConfig.Config(
         include_dirs=inc_dirs,
         compile_flags=compile_flags,
         library_dirs=lib_dirs,

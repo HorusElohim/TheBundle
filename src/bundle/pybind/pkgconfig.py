@@ -17,7 +17,7 @@ log = logger.get_logger(__name__)
 class PkgConfig:
     """A utility class for pkg-config operations."""
 
-    class Result(Data):
+    class Config(Data):
         """Data model for the results of a pkg-config query."""
         include_dirs: List[str] = Field(default_factory=list)
         compile_flags: List[str] = Field(default_factory=list)
@@ -73,7 +73,7 @@ class PkgConfig:
     @staticmethod
     async def run(
         pkg_packages: Tuple[str, ...], pkg_dirs: Tuple[str, ...]
-    ) -> PkgConfig.Result:
+    ) -> PkgConfig.Config:
         """
         Run pkg-config via the Process wrapper for the given packages and search dirs.
 
@@ -109,7 +109,7 @@ class PkgConfig:
         inc_dirs, compile_flags = await PkgConfig.parse_cflags(result_c.stdout.strip())
         lib_dirs, libraries, link_flags = await PkgConfig.parse_libs(result_l.stdout.strip())
 
-        return PkgConfig.Result(
+        return PkgConfig.Config(
             include_dirs=inc_dirs,
             compile_flags=compile_flags,
             library_dirs=lib_dirs,
