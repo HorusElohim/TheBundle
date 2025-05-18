@@ -12,7 +12,7 @@ from pathlib import Path
 from bundle.core import logger, tracer
 from bundle.core.process import Process
 from bundle.pybind.config import PybindConfig
-from bundle.pybind.pkgconfig import set_pkg_config_path
+from bundle.pybind.pkgconfig import PkgConfig
 
 log = logger.get_logger(__name__)
 
@@ -32,7 +32,7 @@ class Pybind:
         pkg_config_dir = install_prefix.resolve() / "lib" / "pkgconfig"
         if pkg_config_dir.is_dir():
             log.info(f"Setting PKG_CONFIG_PATH to include: {pkg_config_dir}")
-            set_pkg_config_path(pkg_config_dir)  # Calls the imported function
+            PkgConfig.set_path(pkg_config_dir)
         else:
             log.warning(
                 f"PKG_CONFIG_PATH not set: Directory {pkg_config_dir} does not exist. "
@@ -80,7 +80,3 @@ class Pybind:
 
         json_text = await cfg.as_json()
         log.info(f"pybind11 configuration from {toml_file}:\n{json_text}")
-
-
-# set_pkg_config_path remains available at the module level as bundle.pybind.api.set_pkg_config_path
-# due to the import at the top of the file.
