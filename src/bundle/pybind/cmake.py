@@ -7,22 +7,22 @@ from bundle.core import tracer
 from bundle.core.process import Process
 
 
+def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
+    """Gets platform-specific CMake arguments and environment variables."""
+    env = os.environ.copy()
+    cmake_args: list[str] = []
+    if sys.platform == "darwin":
+        import platform
+
+        arch = platform.machine()
+        cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
+        env["ARCHFLAGS"] = f"-arch {arch}"
+        env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
+    return cmake_args, env
+
+
 class CMake:
     """A utility class for running CMake commands."""
-
-    @staticmethod
-    def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
-        """Gets platform-specific CMake arguments and environment variables."""
-        env = os.environ.copy()
-        cmake_args: list[str] = []
-        if sys.platform == "darwin":
-            import platform  # Local import
-
-            arch = platform.machine()
-            cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
-            env["ARCHFLAGS"] = f"-arch {arch}"
-            env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
-        return cmake_args, env
 
     @staticmethod
     def configure(
@@ -46,7 +46,7 @@ class CMake:
         if install_prefix:
             cmd.append(f"-DCMAKE_INSTALL_PREFIX={install_prefix.resolve()}")
 
-        platform_args, env = CMake._get_platform_specific_cmake_args_env()
+        platform_args, env = _get_platform_specific_cmake_args_env()
         cmd.extend(platform_args)
 
         if extra_args:
@@ -80,6 +80,6 @@ class CMake:
         if extra_args:
             cmd.extend(extra_args)
 
-        _platform_cmake_args, env = CMake._get_platform_specific_cmake_args_env()
+        _platform_args, env = CMake._get_platform_specific_cmake_args_env()
 
         tracer.Sync.call_raise(proc.__call__, " ".join(cmd), cwd=str(source_dir), env=env)
