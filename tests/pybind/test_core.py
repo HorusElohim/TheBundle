@@ -30,8 +30,8 @@ async def test_to_extension_with_pkgconfig(monkeypatch, tmp_path):
     incorporates pkg-config flags into the Extension.
     """
 
-    async def fake_run(pkgs, dirs) -> PkgConfig.Result:
-        return PkgConfig.Result(
+    async def fake_run(pkgs, dirs) -> PkgConfig.Config:
+        return PkgConfig.Config(
             include_dirs=["inc"],
             compile_flags=["-O3"],
             library_dirs=["ld"],
