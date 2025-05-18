@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+import asyncio  # Added import
 
 import pybind11
 from setuptools import Extension
@@ -14,20 +15,20 @@ class PybindModule:
     def __init__(self, cfg: ModuleConfig) -> None:
         self.cfg = cfg
 
-    def run_pkg_config(self) -> None:
+    async def run_pkg_config(self) -> None:
         if not self.cfg.pkg_config_packages:
             return
         pkgs = tuple(self.cfg.pkg_config_packages)
         dirs = tuple(self.cfg.pkg_config_dirs)
-        result = PkgConfig.run(pkgs, dirs)
+        result = await PkgConfig.run(pkgs, dirs)
         self.cfg.include_dirs.extend(result.include_dirs)
         self.cfg.extra_compile_args.extend(result.compile_flags)
         self.cfg.library_dirs.extend(result.library_dirs)
         self.cfg.libraries.extend(result.libraries)
         self.cfg.extra_link_args.extend(result.link_flags)
 
-    def to_extension(self, base_dir: Path) -> Extension:
-        self.run_pkg_config()
+    async def to_extension(self, base_dir: Path) -> Extension:
+        await self.run_pkg_config()  # await async method
         std_flag = f"-std=c++{self.cfg.cpp_std}"
         if std_flag not in self.cfg.extra_compile_args:
             self.cfg.extra_compile_args.append(std_flag)
@@ -54,11 +55,13 @@ class PybindProject:
     def register_plugin(self, p):
         self.plugins.append(p)
 
-    def apply_plugins(self):
+    async def apply_plugins(self):
         for m in self.modules:
             for p in self.plugins:
-                p.apply(m)
+                await p.apply(m)
 
-    def get_extensions(self):
-        self.apply_plugins()
-        return [m.to_extension(self.base_dir) for m in self.modules]
+    async def get_extensions(self):
+        await self.apply_plugins()
+        # Create extensions concurrently if m.to_extension is independent
+        extension_tasks = [m.to_extension(self.base_dir) for m in self.modules]
+        return await asyncio.gather(*extension_tasks)
