@@ -90,9 +90,7 @@ class Process(Entity):
             **kwargs,
         )
 
-        stdout, stderr = await tracer.Async.call_raise(
-            self._process.communicate,
-        )
+        stdout, stderr = await self._process.communicate()
 
         returncode = -1 if self._process.returncode is None else self._process.returncode
 

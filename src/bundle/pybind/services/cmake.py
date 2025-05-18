@@ -20,7 +20,7 @@ def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
     return cmake_args, env
 
 
-class CMake:
+class CMakeService:
     """A utility class for running CMake commands."""
 
     @staticmethod
@@ -39,7 +39,6 @@ class CMake:
             install_prefix: Optional path for CMAKE_INSTALL_PREFIX.
             extra_args: Optional list of extra arguments to pass to cmake.
         """
-        proc = Process()
         cmd = ["cmake", "-S", ".", "-B", build_dir_name]
 
         if install_prefix:
@@ -51,6 +50,7 @@ class CMake:
         if extra_args:
             cmd.extend(extra_args)
 
+        proc = Process()
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)
 
     @staticmethod
@@ -69,7 +69,6 @@ class CMake:
             target: Optional build target (e.g., "install").
             extra_args: Optional list of extra arguments to pass to cmake --build.
         """
-        proc = Process()
         cmd = ["cmake", "--build", build_dir_name]
 
         if target:
@@ -81,4 +80,5 @@ class CMake:
 
         _platform_args, env = _get_platform_specific_cmake_args_env()
 
+        proc = Process()
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)

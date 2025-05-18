@@ -1,3 +1,3 @@
-from bundle.pybind import setup
+from bundle.pybind import Pybind
 
-setup(__file__)
+Pybind.setup(__file__)
