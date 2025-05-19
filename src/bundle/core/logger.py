@@ -18,6 +18,7 @@
 # under the License.
 
 import json
+import sys
 import logging
 import time
 from datetime import datetime, timezone
@@ -25,9 +26,18 @@ from enum import IntEnum
 from pathlib import Path
 from typing import Any, Callable, Mapping, cast
 
-from colorama import Fore, Style
 from rich.logging import RichHandler
 from rich.pretty import pretty_repr
+
+# Python's logging stacklevel handling changed in 3.11:
+# - In Python < 3.11, the stacklevel=1 points to the caller of the logging function as expected.
+# - In Python >= 3.11, due to internal changes in the logging module, an extra frame is present,
+#   so stacklevel=2 is needed to refer to the same caller.
+# This ensures log records point to the correct user code location across Python versions.
+if sys.version_info < (3, 11):
+    BASE_STACKLEVEL = 1
+else:
+    BASE_STACKLEVEL = 2
 
 
 class Emoji:
@@ -92,13 +102,16 @@ class BundleLogger(logging.getLoggerClass()):
             return callable_obj.__call__.__qualname__
         return repr(callable_obj)
 
-    def verbose(self, msg: str, *args, stacklevel=2, **kwargs) -> None:
+    def verbose(self, msg: str, *args, stacklevel=BASE_STACKLEVEL, **kwargs) -> None:
         if self.isEnabledFor(Level.VERBOSE):
             self._log(Level.VERBOSE, msg, args, stacklevel=stacklevel, **kwargs)
 
-    def testing(self, msg: str, *args, stacklevel=2, **kwargs) -> None:
+    def testing(self, msg: str, *args, stacklevel=BASE_STACKLEVEL, **kwargs) -> None:
         if self.isEnabledFor(Level.TESTING):
             self._log(Level.TESTING, msg, args, stacklevel=stacklevel, **kwargs)
+
+    def pretty_repr(self, obj: Any) -> None:
+        return pretty_repr(obj)
 
     def callable_success(
         self,
@@ -129,7 +142,7 @@ class BundleLogger(logging.getLoggerClass()):
             "kwargs": kwargs,
             "result": result,
         }
-        message = f"{Emoji.success} {caller}({pretty_repr(payload)})"
+        message = f"{Emoji.success} {caller}({self.pretty_repr(payload)})"
         self._log(level, message, (), stacklevel=stacklevel)
 
     def callable_exception(
@@ -248,7 +261,7 @@ def setup_console_handler(colored_output: bool) -> logging.Handler:
     a custom Theme to style the custom TESTING and VERBOSE levels.
     """
     if colored_output:
-        from rich.console import Console
+        from rich import console
         from rich.theme import Theme
 
         # Create a custom theme including styles for the custom levels.
@@ -263,8 +276,20 @@ def setup_console_handler(colored_output: bool) -> logging.Handler:
                 "logging.level.verbose": "dim black",
             }
         )
-        console = Console(theme=custom_theme)
-        return RichHandler(console=console, rich_tracebacks=True)
+
+        class MinWidthConsole(console.Console):
+            def __init__(self, *args, min_width=180, **kwargs):
+                super().__init__(*args, **kwargs)
+                self._min_width = min_width
+
+            @property
+            def width(self):
+                w = super().width
+                return max(w, self._min_width)
+
+        # Remove force_terminal=True to let Rich auto-detect terminal support
+        custom_console = MinWidthConsole(theme=custom_theme)
+        return RichHandler(console=custom_console, rich_tracebacks=True)
     else:
         handler = logging.StreamHandler()
         handler.setFormatter(logging.Formatter("%(levelname)s - [%(name)s]: %(message)s"))
