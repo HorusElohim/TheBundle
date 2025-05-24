@@ -1,14 +1,12 @@
 import asyncio
 from pathlib import Path
 import bundle
-import platform
 import pytest
 import zmq
 
 DEFAULT_SAFE_SLEEP = 0.1
 PROTOCOLS = ["tcp", "ipc", "inproc"]
 HAS_DRAFT_SUPPORT = zmq.has("draft")
-IS_WINDOWS = platform.system() == "Windows"
 
 # Mark all tests in this module as asynchronous
 pytestmark = pytest.mark.asyncio
@@ -40,7 +38,7 @@ async def test_pub_sub(protocol, tmp_path):
     """
     Test PUB/SUB pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5555)
@@ -73,7 +71,7 @@ async def test_push_pull(protocol, tmp_path):
     """
     Test PUSH/PULL pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5556)
@@ -105,7 +103,7 @@ async def test_req_rep(protocol, tmp_path):
     """
     Test REQ/REP pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5557)
@@ -145,7 +143,7 @@ async def test_dealer_router(protocol, tmp_path):
     """
     Test DEALER/ROUTER pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5558)
@@ -185,7 +183,7 @@ async def test_proxy(protocol, tmp_path):
     """
     Test Proxy functionality with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     frontend_endpoint = resolve_endpoint(protocol, tmp_path / "frontend", 5559)
@@ -232,7 +230,7 @@ async def test_pair(protocol, tmp_path):
     """
     Test PAIR pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5561)
@@ -273,7 +271,7 @@ async def test_xpub_xsub(protocol, tmp_path):
     """
     Test XPUB/XSUB pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5562)
@@ -380,7 +378,7 @@ async def test_server_client(protocol, tmp_path):
     """
     Test SERVER/CLIENT pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5564)
@@ -414,7 +412,7 @@ async def test_radio_dish(protocol, tmp_path):
     """
     Test RADIO/DISH pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5565)
@@ -442,7 +440,7 @@ async def test_gather_scatter(protocol, tmp_path):
     """
     Test GATHER/SCATTER pattern with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5566)
@@ -470,7 +468,7 @@ async def test_peer(protocol, tmp_path):
     """
     Test PEER socket with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5567)
@@ -500,7 +498,7 @@ async def test_channel(protocol, tmp_path):
     """
     Test CHANNEL socket with parameterized protocols.
     """
-    if IS_WINDOWS and protocol == "ipc":
+    if bundle.core.platform_info.is_windows and protocol == "ipc":
         pytest.skip("Skipping IPC tests on Windows.")
 
     endpoint = resolve_endpoint(protocol, tmp_path, 5568)

@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 import os
-import platform
 import shutil
 import tempfile
 
@@ -49,7 +48,7 @@ def _get_reference_folder(bundle_folder: bundle.Path):
     Returns the path to the reference folder for the current platform,
     creating it if necessary.
     """
-    ref_folder = bundle_folder / "references" / platform.system().lower()
+    ref_folder = bundle_folder / "references" / bundle.core.platform_info.system
     ref_folder.mkdir(exist_ok=True, parents=True)
     return ref_folder
 
@@ -108,6 +107,9 @@ def pytest_configure(config):
 
 
 def pytest_collection_modifyitems(session, config, items):
+    # Log Platform
+    log.testing(f"Running tests on platform: {log.pretty_repr(bundle.core.platform.platform_info)}")
+
     # Compute bundle_folder
     bundle_folder = _get_bundle_folder()
 

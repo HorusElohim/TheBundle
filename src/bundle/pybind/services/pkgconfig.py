@@ -3,10 +3,9 @@
 import asyncio
 import os
 import shlex
-import sys
 from pathlib import Path
 
-from bundle.core import logger, tracer
+from bundle.core import logger, tracer, platform_info
 from bundle.core.process import Process
 
 from ..resolved import PkgConfigResolved, PkgConfigResult
@@ -30,7 +29,7 @@ def get_env_with_pkg_config_path(extra_dirs: list[Path] | None = None) -> dict[s
     if not extra_dirs:
         return env
 
-    path_sep = ";" if sys.platform == "win32" else ":"
+    path_sep = ";" if platform_info.is_windows == "win32" else ":"
     new_paths_str = [str(p.resolve()) for p in extra_dirs]  # Ensure paths are absolute and resolved
     existing_pkg_path = env.get("PKG_CONFIG_PATH", "")
 
