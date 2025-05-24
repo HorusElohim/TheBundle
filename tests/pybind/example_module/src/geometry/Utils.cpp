@@ -42,10 +42,12 @@ namespace example_module::geometry
             return std::nullopt;
         }
     }
+#if __cplusplus >= 201703L && (!defined(__APPLE__) || (defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101300))
     ShapeVariant get_shape_variant(bool flag)
     {
         if (flag)
             return std::make_shared<shape::Circle>(5.0);
         return std::make_shared<shape::Square>(6.0);
     }
+#endif
 }
