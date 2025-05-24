@@ -13,7 +13,15 @@ jobs:
       matrix:
         python-version: ['3.10', '3.11', '3.12']
 
+    env:
+      TMP: C:\tmp
+      TEMP: C:\tmp
+
     steps:
+      - name: Make short temp dir
+        shell: powershell
+        run: New-Item -ItemType Directory -Force -Path C:\tmp
+
       - uses: actions/checkout@v4
 
       - uses: ./.github/actions/setup-test

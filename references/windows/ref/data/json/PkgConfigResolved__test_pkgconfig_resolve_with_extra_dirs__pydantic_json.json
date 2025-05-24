@@ -1,0 +1,29 @@
+{
+    "spec": {
+        "packages": [
+            "foo"
+        ],
+        "extra_dirs": [
+            "."
+        ]
+    },
+    "resolved": [
+        {
+            "name": "foo",
+            "include_dirs": [
+                "/usr/local/include/foo"
+            ],
+            "compile_flags": [
+                "-DFOO=1"
+            ],
+            "library_dirs": [
+                "/usr/local/lib"
+            ],
+            "libraries": [
+                "foo",
+                "m"
+            ],
+            "link_flags": []
+        }
+    ]
+}

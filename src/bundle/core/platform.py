@@ -128,8 +128,11 @@ class Darwin(PlatformSpecific):
     hardware_uuid: str = data.Field(default_factory=str, frozen=True)
     xcode_version: str = data.Field(default_factory=str, frozen=True)
     command_line_tools_version: str = data.Field(default_factory=str, frozen=True)
-    macosx_deployment_target: str = data.Field(
-        default_factory=lambda: sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0", frozen=True
+    macosx_deployment_target: float = data.Field(
+        default_factory=lambda: (
+            float(val) if (val := sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")) not in (None, "") else -1.0
+        ),
+        frozen=True,
     )
 
     @classmethod

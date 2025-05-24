@@ -1,0 +1,90 @@
+{
+    "$defs": {
+        "PkgConfigResult": {
+            "additionalProperties": false,
+            "properties": {
+                "name": {
+                    "title": "Name",
+                    "type": "string"
+                },
+                "include_dirs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Include Dirs",
+                    "type": "array"
+                },
+                "compile_flags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Compile Flags",
+                    "type": "array"
+                },
+                "library_dirs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Library Dirs",
+                    "type": "array"
+                },
+                "libraries": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Libraries",
+                    "type": "array"
+                },
+                "link_flags": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Link Flags",
+                    "type": "array"
+                }
+            },
+            "title": "PkgConfigResult",
+            "type": "object"
+        },
+        "PkgConfigSpec": {
+            "additionalProperties": false,
+            "description": "This class defines the configuration options for the pkg-config dependency of a pybind11 extension module.\nAttributes:\n    packages (list[str]): A list of package names to be resolved using pkg-config.\n    extra_dirs (list[str]): A list of directories to search for pkg-config files.",
+            "properties": {
+                "packages": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Packages",
+                    "type": "array"
+                },
+                "extra_dirs": {
+                    "items": {
+                        "type": "string"
+                    },
+                    "title": "Extra Dirs",
+                    "type": "array"
+                }
+            },
+            "title": "PkgConfigSpec",
+            "type": "object"
+        }
+    },
+    "additionalProperties": false,
+    "properties": {
+        "spec": {
+            "$ref": "#/$defs/PkgConfigSpec"
+        },
+        "resolved": {
+            "items": {
+                "$ref": "#/$defs/PkgConfigResult"
+            },
+            "title": "Resolved",
+            "type": "array"
+        }
+    },
+    "required": [
+        "spec"
+    ],
+    "title": "PkgConfigResolved",
+    "type": "object"
+}

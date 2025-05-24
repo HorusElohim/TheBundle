@@ -1,0 +1,42 @@
+{
+    "spec": {
+        "packages": [
+            "foo",
+            "bar"
+        ],
+        "extra_dirs": []
+    },
+    "resolved": [
+        {
+            "name": "foo",
+            "include_dirs": [
+                "/usr/local/include/foo"
+            ],
+            "compile_flags": [
+                "-DFOO=1"
+            ],
+            "library_dirs": [
+                "/usr/local/lib"
+            ],
+            "libraries": [
+                "foo",
+                "m"
+            ],
+            "link_flags": []
+        },
+        {
+            "name": "bar",
+            "include_dirs": [
+                "/opt/bar/include/bar"
+            ],
+            "compile_flags": [],
+            "library_dirs": [
+                "/opt/bar/lib"
+            ],
+            "libraries": [
+                "bar"
+            ],
+            "link_flags": []
+        }
+    ]
+}

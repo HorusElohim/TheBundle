@@ -5,7 +5,7 @@ import os
 import shlex
 from pathlib import Path
 
-from bundle.core import logger, tracer, platform_info
+from bundle.core import logger, tracer
 from bundle.core.process import Process
 
 from ..resolved import PkgConfigResolved, PkgConfigResult
@@ -16,35 +16,25 @@ log = logger.get_logger(__name__)
 
 def get_env_with_pkg_config_path(extra_dirs: list[Path] | None = None) -> dict[str, str]:
     """
-    Computes the PKG_CONFIG_PATH and returns a new environment dictionary.
-    Does not modify os.environ directly.
+    Computes PKG_CONFIG_PATH and returns a modified copy of os.environ.
 
     Parameters:
-    - extra_dirs: Optional list of Path objects to prepend to PKG_CONFIG_PATH.
+    - extra_dirs: Optional list of Path objects to prepend.
 
     Returns:
-    - A copy of os.environ with PKG_CONFIG_PATH potentially modified.
+    - A modified copy of os.environ with PKG_CONFIG_PATH set.
     """
     env = os.environ.copy()
     if not extra_dirs:
         return env
 
-    path_sep = ";" if platform_info.is_windows == "win32" else ":"
-    new_paths_str = [str(p.resolve()) for p in extra_dirs]  # Ensure paths are absolute and resolved
-    existing_pkg_path = env.get("PKG_CONFIG_PATH", "")
-
-    current_paths_set = set(new_paths_str)
-    final_paths_list = list(new_paths_str)
-
-    if existing_pkg_path:
-        current_existing_list = [p for p in existing_pkg_path.split(path_sep) if p]
-        for p_exist in current_existing_list:
-            if p_exist not in current_paths_set:
-                final_paths_list.append(p_exist)
-                current_paths_set.add(p_exist)  # Add to set to avoid duplicates from existing path itself
-
-    combined_pkg_path = path_sep.join(final_paths_list)
-    env["PKG_CONFIG_PATH"] = combined_pkg_path
+    path_sep = os.pathsep  # Automatically uses ';' on Windows, ':' elsewhere
+    new_paths = [str(p.resolve()) for p in extra_dirs]
+    existing_paths = env.get("PKG_CONFIG_PATH", "").split(path_sep)
+    existing_paths = [p for p in existing_paths if p]
+    # Maintain order: extra_dirs paths first, then existing paths without duplicates
+    final_paths = new_paths + [p for p in existing_paths if p not in new_paths]
+    env["PKG_CONFIG_PATH"] = path_sep.join(final_paths)
     log.debug(f"Computed PKG_CONFIG_PATH for subprocess: {env['PKG_CONFIG_PATH']}")
     return env
 

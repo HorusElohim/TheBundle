@@ -99,8 +99,8 @@ class Pybind:
             extra_link_args = []
             extra_compile_args = []
             module_spec = module.spec
-            std_flag = f"-std=c++{module_spec.cpp_std}"
-            sources = [str((self.base_dir / s).resolve()) for s in module_spec.sources]
+            std_flag = f"/std:c++{module_spec.cpp_std}" if platform_info.is_windows else f"-std=c++{module_spec.cpp_std}"
+            sources = [str(Path(s)) for s in module_spec.sources]
             # Use the single pkgconfig field (PkgConfigResolved)
             pkg = module.pkgconfig
             if pkg:
@@ -112,18 +112,20 @@ class Pybind:
                     extra_compile_args.extend(pkg_result.compile_flags)
             if std_flag not in extra_compile_args:
                 extra_compile_args.append(std_flag)
-            ext_modules.append(
-                Extension(
-                    name=module_spec.name,
-                    sources=sources,
-                    language=module_spec.language,
-                    include_dirs=include_dirs,
-                    library_dirs=library_dirs,
-                    libraries=libraries,
-                    extra_compile_args=extra_compile_args,
-                    extra_link_args=extra_link_args,
-                )
+            log.debug("Creating Extension for module %s", module_spec.name)
+            ext = Extension(
+                name=module_spec.name,
+                sources=sources,
+                language=module_spec.language,
+                include_dirs=include_dirs,
+                library_dirs=library_dirs,
+                libraries=libraries,
+                extra_compile_args=extra_compile_args,
+                extra_link_args=extra_link_args,
             )
+            # custom build_temp to avoid conflicts when building multiple extensions
+            ext._build_temp = f"build/temp_{module_spec.name}"
+            ext_modules.append(ext)
         return ext_modules
 
     @classmethod
@@ -147,34 +149,54 @@ class Pybind:
             except ValueError:
                 pass
 
+        # Custom build_ext to set per-extension build_temp only
+        from setuptools.command.build_ext import build_ext as _build_ext
+
+        class build_ext(_build_ext):
+            def build_extension(self, ext):
+                # Set unique build_temp for each extension if present
+                build_temp = getattr(ext, "_build_temp", None)
+                if build_temp:
+                    self.build_temp = build_temp
+                    os.makedirs(self.build_temp, exist_ok=True)
+                # Do not set build_lib
+                super().build_extension(ext)
+
+        kwargs["cmdclass"] = kwargs.get("cmdclass", {})
+        kwargs["cmdclass"]["build_ext"] = build_ext
+
         setuptools_setup(**kwargs)
 
     @classmethod
     @tracer.Async.decorator.call_raise
     async def build(cls, path: str, parallel: int = multiprocessing.cpu_count()) -> process.ProcessResult:
-        proj = Path(path).resolve()
-        cmd = f"python {proj / 'setup.py'} build_ext --inplace"
-        if parallel:
+
+        module_path = Path(path).resolve()
+        cmd = f"python {module_path / 'setup.py'} build_ext --inplace"
+        if parallel and not platform_info.is_windows:
+            # Use --parallel only on non-Windows platforms
             cmd += f" --parallel {parallel}"
 
-        log.info(f"Running build command in {proj}:")
+        log.info(f"Running build command in {module_path}:")
 
         env = os.environ.copy()
 
         if platform_info.is_darwin:
             # Set ARCHFLAGS to match the current Python architecture
             env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
+            # Set deployment target for bindings build
+            env["MACOSX_DEPLOYMENT_TARGET"] = str(platform_info.darwin.macosx_deployment_target)
 
         proc = process.Process(name="Pybind.build")
-        result = await proc(cmd, cwd=str(proj), env=env)
+        result = await proc(cmd, cwd=str(module_path), env=env)
         log.info(f"Build completed with return code {result.returncode}")
         return result
 
     @classmethod
     @tracer.Async.decorator.call_raise
     async def info(cls, path: str) -> ProjectResolved:
-        proj = Path(path).resolve()
-        toml_file = proj / "pyproject.toml"
+        module_path = Path(path).resolve()
+        toml_file = module_path / "pyproject.toml"
         pybind = cls(toml_file)
         project_resolved = await pybind.resolve()
         json_text = await project_resolved.as_json()
