@@ -50,7 +50,7 @@ class CMakeService:
         if extra_args:
             cmd.extend(extra_args)
 
-        proc = Process()
+        proc = Process(name="CMakeService.configure")
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)
 
     @staticmethod
@@ -78,7 +78,8 @@ class CMakeService:
         if extra_args:
             cmd.extend(extra_args)
 
-        _platform_args, env = _get_platform_specific_cmake_args_env()
+        platform_args, env = _get_platform_specific_cmake_args_env()
+        cmd.extend(platform_args)
 
-        proc = Process()
+        proc = Process(name="CMakeService.build")
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)
