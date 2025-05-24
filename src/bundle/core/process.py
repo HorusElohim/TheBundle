@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+from __future__ import annotations
 import asyncio
 import sys
 from typing import Optional
@@ -40,22 +41,18 @@ class ProcessResult(Data):
 class ProcessError(Exception):
     """Custom exception for process execution errors."""
 
-    def __init__(self, result: ProcessResult):
+    def __init__(self, process: Process | ProcessStream, result: ProcessResult):
         self.result = result
-        exc_message = f"Command: {result.command} Return Code: {result.returncode}"
-
-        msg_lines = [exc_message]
-        if result.stdout:
-            stdout_clean = result.stdout.replace("\r\n", "\n").strip()
-            msg_lines.append("StdOut:")
-            msg_lines.append(stdout_clean)
-        if result.stderr:
-            stderr_clean = result.stderr.replace("\r\n", "\n").strip()
-            msg_lines.append("StdErr:")
-            msg_lines.append(stderr_clean)
-        message = "\n".join(msg_lines)
-        log.error(message)
-        super().__init__(exc_message)
+        parts = [
+            f"\n\n{'--' * 10} Process Execution Error {'--' * 10}\n",
+            log.pretty_repr(process),
+            f"\n\n\t{'--' * 10} Standard Output {'--' * 10}\n",
+            result.stdout.replace("\r\n", "\n").strip(),
+            f"\n\n\t{'--' * 10} Error Output {'--' * 10}\n",
+            result.stderr.replace("\r\n", "\n").strip(),
+            f"\n\n{'--' * 10} End of Process Execution Error {'--' * 10}\n",
+        ]
+        super().__init__("\n".join(parts))
 
 
 class Process(Entity):
@@ -101,7 +98,7 @@ class Process(Entity):
         result = ProcessResult(command=command, returncode=returncode, stdout=stdout_decoded, stderr=stderr_decoded)
 
         if returncode != 0:
-            raise ProcessError(result)
+            raise ProcessError(self, result)
 
         return result
 
@@ -127,9 +124,7 @@ class ProcessStream(Process):
         stdout_lines = []
         stderr_lines = []
 
-        return await tracer.Async.call_raise(
-            self._internal_call_, command, stdout_lines, stderr_lines, **kwargs, log_level=logger.Level.VERBOSE
-        )
+        return await self._internal_call_(command, stdout_lines, stderr_lines, **kwargs, log_level=logger.Level.VERBOSE)
 
     async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
         self._process = await tracer.Async.call_raise(
@@ -164,7 +159,7 @@ class ProcessStream(Process):
         result = ProcessResult(command=command, returncode=returncode, stdout=stdout, stderr=stderr)
 
         if returncode != 0:
-            raise ProcessError(result)
+            raise ProcessError(self, result)
 
         return result
 
