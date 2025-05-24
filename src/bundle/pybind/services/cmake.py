@@ -1,21 +1,18 @@
 import os
-import sys
 import sysconfig
 from pathlib import Path
 
 from bundle.core.process import Process
+from bundle.core import platform_info
 
 
 def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
     """Gets platform-specific CMake arguments and environment variables."""
     env = os.environ.copy()
     cmake_args: list[str] = []
-    if sys.platform == "darwin":
-        import platform
-
-        arch = platform.machine()
-        cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={arch}")
-        env["ARCHFLAGS"] = f"-arch {arch}"
+    if platform_info.is_darwin:
+        cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform_info.arch}")
+        env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
         env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
     return cmake_args, env
 
@@ -78,8 +75,7 @@ class CMakeService:
         if extra_args:
             cmd.extend(extra_args)
 
-        platform_args, env = _get_platform_specific_cmake_args_env()
-        cmd.extend(platform_args)
+        _platform_args, env = _get_platform_specific_cmake_args_env()
 
         proc = Process(name="CMakeService.build")
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)

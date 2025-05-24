@@ -9,7 +9,7 @@ import toml
 from setuptools import Extension
 from setuptools import setup as setuptools_setup
 
-from bundle.core import logger, process, tracer
+from bundle.core import logger, process, tracer, platform_info
 
 from .resolved.project import ProjectResolved
 from .resolvers.project import ProjectResolver
@@ -158,8 +158,15 @@ class Pybind:
             cmd += f" --parallel {parallel}"
 
         log.info(f"Running build command in {proj}:")
+
+        env = os.environ.copy()
+
+        if platform_info.is_darwin:
+            # Set ARCHFLAGS to match the current Python architecture
+            env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
+
         proc = process.Process(name="Pybind.build")
-        result = await proc(cmd, cwd=str(proj))
+        result = await proc(cmd, cwd=str(proj), env=env)
         log.info(f"Build completed with return code {result.returncode}")
         return result
 
