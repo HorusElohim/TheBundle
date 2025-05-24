@@ -6,7 +6,6 @@
 #include "example_module/shape/Shape.hpp"
 
 #include <optional>
-#include <variant>
 #include <vector>
 #include <memory>
 
@@ -18,9 +17,12 @@ namespace example_module::geometry
     std::optional<std::shared_ptr<shape::Square>> maybe_make_square(bool flag);
     std::optional<std::shared_ptr<shape::Triangle>> maybe_make_triangle(bool flag);
 
+#if __cplusplus >= 201703L && (!defined(__APPLE__) || (defined(__APPLE__) && defined(__MAC_OS_X_VERSION_MIN_REQUIRED) && __MAC_OS_X_VERSION_MIN_REQUIRED >= 101300))
+#include <variant>
     using ShapeVariant = std::variant<
         std::shared_ptr<shape::Circle>,
         std::shared_ptr<shape::Square>,
         std::shared_ptr<shape::Triangle>>;
     ShapeVariant get_shape_variant(bool flag);
+#endif
 }

@@ -164,6 +164,8 @@ class Pybind:
         if platform_info.is_darwin:
             # Set ARCHFLAGS to match the current Python architecture
             env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
+            # Set deployment target for bindings build
+            env["MACOSX_DEPLOYMENT_TARGET"] = str(platform_info.darwin.macosx_deployment_target)
 
         proc = process.Process(name="Pybind.build")
         result = await proc(cmd, cwd=str(proj), env=env)
