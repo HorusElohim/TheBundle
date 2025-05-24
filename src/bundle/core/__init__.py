@@ -28,6 +28,7 @@ from . import data
 
 from .data import Data
 from .entity import Entity
+from .platform import Platform, platform_info
 from .process import Process, ProcessStream, ProcessResult, ProcessError
 from .downloader import Downloader, DownloaderTQDM
 from .sockets import Socket
