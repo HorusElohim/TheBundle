@@ -58,6 +58,9 @@ async def test_cmake_build_and_install(get_tmp_example_module: Path):
         pc_file = install_prefix / "lib" / "pkgconfig" / "example_module.pc"
         assert pc_file.is_file(), f".pc file not found at {pc_file}"
 
+    except Exception as e:
+        raise e
+
     finally:
         # Restore original PKG_CONFIG_PATH state
         if original_pkg_config_path_env is None:

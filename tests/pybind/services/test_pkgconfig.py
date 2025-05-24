@@ -111,13 +111,8 @@ async def test_pkgconfig_resolve_empty(pkg_config_service, request):
     return resolved
 
 
-@pytest.mark.bundle_data()
 @pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
 async def test_pkgconfig_resolve_missing(pkg_config_service, foo_pc_file, set_pkg_config_path, request):
     spec = PkgConfigSpec(packages=["foo", "missing"])
-    try:
-        resolved = await pkg_config_service.resolve(spec)
-    except process.ProcessError:
-        resolved = PkgConfigResolved(spec=spec, resolved=[])
-    resolved.__test_name = request.node.name.strip()
-    return resolved
+    with pytest.raises(process.ProcessError):
+        await pkg_config_service.resolve(spec)
