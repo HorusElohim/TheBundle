@@ -63,7 +63,9 @@ async def built_example_module_pybind(built_example_module: Path):
         raise FileNotFoundError(f"pyproject.toml not found in {source_dir}")
     await Pybind.build(source_dir)
     bindings_dir = source_dir / "bindings" / "python"
+    bindings_dir = bindings_dir.resolve()
     if not bindings_dir.exists():
         raise FileNotFoundError(f"Bindings directory not found: {bindings_dir}")
+    log.debug(f"Adding bindings_dir in PATH: {bindings_dir}")
     sys.path.insert(0, str(bindings_dir))
     return bindings_dir, pyproject_path

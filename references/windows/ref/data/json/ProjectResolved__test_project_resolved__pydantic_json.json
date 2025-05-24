@@ -1,0 +1,132 @@
+{
+    "spec": {
+        "modules": [
+            {
+                "name": "example_module.shape",
+                "sources": [
+                    "bindings/python/example_module/shape_bindings.cpp"
+                ],
+                "language": "c++",
+                "cpp_std": "20",
+                "pkgconfig": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "extra_compile_args": [
+                    "-O3"
+                ],
+                "extra_link_args": []
+            },
+            {
+                "name": "example_module.geometry",
+                "sources": [
+                    "bindings/python/example_module/geometry_bindings.cpp"
+                ],
+                "language": "c++",
+                "cpp_std": "20",
+                "pkgconfig": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "extra_compile_args": [
+                    "-O3"
+                ],
+                "extra_link_args": []
+            }
+        ]
+    },
+    "modules": [
+        {
+            "spec": {
+                "name": "example_module.shape",
+                "sources": [
+                    "bindings/python/example_module/shape_bindings.cpp"
+                ],
+                "language": "c++",
+                "cpp_std": "20",
+                "pkgconfig": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "extra_compile_args": [
+                    "-O3"
+                ],
+                "extra_link_args": []
+            },
+            "pkgconfig": {
+                "spec": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "resolved": [
+                    {
+                        "name": "example_module",
+                        "include_dirs": [
+                            "install\\include"
+                        ],
+                        "compile_flags": [],
+                        "library_dirs": [
+                            "install\\lib"
+                        ],
+                        "libraries": [
+                            "example_module"
+                        ],
+                        "link_flags": []
+                    }
+                ]
+            }
+        },
+        {
+            "spec": {
+                "name": "example_module.geometry",
+                "sources": [
+                    "bindings/python/example_module/geometry_bindings.cpp"
+                ],
+                "language": "c++",
+                "cpp_std": "20",
+                "pkgconfig": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "extra_compile_args": [
+                    "-O3"
+                ],
+                "extra_link_args": []
+            },
+            "pkgconfig": {
+                "spec": {
+                    "packages": [
+                        "example_module"
+                    ],
+                    "extra_dirs": []
+                },
+                "resolved": [
+                    {
+                        "name": "example_module",
+                        "include_dirs": [
+                            "install\\include"
+                        ],
+                        "compile_flags": [],
+                        "library_dirs": [
+                            "install\\lib"
+                        ],
+                        "libraries": [
+                            "example_module"
+                        ],
+                        "link_flags": []
+                    }
+                ]
+            }
+        }
+    ]
+}

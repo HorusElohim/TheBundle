@@ -1,7 +1,8 @@
+from __future__ import annotations
 import os
-import sysconfig
 from pathlib import Path
 
+from enum import Enum
 from bundle.core.process import Process
 from bundle.core import platform_info
 
@@ -13,18 +14,27 @@ def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
     if platform_info.is_darwin:
         cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform_info.arch}")
         env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
-        env["MACOSX_DEPLOYMENT_TARGET"] = sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET") or "14.0"
+        env["MACOSX_DEPLOYMENT_TARGET"] = str(platform_info.darwin.macosx_deployment_target)
     return cmake_args, env
 
 
 class CMakeService:
     """A utility class for running CMake commands."""
 
+    class BuildType(Enum):
+        """Enum-like class for CMake build types."""
+
+        DEBUG = "Debug"
+        RELEASE = "Release"
+        RELWITHDEBINFO = "RelWithDebInfo"
+        MINSIZEREL = "MinSizeRel"
+
     @staticmethod
     async def configure(
         source_dir: Path,
         build_dir_name: str,
         install_prefix: Path | None = None,
+        build_type: BuildType = BuildType.RELEASE,
         extra_args: list[str] | None = None,
     ) -> None:
         """
@@ -36,7 +46,7 @@ class CMakeService:
             install_prefix: Optional path for CMAKE_INSTALL_PREFIX.
             extra_args: Optional list of extra arguments to pass to cmake.
         """
-        cmd = ["cmake", "-S", ".", "-B", build_dir_name]
+        cmd = ["cmake", "-S", ".", "-B", build_dir_name, "-DCMAKE_BUILD_TYPE=" + build_type.value]
 
         if install_prefix:
             cmd.append(f"-DCMAKE_INSTALL_PREFIX={install_prefix.resolve()}")
@@ -55,6 +65,7 @@ class CMakeService:
         source_dir: Path,
         build_dir_name: str,
         target: str | None = None,
+        build_type: BuildType = BuildType.RELEASE,
         extra_args: list[str] | None = None,
     ) -> None:
         """
@@ -66,7 +77,7 @@ class CMakeService:
             target: Optional build target (e.g., "install").
             extra_args: Optional list of extra arguments to pass to cmake --build.
         """
-        cmd = ["cmake", "--build", build_dir_name]
+        cmd = ["cmake", "--build", build_dir_name, "--config", build_type.value]
 
         if target:
             cmd.append("--target")

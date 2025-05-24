@@ -25,7 +25,7 @@ async def test_cmake_configure(get_tmp_example_module: Path):
 
     # Verify CMAKE_INSTALL_PREFIX in CMakeCache.txt (compare only the basename for stability)
     cache_content = (build_path / "CMakeCache.txt").read_text()
-    assert f"CMAKE_INSTALL_PREFIX:PATH={install_prefix.resolve()}" in cache_content
+    assert f"CMAKE_INSTALL_PREFIX:PATH={install_prefix.resolve().as_posix()}" in cache_content
 
 
 async def test_cmake_build_and_install(get_tmp_example_module: Path):
