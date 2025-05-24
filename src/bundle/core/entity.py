@@ -25,7 +25,7 @@ from uuid import UUID, uuid5
 from .. import version
 from . import Data, data, logger, utils
 
-LOGGER = logger.logging.getLogger(__name__)
+LOGGER = logger.get_logger(__name__)
 
 __doc__ = """
 This module introduces the `Entity` class, an extension of the `Data` model designed to represent
@@ -114,4 +114,8 @@ class Entity(Data):
         """
         Destructor method for the Entity class logging the entity's deletion along with its age.
         """
+        if not LOGGER.hasHandlers():
+            # Avoid logging if no handlers are attached.
+            # This can happen on the last entity when the program is exiting.
+            return
         LOGGER.debug("%s  %s[%s] age=%s", logger.Emoji.end, self.class_name, self.name, utils.format_duration_ns(self.age))

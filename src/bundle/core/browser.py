@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from contextlib import asynccontextmanager
 from enum import Enum
 
@@ -27,7 +28,7 @@ try:
 except ImportError:
     from typing_extensions import Self
 
-from typing import AsyncIterator, List, Type
+from typing import Any, AsyncIterator, Awaitable, Callable, Generic, List, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
@@ -36,6 +37,8 @@ from . import data, entity, tracer
 from .logger import get_logger
 
 logger = get_logger(__name__)
+
+T = TypeVar("T", bound=data.Data)
 
 
 class BrowserType(Enum):
@@ -217,3 +220,104 @@ class Browser(entity.Entity):
 
         self.is_closed = True
         return self
+
+    class Table(data.Data, Generic[T]):
+        """
+        Table specification: CSS selector for rows, list of Column, and model to instantiate.
+        """
+
+        row_selector: str
+        columns: list[Browser.Table.Column]
+        model: Type[T]
+
+        def __init__(
+            self,
+            row_selector: str,
+            columns: list[Browser.Table.Column],
+            model: Type[T],
+        ) -> None:
+            super().__init__(
+                row_selector=row_selector,
+                columns=columns,
+                model=model,
+            )
+
+        @tracer.Async.decorator.call_raise
+        async def parse(self, row: ElementHandle) -> dict[str, Any]:
+            record: dict[str, Any] = {}
+            for col in self.columns:
+                cell = await row.query_selector(col.selector)
+                record[col.name] = await col.parse(cell) if cell else None
+            return record
+
+        class Column(data.Data):
+            """
+            One column: field name, CSS selector, parser type, and optional base_url for URL parsing.
+            """
+
+            class Type(Enum):
+                TEXT = "text"
+                INT = "int"
+                URL = "url"
+
+            name: str
+            selector: str
+            parser_type: Type
+            base_url: str | None = None
+
+            # Instance methods for each parser
+            async def parse_text(self, cell: ElementHandle) -> str:
+                return (await cell.inner_text()).strip()
+
+            async def parse_int(self, cell: ElementHandle) -> int:
+                raw = (await cell.inner_text()).strip()
+                try:
+                    return int(raw.replace(",", ""))
+                except ValueError:
+                    return 0
+
+            async def parse_url(self, cell: ElementHandle) -> str:
+                href = (await cell.get_attribute("href") or "").strip()
+                if href.startswith("/") and self.base_url:
+                    return f"{self.base_url.rstrip('/')}{href}"
+                return href
+
+            # Map parser types to methods—easy to extend with new types
+            _PARSER_MAP: dict[Type, Callable[[Browser.Table.Column, ElementHandle], Awaitable[Any]]] = {
+                Type.TEXT: parse_text,
+                Type.INT: parse_int,
+                Type.URL: parse_url,
+            }
+
+            async def parse(self, cell: ElementHandle) -> Any:
+                """
+                Dispatch to the appropriate parser based on parser_type.
+                """
+                if parser_fn := self._PARSER_MAP.get(self.parser_type):
+                    return await parser_fn(self, cell)
+
+                raise ValueError(f"Unsupported parser type: {self.parser_type}")
+
+    @tracer.Async.decorator.call_raise
+    async def extract_table(
+        self,
+        page: Page,
+        table: Table[T],
+    ) -> list[T]:
+        """
+        Wait for `table.row_selector`, parse each row via `table.parse()`,
+        and build a list of `table.model` instances.
+        """
+        await page.wait_for_selector(table.row_selector)
+        rows = await page.query_selector_all(table.row_selector)
+
+        tasks = [table.parse(row) for row in rows]
+        records = await asyncio.gather(*tasks)
+
+        results: list[T] = []
+        for rec in records:
+            try:
+                results.append(await table.model.from_dict(rec))
+            except Exception as e:
+                logger.warning("Failed to instantiate %s: %s", table.model.__name__, e)
+        return results

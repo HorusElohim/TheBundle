@@ -1,0 +1,10 @@
+{
+    "spec": {
+        "packages": [
+            "foo",
+            "missing"
+        ],
+        "extra_dirs": []
+    },
+    "resolved": []
+}
