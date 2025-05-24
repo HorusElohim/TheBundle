@@ -158,7 +158,7 @@ class Pybind:
             cmd += f" --parallel {parallel}"
 
         log.info(f"Running build command in {proj}:")
-        proc = process.Process()
+        proc = process.Process(name="Pybind.build")
         result = await proc(cmd, cwd=str(proj))
         log.info(f"Build completed with return code {result.returncode}")
         return result

@@ -91,7 +91,7 @@ class PkgConfigService:
         cmd_parts = [self.executable, option, package_name]
         cmd_str = " ".join(shlex.quote(part) for part in cmd_parts)
 
-        proc = Process()
+        proc = Process(name=f"PkgConfigService.query{option}")
         path_extra_dirs = [Path(d) for d in extra_dirs] if extra_dirs else None
         env = get_env_with_pkg_config_path(path_extra_dirs)
         result = await proc(cmd_str, env=env)
