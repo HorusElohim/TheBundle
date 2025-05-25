@@ -1,0 +1,28 @@
+name: Commit Reference Update
+description: Git add + commit a path and push if changes exist
+inputs:
+  path:
+    required: true
+    description: Path to add and commit
+  message:
+    required: true
+    description: Commit message
+  token:
+    required: true
+    description: GitHub token
+
+runs:
+  using: composite
+  steps:
+    - name: Git Config
+      shell: bash
+      run: |
+        git config --global user.name "TheBundle"
+        git config --global user.email "noreply@github.com"
+
+    - name: Commit changes if any
+      shell: bash
+      run: |
+        git add ${{ inputs.path }}
+        git diff --quiet && git diff --staged --quiet || git commit -m "${{ inputs.message }}"
+        git push https://${{ inputs.token }}@github.com/${{ github.repository }} HEAD:${{ github.head_ref || github.ref_name }}

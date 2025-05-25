@@ -1,0 +1,41 @@
+name: Drop Reference Commits
+description: Remove commits matching a message pattern from the history and force-push
+inputs:
+  pattern:
+    required: true
+    description: grep pattern to match commit messages to remove
+  token:
+    required: true
+    description: GitHub token
+
+runs:
+  using: composite
+  steps:
+    - name: Git Config
+      shell: bash
+      run: |
+        git config --global user.name "TheBundle"
+        git config --global user.email "noreply@github.com"
+
+    - name: Remove matching commits
+      shell: bash
+      run: |
+        set -euo pipefail
+        git fetch origin
+        git pull --rebase origin "${{ github.head_ref || github.ref_name }}"
+        git stash save --include-untracked || true
+        pattern="${{ inputs.pattern }}"
+        matching=$(git log --pretty=format:'%H %s' | grep "$pattern" || true)
+        if [ -z "$matching" ]; then
+          echo "No commits found with the pattern: $pattern"
+        else
+          echo "Matching commits:"
+          echo "$matching"
+          base_commit=$(echo "$matching" | tail -1 | cut -d ' ' -f1)^
+          echo "Rebasing from base commit: $base_commit"
+          GIT_SEQUENCE_EDITOR="sed -i.bak '/$pattern/ s/^pick /drop /'" \
+            git rebase -i --empty=drop "$base_commit"
+        fi
+        git stash list | grep -q 'stash@{0}' && git stash pop || true
+        git push --force "https://${{ inputs.token }}@github.com/${{ github.repository }}" HEAD:"${{ github.head_ref || github.ref_name }}"
+          
