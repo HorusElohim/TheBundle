@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import os
+from enum import Enum
 from pathlib import Path
 
-from enum import Enum
-from bundle.core.process import Process
 from bundle.core import platform_info
+from bundle.core.process import Process
 
 
 def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
