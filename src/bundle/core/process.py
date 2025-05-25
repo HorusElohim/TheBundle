@@ -91,8 +91,8 @@ class Process(Entity):
 
         returncode = -1 if self._process.returncode is None else self._process.returncode
 
-        stdout_decoded = stdout.decode("utf-8") if stdout else ""
-        stderr_decoded = stderr.decode("utf-8") if stderr else ""
+        stdout_decoded = stdout.decode("utf-8", errors="replace") if stdout else ""
+        stderr_decoded = stderr.decode("utf-8", errors="replace") if stderr else ""
 
         # Create the ProcessResult before checking the return code
         result = ProcessResult(command=command, returncode=returncode, stdout=stdout_decoded, stderr=stderr_decoded)
@@ -174,7 +174,7 @@ class ProcessStream(Process):
         """
         try:
             async for line in stream:
-                str_line = line.decode("utf-8")
+                str_line = line.decode("utf-8", errors="replace")
                 accumulator.append(str_line)
                 await handler(str_line)
         except Exception as e:
