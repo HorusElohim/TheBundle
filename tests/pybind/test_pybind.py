@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import toml
 
-from bundle.pybind.pybind import Pybind, PybindPluginSpec, PybindPluginResolved
+from bundle.pybind.pybind import Pybind, PybindPluginResolved, PybindPluginSpec
 
 pytestmark = pytest.mark.asyncio
 
@@ -41,9 +41,8 @@ def minimal_pyproject(tmp_path):
 
 async def test_from_pyproject_and_module_names(minimal_pyproject):
     pybind = Pybind(minimal_pyproject)
-    assert pybind.get_module_names() == ["testmod"]
-    assert len(pybind.get_module_specs()) == 1
-    assert pybind.get_module_specs()[0].name == "testmod"
+    assert len(pybind.spec.modules) == 1
+    assert pybind.spec.modules[0].name == "testmod"
 
 
 async def test_register_plugin_spec_and_apply(minimal_pyproject):
@@ -72,7 +71,7 @@ async def test_register_plugin_resolved_and_apply(minimal_pyproject):
     assert called.get("applied") == "testmod"
 
 
-async def test_get_extensions(minimal_pyproject):
+async def test_get_spec_extensions(minimal_pyproject):
     pybind = Pybind(minimal_pyproject)
     # Patch pybind11.get_include to avoid dependency
     import sys
@@ -82,8 +81,8 @@ async def test_get_extensions(minimal_pyproject):
     fake_pybind11.get_include = lambda: "/fake/include"
     sys.modules["pybind11"] = fake_pybind11
 
-    exts = await pybind.get_extensions()
+    exts = await pybind.get_spec_extensions()
     assert len(exts) == 1
     ext = exts[0]
     assert ext.name == "testmod"
-    assert "/fake/include" in ext.include_dirs
+    assert "pybind11" in ext.include_dirs[0]
