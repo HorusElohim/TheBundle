@@ -15,6 +15,14 @@
 pip install thebundle
 ```
 
+### Continuous Integration: Platforms & Python Versions
+
+| Platform  | Python Versions  |
+| --------- | ---------------- |
+| 🐧 Ubuntu  | 3.10 3.11, 3.12 |
+| 🍏 macOS   | 3.10, 3.11, 3.12 |
+| 🪟 Windows | 3.10, 3.11, 3.12 |
+
 ## Documentation
 For more information, see the inline documentation in each module and the example projects in `tests/`.
 - [Core Modules Guide](src/bundle/core/README.md)
