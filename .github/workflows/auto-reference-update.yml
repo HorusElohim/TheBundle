@@ -8,25 +8,29 @@ jobs:
   check_commit_message:
     runs-on: ubuntu-latest
     outputs:
-      should_run_tests: ${{ steps.check.outputs.should_run_tests }}
+      should_generate_ref: ${{ steps.check.outputs.should_generate_ref }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+          ref: ${{ github.head_ref || github.event.pull_request.head.ref }}
+
       - id: check
         run: |
-          # Retrieve the most recent commit message
-          commit_message=$(git log -1 --pretty=%B)
+          commit_message=$(git log $(git rev-parse HEAD) -1 --pretty=%B)
           echo "Commit message: $commit_message"
-          if echo "$commit_message" | grep -q "auto: \[drop reference\]"; then
-            echo "Found commit message, tests will run."
-            echo "should_run_tests=true" >> $GITHUB_OUTPUT
+
+          if echo "$commit_message" | grep -q "🔥"; then
+            echo "Found 🔥, Auto Reference update will run!"
+            echo "should_generate_ref=true" >> "$GITHUB_OUTPUT"
           else
-            echo "Commit message not found, skipping tests."
-            echo "should_run_tests=false" >> $GITHUB_OUTPUT
+            echo "🔥 not found, skipping Auto Reference update."
+            echo "should_generate_ref=false" >> "$GITHUB_OUTPUT"
           fi
 
   wait_for_crossplatforms-tests:
     needs: [check_commit_message]
-    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
+    if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +38,7 @@ jobs:
       - name: Wait for Ubuntu tests
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^ubuntu_tests \(3\.\d{2}\)$'
           repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
           wait-interval: 3
@@ -43,7 +47,7 @@ jobs:
       - name: Wait for macOS tests
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^macos_tests \(3\.\d{2}\)$'
           repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
           wait-interval: 3
@@ -52,7 +56,7 @@ jobs:
       - name: Wait for Windows tests
         uses: lewagon/wait-on-check-action@v1.3.1
         with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^windows_tests \(3\.\d{2}\)$'
           repo-token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
           wait-interval: 3
@@ -60,88 +64,13 @@ jobs:
 
   update_reference_linux:
     needs: [wait_for_crossplatforms-tests, check_commit_message]
-    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
+    if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - uses: ./.github/actions/setup-test
-        with:
-          python-version: '3.10'
-
-      - name: Pull changes
-        run: git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
-
-      - name: Commit References
-        run: |
-          git config --global user.name 'TheBundle'
-          git config --global user.email 'noreply@github.com'
-          git add references/linux
-          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [linux]"
-          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
-
-  update_reference_darwin:
-    needs: [update_reference_linux, check_commit_message]
-    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - uses: ./.github/actions/setup-test
-        with:
-          python-version: '3.10'
-
-      - name: Pull changes
-        run: git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
-
-      - name: Commit References
-        run: |
-          git config --global user.name 'TheBundle'
-          git config --global user.email 'noreply@github.com'
-          git add references/darwin
-          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [darwin]"
-          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
-
-  update_reference_windows:
-    needs: [update_reference_darwin, check_commit_message]
-    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-
-      - uses: ./.github/actions/setup-test
-        with:
-          python-version: '3.10'
-
-      - name: Pull changes
-        run: git pull origin ${{ github.event.pull_request.head.ref || github.ref_name }}
-
-      - name: Commit References
-        run: |
-          git config --global user.name 'TheBundle'
-          git config --global user.email 'noreply@github.com'
-          git add references/windows
-          git diff --quiet && git diff --staged --quiet || git commit -m "auto: update references [windows]"
-          git push --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
-
-  remove_target_commit:
-    needs: [update_reference_windows, check_commit_message]
-    if: ${{ needs.check_commit_message.outputs.should_run_tests == 'true' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - uses: ./.github/actions/setup-test
         with:
@@ -150,25 +79,82 @@ jobs:
       - name: Pull changes
         run: |
           git fetch origin
-          git pull --rebase origin ${{ github.event.pull_request.head.ref || github.ref_name }}
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git pull origin ${{ github.event.pull_request.head.ref }}
 
-      - name: Configure Git User
-        run: |
-          git config --global user.name 'TheBundle'
-          git config --global user.email 'noreply@github.com'
+      - uses: ./.github/actions/commit-reference-push
+        with:
+          path: references/linux
+          message: " 🔐|🐧 update references"
+          token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
 
-      - name: Remove Target Commits
+  update_reference_darwin:
+    needs: [update_reference_linux, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - uses: ./.github/actions/setup-test
+        with:
+          python-version: '3.10'
+
+      - name: Pull changes
         run: |
-          git stash save --include-untracked
-          commits=$(git log --pretty=format:'%H %s' | grep "auto: \[drop reference\]" | cut -d ' ' -f1)
-          if [ -z "$commits" ]; then
-            echo "No commits found with the specified message."
-          else
-            for commit in $commits; do
-              GIT_COMMITTER_NAME="$(git log -1 --format='%an' $commit)"
-              GIT_COMMITTER_EMAIL="$(git log -1 --format='%ae' $commit)"
-              git rebase --onto $commit^ $commit --strategy-option=theirs --committer-date-is-author-date || git rebase --abort
-            done
-          fi
-          git stash list | grep -q 'stash@{0}' && git stash pop
-          git push --force --set-upstream https://${{ secrets.GITACTION_ACCESS_TOKEN }}@github.com/${{ github.repository }} HEAD:${{ github.event.pull_request.head.ref || github.ref_name }}
+          git fetch origin
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git pull origin ${{ github.event.pull_request.head.ref }}
+
+      - uses: ./.github/actions/commit-reference-push
+        with:
+          path: references/darwin
+          message: " 🔐|🍏 update references"
+          token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
+
+  update_reference_windows:
+    needs: [update_reference_darwin, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - uses: ./.github/actions/setup-test
+        with:
+          python-version: '3.10'
+
+      - name: Pull changes
+        run: |
+          git fetch origin
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git pull origin ${{ github.event.pull_request.head.ref }}
+
+      - uses: ./.github/actions/commit-reference-push
+        with:
+          path: references/windows
+          message: " 🔐|🪟 update references"
+          token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
+
+  remove_target_commit:
+    needs: [update_reference_windows, check_commit_message]
+    if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      
+      - uses: actions/checkout@v4 
+      
+      - name: Pull changes
+        run: |
+          git fetch origin
+          git checkout ${{ github.event.pull_request.head.ref }}
+          git pull origin ${{ github.event.pull_request.head.ref }}
+
+      - uses: ./.github/actions/commit-reference-drop
+        with:
+          pattern: "🔥"
+          token: ${{ secrets.GITACTION_ACCESS_TOKEN }}
