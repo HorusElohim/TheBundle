@@ -6,31 +6,19 @@ log = logger.get_logger(__name__)
 
 click.rich_click.SHOW_ARGUMENTS = True
 
-banner = """                                    
-                                                                                                                               dddddddd                            
-TTTTTTTTTTTTTTTTTTTTTTThhhhhhh                               BBBBBBBBBBBBBBBBB                                                 d::::::dlllllll                     
-T:::::::::::::::::::::Th:::::h                               B::::::::::::::::B                                                d::::::dl:::::l                     
-T:::::::::::::::::::::Th:::::h                               B::::::BBBBBB:::::B                                               d::::::dl:::::l                     
-T:::::TT:::::::TT:::::Th:::::h                               BB:::::B     B:::::B                                              d:::::d l:::::l                     
-TTTTTT  T:::::T  TTTTTT h::::h hhhhh           eeeeeeeeeeee    B::::B     B:::::Buuuuuu    uuuuuunnnn  nnnnnnnn        ddddddddd:::::d  l::::l     eeeeeeeeeeee    
-        T:::::T         h::::hh:::::hhh      ee::::::::::::ee  B::::B     B:::::Bu::::u    u::::un:::nn::::::::nn    dd::::::::::::::d  l::::l   ee::::::::::::ee  
-        T:::::T         h::::::::::::::hh   e::::::eeeee:::::eeB::::BBBBBB:::::B u::::u    u::::un::::::::::::::nn  d::::::::::::::::d  l::::l  e::::::eeeee:::::ee
-        T:::::T         h:::::::hhh::::::h e::::::e     e:::::eB:::::::::::::BB  u::::u    u::::unn:::::::::::::::nd:::::::ddddd:::::d  l::::l e::::::e     e:::::e
-        T:::::T         h::::::h   h::::::he:::::::eeeee::::::eB::::BBBBBB:::::B u::::u    u::::u  n:::::nnnn:::::nd::::::d    d:::::d  l::::l e:::::::eeeee::::::e
-        T:::::T         h:::::h     h:::::he:::::::::::::::::e B::::B     B:::::Bu::::u    u::::u  n::::n    n::::nd:::::d     d:::::d  l::::l e:::::::::::::::::e 
-        T:::::T         h:::::h     h:::::he::::::eeeeeeeeeee  B::::B     B:::::Bu::::u    u::::u  n::::n    n::::nd:::::d     d:::::d  l::::l e::::::eeeeeeeeeee  
-        T:::::T         h:::::h     h:::::he:::::::e           B::::B     B:::::Bu:::::uuuu:::::u  n::::n    n::::nd:::::d     d:::::d  l::::l e:::::::e           
-      TT:::::::TT       h:::::h     h:::::he::::::::e        BB:::::BBBBBB::::::Bu:::::::::::::::uun::::n    n::::nd::::::ddddd::::::ddl::::::le::::::::e          
-      T:::::::::T       h:::::h     h:::::h e::::::::eeeeeeeeB:::::::::::::::::B  u:::::::::::::::un::::n    n::::n d:::::::::::::::::dl::::::l e::::::::eeeeeeee  
-      T:::::::::T       h:::::h     h:::::h  ee:::::::::::::eB::::::::::::::::B    uu::::::::uu:::un::::n    n::::n  d:::::::::ddd::::dl::::::l  ee:::::::::::::e  
-      TTTTTTTTTTT       hhhhhhh     hhhhhhh    eeeeeeeeeeeeeeBBBBBBBBBBBBBBBBB       uuuuuuuu  uuuunnnnnn    nnnnnn   ddddddddd   dddddllllllll    eeeeeeeeeeeeee                                                                                                                                                                     
+banner = """
+╔═════════════════════════════════╗
+║       T H E   B U N D L E       ║
+╚═════════════════════════════════╝                                                                                                                                                     
 """
+
+click.echo(click.style(banner, fg="green"))
 
 
 @click.group(name="bundle")
 @tracer.Sync.decorator.call_raise
 async def main():
-    click.echo(click.style(banner, fg="green"))
+    pass
 
 
 @main.command()
