@@ -3,7 +3,7 @@ requires = ["setuptools", "wheel", "setuptools_scm", "thebundle"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "realpkg"
+name = "example_module"
 dynamic = ["version"]
 description = "Example Python package with pybind11 bindings."
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
@@ -17,7 +17,11 @@ where = ["bindings/python"]
 [[tool.pybind11.modules]]
 name = "example_module.shape"
 sources = ["bindings/python/example_module/shape_bindings.cpp"]
-pkgconfig = { packages = ["example_module"], extra_dirs = [] }
+pkgconfig = { packages = [
+    "example_module",
+], extra_dirs = [
+    "_install/lib/pkgconfig",
+] }
 extra_compile_args = ["-O3"]
 extra_link_args = []
 
@@ -25,6 +29,10 @@ extra_link_args = []
 [[tool.pybind11.modules]]
 name = "example_module.geometry"
 sources = ["bindings/python/example_module/geometry_bindings.cpp"]
-pkgconfig = { packages = ["example_module"], extra_dirs = [] }
+pkgconfig = { packages = [
+    "example_module",
+], extra_dirs = [
+    "_install/lib/pkgconfig",
+] }
 extra_compile_args = ["-O3"]
 extra_link_args = []

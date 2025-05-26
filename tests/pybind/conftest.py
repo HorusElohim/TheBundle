@@ -37,16 +37,16 @@ def get_tmp_example_module(tmp_path_factory, request):
 
 @pytest_asyncio.fixture
 async def built_example_module(get_tmp_example_module: Path):
-    """Build and install the example module using CMakeService, return install_prefix."""
+    """Build and install the example module using CMakeService, return install_path."""
     log.testing("Building example module with CMakeService")
-    source_dir = get_tmp_example_module
-    build_dir_name = "integration_build"
-    install_prefix = source_dir / "install"
+    source_path = get_tmp_example_module
+    build_path = get_tmp_example_module / "integration_build"
+    install_path = source_path / "install"
 
-    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
-    await CMakeService.build(source_dir, build_dir_name, target="install")
+    await CMakeService.configure(source_path, build_path, install_path)
+    await CMakeService.build(source_path, build_path, target="install")
 
-    return install_prefix
+    return install_path
 
 
 @pytest_asyncio.fixture
@@ -62,17 +62,17 @@ async def built_example_module_pybind(built_example_module: Path):
     os.environ.update(env)
     log.debug(f"Setting PKG_CONFIG_PATH to: {env['PKG_CONFIG_PATH']}")
 
-    source_dir = dest.parent  # e.g. tests_example_module/install -> tests_example_module
-    pyproject_path = source_dir / "pyproject.toml"
+    source_path = dest.parent  # e.g. tests_example_module/install -> tests_example_module
+    pyproject_path = source_path / "pyproject.toml"
     if not pyproject_path.exists():
-        raise FileNotFoundError(f"pyproject.toml not found in {source_dir}")
+        raise FileNotFoundError(f"pyproject.toml not found in {source_path}")
 
-    await Pybind.build(source_dir)
+    await Pybind.build(source_path)
 
     # Without --inplace: find the real output directory
-    build_dir = source_dir / "build"
+    build_dir = source_path / "build"
     if not build_dir.exists():
-        raise FileNotFoundError(f"Expected build/ directory not found in {source_dir}")
+        raise FileNotFoundError(f"Expected build/ directory not found in {source_path}")
 
     # Locate the first valid build output folder (e.g., build/lib.<platform>-cpython-<python-version>)
     for sub in build_dir.iterdir():

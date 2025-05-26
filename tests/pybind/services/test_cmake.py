@@ -17,7 +17,7 @@ async def test_cmake_configure(get_tmp_example_module: Path):
     build_dir_name = "build_configure_test"
     install_prefix = source_dir / "install_configure_test"
 
-    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMakeService.configure(source_dir, build_dir_name, install_path=install_prefix)
 
     build_path = source_dir / build_dir_name
     assert build_path.is_dir(), "Build directory was not created"
@@ -35,7 +35,7 @@ async def test_cmake_build_and_install(get_tmp_example_module: Path):
     install_prefix = source_dir / "install_dir_for_build_test"
 
     # 1. Configure the project
-    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMakeService.configure(source_dir, build_dir_name, install_path=install_prefix)
 
     # 2. Build the default target
     await CMakeService.build(source_dir, build_dir_name)
