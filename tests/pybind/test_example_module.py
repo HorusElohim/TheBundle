@@ -6,37 +6,36 @@ import pytest
 from bundle.core import logger, platform_info
 from bundle.pybind.pybind import Pybind
 from bundle.pybind.services.pkgconfig import get_env_with_pkg_config_path
+from bundle.testing import CppModulePath
 
 log = logger.get_logger(__name__)
 
 pytestmark = pytest.mark.asyncio
 
-# Remove the built fixture and use built_example_module from conftest.py
 
-
-async def test_project_pkg_path(built_example_module_pybind, built_example_module, request):
-    pc_dir = built_example_module / "lib" / "pkgconfig"
+async def test_project_pkg_path(built_example_module_pybind, built_example_module: CppModulePath):
+    cpp_module_path = built_example_module
     _bindings_dir, pyproject_path = built_example_module_pybind
 
     # Get modified environment and explicitly set it in os.environ
-    env = get_env_with_pkg_config_path([pc_dir])
+    env = get_env_with_pkg_config_path([cpp_module_path.pkgconfig])
     os.environ["PKG_CONFIG_PATH"] = env["PKG_CONFIG_PATH"]
     log.debug(f"Set PKG_CONFIG_PATH={os.environ['PKG_CONFIG_PATH']}")
 
     # Debug explicitly by checking the existence of .pc files
-    pc_files = list(pc_dir.glob("*.pc"))
+    pc_files = list(cpp_module_path.pkgconfig.glob("*.pc"))
     if not pc_files:
-        raise FileNotFoundError(f"No pkg-config (.pc) files found in {pc_dir}")
+        raise FileNotFoundError(f"No pkg-config (.pc) files found in {cpp_module_path.pkgconfig}")
 
 
 @pytest.mark.bundle_data()
 @pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
 async def test_project_resolved(built_example_module_pybind, built_example_module, request):
-    pc_dir = built_example_module / "lib" / "pkgconfig"
+    cpp_module_path = built_example_module
     _bindings_dir, pyproject_path = built_example_module_pybind
 
     # Get modified environment and explicitly set it in os.environ
-    env = get_env_with_pkg_config_path([pc_dir])
+    env = get_env_with_pkg_config_path([cpp_module_path.pkgconfig])
     os.environ["PKG_CONFIG_PATH"] = env["PKG_CONFIG_PATH"]
     log.debug(f"Set PKG_CONFIG_PATH={os.environ['PKG_CONFIG_PATH']}")
 

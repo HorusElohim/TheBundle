@@ -10,6 +10,7 @@ from bundle.core import logger
 from bundle.pybind.pybind import Pybind
 from bundle.pybind.services import CMakeService
 from bundle.pybind.services.pkgconfig import get_env_with_pkg_config_path
+from bundle.testing import CppModulePath
 
 EXAMPLE_MODULE_SRC_DIR = Path(__file__).parent / "example_module"
 
@@ -17,7 +18,7 @@ log = logger.get_logger(__name__)
 
 
 @pytest.fixture(scope="session")
-def get_tmp_example_module(tmp_path_factory, request):
+def get_tmp_cpp_module_path(tmp_path_factory, request) -> CppModulePath:
     """Copies the example_module to a temporary directory for CMake testing."""
     log.testing("Copying example module to temporary directory for testing")
     if not EXAMPLE_MODULE_SRC_DIR.exists():
@@ -32,50 +33,50 @@ def get_tmp_example_module(tmp_path_factory, request):
     if not hasattr(session, "collected_temp_dirs"):
         session.collected_temp_dirs = []
     session.collected_temp_dirs.append(dest_proj_dir)
-    return dest_proj_dir
+
+    example_module_path = CppModulePath(source=dest_proj_dir)
+
+    return example_module_path
 
 
-@pytest_asyncio.fixture
-async def built_example_module(get_tmp_example_module: Path):
-    """Build and install the example module using CMakeService, return install_prefix."""
+@pytest_asyncio.fixture(scope="session")
+async def built_example_module(get_tmp_cpp_module_path: CppModulePath) -> CppModulePath:
+    """Build and install the example module using CMakeService, return install_path."""
     log.testing("Building example module with CMakeService")
-    source_dir = get_tmp_example_module
-    build_dir_name = "integration_build"
-    install_prefix = source_dir / "install"
+    cpp_module_path = get_tmp_cpp_module_path
 
-    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
-    await CMakeService.build(source_dir, build_dir_name, target="install")
+    await CMakeService.configure(cpp_module_path.source, cpp_module_path.build, cpp_module_path.install)
+    await CMakeService.build(cpp_module_path.source, cpp_module_path.build, target="install")
 
-    return install_prefix
+    return cpp_module_path
 
 
-@pytest_asyncio.fixture
-async def built_example_module_pybind(built_example_module: Path):
+@pytest_asyncio.fixture(scope="session")
+async def built_example_module_pybind(built_example_module: CppModulePath):
     """
     Build and install the example module using CMakeService, then build Python extensions via Pybind.
     Returns the actual build output path and pyproject.toml path.
     """
+    cpp_module_path = built_example_module
+
     log.testing("Building Python bindings for example module")
-    dest = built_example_module
-    pc_path = dest / "lib" / "pkgconfig"
-    env = get_env_with_pkg_config_path([pc_path])
+    env = get_env_with_pkg_config_path([cpp_module_path.pkgconfig])
     os.environ.update(env)
     log.debug(f"Setting PKG_CONFIG_PATH to: {env['PKG_CONFIG_PATH']}")
 
-    source_dir = dest.parent  # e.g. tests_example_module/install -> tests_example_module
-    pyproject_path = source_dir / "pyproject.toml"
+    pyproject_path = cpp_module_path.source / "pyproject.toml"
+    log.testing(f"Looking for pyproject.toml in {cpp_module_path.source}")
     if not pyproject_path.exists():
-        raise FileNotFoundError(f"pyproject.toml not found in {source_dir}")
+        raise FileNotFoundError(f"pyproject.toml not found in {cpp_module_path.source}")
 
-    await Pybind.build(source_dir)
+    await Pybind.build(cpp_module_path.source)
 
     # Without --inplace: find the real output directory
-    build_dir = source_dir / "build"
-    if not build_dir.exists():
-        raise FileNotFoundError(f"Expected build/ directory not found in {source_dir}")
+    if not cpp_module_path.build.exists():
+        raise FileNotFoundError(f"Expected build/ directory not found in {cpp_module_path.source}")
 
     # Locate the first valid build output folder (e.g., build/lib.<platform>-cpython-<python-version>)
-    for sub in build_dir.iterdir():
+    for sub in cpp_module_path.build.iterdir():
         if sub.is_dir() and sub.name.startswith("lib."):
             sys.path.insert(0, str(sub))
             log.debug(f"Found and added compiled extension path to sys.path: {sub}")

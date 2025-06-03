@@ -18,7 +18,7 @@ from setuptools import setup as setuptools_setup
 
 from bundle.core import logger, process, tracer
 
-from .extension import ExtensionBuild, ExtensionSpec
+from .extension import ExtensionSpec
 from .plugins import PybindPluginResolved, PybindPluginSpec
 from .resolved import ProjectResolved
 from .resolvers import ProjectResolver
@@ -97,7 +97,7 @@ class Pybind:
         return self.resolved
 
     @tracer.Async.decorator.call_raise
-    async def get_spec_extensions(self) -> list[ExtensionBuild]:
+    async def get_spec_extensions(self) -> list[ExtensionSpec]:
         """
         Resolve the project and build all Extension objects concurrently.
         """
@@ -121,7 +121,6 @@ class Pybind:
 
         exts = asyncio.run(pyb.get_spec_extensions())
         kwargs.setdefault("ext_modules", []).extend(exts)
-        kwargs.setdefault("cmdclass", {})["build_ext"] = ExtensionBuild
         setuptools_setup(**kwargs)
 
     @classmethod

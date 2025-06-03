@@ -186,7 +186,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
 
             jsonschema_dict = await class_instance.as_jsonschema()
 
-            ref_dict = json.loads(ref_json_path.open("r").read())
+            ref_dict = json.loads(ref_json_path.read_text())
 
             await test_pydantic_data_validate_dict_with_jsonschema(
                 class_instance,

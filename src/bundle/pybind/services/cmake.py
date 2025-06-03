@@ -32,9 +32,9 @@ class CMakeService:
 
     @staticmethod
     async def configure(
-        source_dir: Path,
-        build_dir_name: str,
-        install_prefix: Path | None = None,
+        source_path: Path,
+        build_path: Path,
+        install_path: Path | None = None,
         build_type: BuildType = BuildType.RELEASE,
         extra_args: list[str] | None = None,
     ) -> None:
@@ -47,10 +47,13 @@ class CMakeService:
             install_prefix: Optional path for CMAKE_INSTALL_PREFIX.
             extra_args: Optional list of extra arguments to pass to cmake.
         """
-        cmd = ["cmake", "-S", ".", "-B", build_dir_name, "-DCMAKE_BUILD_TYPE=" + build_type.value]
+        source_path = Path(source_path).resolve(True).absolute().as_posix()
+        build_path = Path(build_path).resolve().absolute().as_posix()
 
-        if install_prefix:
-            cmd.append(f"-DCMAKE_INSTALL_PREFIX={install_prefix.resolve()}")
+        cmd = ["cmake", "-S", ".", "-B", build_path, "-DCMAKE_BUILD_TYPE=" + build_type.value]
+
+        if install_path:
+            cmd.append(f"-DCMAKE_INSTALL_PREFIX={install_path.resolve().absolute().as_posix()}")
 
         platform_args, env = _get_platform_specific_cmake_args_env()
         cmd.extend(platform_args)
@@ -59,12 +62,12 @@ class CMakeService:
             cmd.extend(extra_args)
 
         proc = Process(name="CMakeService.configure")
-        await proc(" ".join(cmd), cwd=str(source_dir), env=env)
+        await proc(" ".join(cmd), cwd=str(source_path), env=env)
 
     @staticmethod
     async def build(
-        source_dir: Path,
-        build_dir_name: str,
+        source_path: Path,
+        build_path: Path,
         target: str | None = None,
         build_type: BuildType = BuildType.RELEASE,
         extra_args: list[str] | None = None,
@@ -78,7 +81,10 @@ class CMakeService:
             target: Optional build target (e.g., "install").
             extra_args: Optional list of extra arguments to pass to cmake --build.
         """
-        cmd = ["cmake", "--build", build_dir_name, "--config", build_type.value]
+        source_path = Path(source_path).resolve(True).absolute().as_posix()
+        build_path = Path(build_path).resolve(True).absolute().as_posix()
+
+        cmd = ["cmake", "--build", build_path, "--config", build_type.value]
 
         if target:
             cmd.append("--target")
@@ -90,4 +96,4 @@ class CMakeService:
         _platform_args, env = _get_platform_specific_cmake_args_env()
 
         proc = Process(name="CMakeService.build")
-        await proc(" ".join(cmd), cwd=str(source_dir), env=env)
+        await proc(" ".join(cmd), cwd=str(source_path), env=env)
