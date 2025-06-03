@@ -1,6 +1,0 @@
-{
-    "command": "echo validcommand",
-    "returncode": 0,
-    "stdout": "validcommand\n",
-    "stderr": ""
-}

@@ -1,6 +1,0 @@
-{
-    "command": "invalidcommand",
-    "returncode": 127,
-    "stdout": "",
-    "stderr": "/bin/sh: invalidcommand: command not found\n"
-}

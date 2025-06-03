@@ -12,7 +12,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "extra_compile_args": [
                     "-O3"
@@ -30,7 +32,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "extra_compile_args": [
                     "-O3"
@@ -52,7 +56,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "extra_compile_args": [
                     "-O3"
@@ -64,7 +70,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "resolved": [
                     {
@@ -96,7 +104,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "extra_compile_args": [
                     "-O3"
@@ -108,7 +118,9 @@
                     "packages": [
                         "example_module"
                     ],
-                    "extra_dirs": []
+                    "extra_dirs": [
+                        "_install/lib/pkgconfig"
+                    ]
                 },
                 "resolved": [
                     {
