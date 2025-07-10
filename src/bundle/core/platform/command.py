@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Awaitable, Callable, Union
+from typing import Callable, Callable
 
 from .. import data, tracer, logger
 from .base import CommandBase, CommandList

@@ -9,7 +9,6 @@ from bundle.core import logger, tracer
 from bundle.youtube import media, pytube
 from bundle.youtube.database import Database
 
-from ..core.downloader import Downloader, DownloaderTQDM
 from . import YOUTUBE_PATH
 
 log = logger.get_logger(__name__)
@@ -42,13 +41,17 @@ async def download(url, directory, dry_run, mp3, mp3_only):
     directory = Path(directory)
     db = Database(path=directory)
     await db.load()
-    semaphore = asyncio.Semaphore(1)
 
     async for youtube_track in pytube.resolve(url):
         # Check in Database
         if db.has(youtube_track.identifier):
             log.info(f"✨ Already present - {youtube_track.filename}")
-            return 0
+            if await pytube.is_playlist(url):
+                # Skip if the track is already in the database
+                continue
+            else:
+                # If not a playlist, we can return early
+                return 0
         # Dry run
         if dry_run:
             log.info(f"YoutubeTrack:\n{await youtube_track.as_json()}")
@@ -67,6 +70,8 @@ async def download(url, directory, dry_run, mp3, mp3_only):
             sleep_time = 2 + randint(10, 5200) / 1000
             log.info(f"sleeping {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
+
+        log.info(f"Download completed\n{youtube_track.title} - {youtube_track.author} -> '{mp4.path.resolve()}'")
 
 
 @click.group()

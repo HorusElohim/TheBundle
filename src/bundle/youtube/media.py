@@ -47,10 +47,14 @@ async def download_mp4(youtube_track: YoutubeTrackData, destination_folder: Path
     thumbnail_downloader = downloader.Downloader(url=youtube_track.thumbnail_url)
 
     await asyncio.gather(audio_downloader.download(), thumbnail_downloader.download())
-
+    
+    if not target_path.exists():
+        raise FileNotFoundError(f"Failed to download MP4 file: {target_path}")
+    
     mp4 = MP4.from_track(path=target_path, track=youtube_track)
+    
     await mp4.save(thumbnail_downloader.buffer)
-
+    log.info("MP4 download completed -> %s", target_path)
     return mp4
 
 
@@ -69,7 +73,7 @@ async def extract_mp3(mp4: MP4) -> MP3:
     log.debug("extraction completed - %s", mp4.filename)
     mp3 = MP3(title=mp4.title, author=mp4.author, path=mp3_path, duration=mp4.duration)
     await mp3.save(thumbnail=await mp4.get_thumbnail())
-    log.debug("mp3 generated -> %s", mp3_path)
+    log.info("mp3 generated -> %s", mp3_path)
     return mp3
 
 
@@ -132,6 +136,7 @@ class MP4(MP4TrackData):
             # MP4Cover.FORMAT_JPEG or MP4Cover.FORMAT_PNG depending on your thumbnail's format
             cover_format = MP4Cover.FORMAT_PNG if thumbnail.startswith(b"\x89PNG") else MP4Cover.FORMAT_JPEG
             mp4["covr"] = [MP4Cover(thumbnail, imageformat=cover_format)]
+        log.info("Saving MP4 metadata - %s", self.path)
         mp4.save()
 
     @tracer.Async.decorator.call_raise

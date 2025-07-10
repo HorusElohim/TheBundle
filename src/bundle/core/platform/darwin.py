@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sysconfig
-import platform as _platform
 
 from .. import data
 from .base import PlatformSpecificBase

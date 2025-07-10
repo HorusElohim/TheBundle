@@ -208,7 +208,7 @@ class BundleLogger(logging.getLoggerClass()):
 logging.setLoggerClass(BundleLogger)
 
 
-def get_logger(name: str) -> BundleLogger:
+def get_logger(name: str | None = None) -> BundleLogger:
     """Retrieve a logger with the correct type hint."""
     # BundleLogger is already set globally.
     logger = logging.getLogger(name)

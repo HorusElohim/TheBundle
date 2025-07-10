@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import platform as _platform
-
 from .. import data
 from .base import PlatformSpecificBase
 from .command import CommandProcess, CommandList
