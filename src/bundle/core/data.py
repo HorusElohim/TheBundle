@@ -288,3 +288,35 @@ class Data(BaseModel):
         """
         schema_str = await self.as_jsonschema_str(mode)
         await tracer.Async.call_raise(path.write_text, schema_str, encoding="utf-8")
+
+    @tracer.Async.decorator.call_raise
+    async def encode(self) -> bytes:
+        """
+        Encode the model instance to a JSON string.
+
+        Returns:
+            A JSON string representation of the model instance.
+
+        Raises:
+            Exception: If encoding to JSON fails.
+        """
+        json_data = await self.as_json()
+        return json_data.encode("utf-8")
+    
+    @classmethod
+    @tracer.Async.decorator.call_raise
+    async def decode(cls, data: bytes) -> D:
+        """
+        Decode a JSON byte string into an instance of the model.
+
+        Args:
+            data (bytes): The JSON byte string to decode.
+
+        Returns:
+            An instance of the model.
+
+        Raises:
+            Exception: If decoding from JSON fails.
+        """
+
+        return await cls.from_json(data.decode("utf-8"))
