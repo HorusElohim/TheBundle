@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 from enum import IntEnum
 from typing import ClassVar, Generic, Type, TypeVar
+from urllib.parse import urlparse
 
 import zmq
 import zmq.asyncio
@@ -97,7 +98,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
         await self.close()
 
     @tracer.Sync.decorator.call_raise
-    def bind(self: T_Socket, endpoint: str) -> T_Socket:
+    def bind(self: T_Socket, endpoint: str | None = None) -> T_Socket:
         """
         Bind the socket to an endpoint.
 
@@ -108,12 +109,13 @@ class Socket(entity.Entity, Generic[T_Socket]):
             T_Socket: The current instance for method chaining.
         """
         self.mode = SocketMode.BIND
-        self.endpoint = endpoint
-        self.socket.bind(endpoint)
+        if endpoint is not None:
+            self.endpoint = endpoint
+        self.socket.bind(self.endpoint)
         return self
 
     @tracer.Sync.decorator.call_raise
-    def connect(self: T_Socket, endpoint: str) -> T_Socket:
+    def connect(self: T_Socket, endpoint: str | None = None) -> T_Socket:
         """
         Connect the socket to an endpoint.
 
@@ -124,8 +126,9 @@ class Socket(entity.Entity, Generic[T_Socket]):
             T_Socket: The current instance for method chaining.
         """
         self.mode = SocketMode.CONNECT
-        self.endpoint = endpoint
-        self.socket.connect(endpoint)
+        if endpoint is not None:
+            self.endpoint = endpoint
+        self.socket.connect(self.endpoint)
         return self
 
     @tracer.Sync.decorator.call_raise
@@ -252,7 +255,7 @@ class Socket(entity.Entity, Generic[T_Socket]):
                     message = await backend.socket.recv_multipart()
                     await frontend.socket.send_multipart(message)
         except asyncio.CancelledError:
-            logger.debug("Proxy task was cancelled.")
+            logger.warning("Proxy task was cancelled.")
             raise
 
     @classmethod
@@ -881,3 +884,47 @@ class Socket(entity.Entity, Generic[T_Socket]):
             +----------------+                +---------------+
         """
         return cls(type=zmq.SocketType.CHANNEL)
+
+    @tracer.Sync.decorator.call_raise
+    def with_proxy(self: T_Socket, url: str) -> T_Socket:
+        """
+        Configure a network proxy (currently SOCKS5) for this socket.
+
+        Args:
+            url: Proxy URL in the form:
+                socks5://[user[:pass]@]host[:port]
+                Default port: 1080.
+
+        Returns:
+            Self for chaining.
+
+        Raises:
+            RuntimeError: If called after connect()/bind().
+            ValueError: If the URL is invalid or unsupported.
+        """
+        if self.endpoint:
+            raise RuntimeError("Proxy must be set before connect() or bind().")
+
+        parsed = urlparse(url.strip())
+        scheme = (parsed.scheme or "").lower()
+
+        if not scheme.startswith("socks5"):
+            raise ValueError(f"Unsupported proxy scheme for ZeroMQ: {scheme or '<empty>'}")
+
+        host = parsed.hostname
+        port = parsed.port or 1080
+
+        if not host:
+            raise ValueError("Proxy host is required.")
+
+        # Store in entity field
+        self.proxy_url = url
+
+        # Apply to socket
+        self.socket.setsockopt_string(zmq.SOCKS_PROXY, f"{host}:{port}")
+        if parsed.username:
+            self.socket.setsockopt_string(zmq.SOCKS_USERNAME, parsed.username)
+        if parsed.password:
+            self.socket.setsockopt_string(zmq.SOCKS_PASSWORD, parsed.password)
+
+        return self
