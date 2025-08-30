@@ -88,6 +88,8 @@ async def test_chat_text(tmp_path: Path, protocol: str):
         assert len(received_by_client) == 1
         assert len(received_by_server) == 1
 
+    return f"Chat-Text-{protocol.upper()}"
+
 
 @bundle_cprofile
 @parametrize_socket_protocol
@@ -124,3 +126,5 @@ async def test_chat_file(tmp_path: Path, protocol: str):
         assert got.filename == "sample.bin"
         assert got.filedata == original
         assert hashlib.sha256(got.filedata).hexdigest() == original_sha
+
+    return f"Chat-File-{protocol.upper()}"
