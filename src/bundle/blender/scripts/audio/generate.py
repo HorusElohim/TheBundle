@@ -2,15 +2,16 @@
 # Apache 2.0 License
 
 from __future__ import annotations
-from pathlib import Path
-import traceback
-import asyncio
 
-import numpy as np
+import asyncio
+import traceback
+from pathlib import Path
+
 import aud
 import bpy
+import numpy as np
 
-from bundle.core import logger, data
+from bundle.core import data, logger
 
 FILE_NAME = "audio_scene6.blend"
 
@@ -34,7 +35,9 @@ log.parent = logger.get_logger("bundle")
 # --------------------------------------------------------------------------- #
 
 
-def load_config(path: str | Path = r"C:\Dev\TheBundle\src\bundle\blender\scripts\audio\configuration.json") -> AudioDriverConfig:
+def load_config(
+    path: str | Path = r"C:\Dev\TheBundle\src\bundle\blender\scripts\audio\configuration.json",
+) -> AudioDriverConfig:
     log.info(f"📂 Loading configuration from {path}")
     cfg = asyncio.run(AudioDriverConfig.from_json(Path(path)))
     log.info(f"✅ Loaded config: {cfg}")
@@ -47,7 +50,7 @@ def ensure_target_mesh(name_hint: str | None) -> bpy.types.Object:
     if name_hint:
         obj = bpy.data.objects.get(name_hint) or obj
     if not obj or obj.type != "MESH":
-        log.info("ℹ️ No mesh found, creating plane")
+        log.info("i No mesh found, creating plane")
         bpy.ops.mesh.primitive_plane_add(size=2.0)
         obj = bpy.context.active_object
         obj.name = name_hint or "AudioDrivenPlane"
@@ -86,7 +89,7 @@ def build_audio_grid_group(name: str = "AudioGridRipple") -> bpy.types.NodeTree:
     ng = bpy.data.node_groups.new(name, "GeometryNodeTree")
 
     # Interface sockets
-    geo_in = ng.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
+    ng.interface.new_socket("Geometry", in_out="INPUT", socket_type="NodeSocketGeometry")
     geo_out = ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
 
     s_audio = ng.interface.new_socket("AudioDrive", in_out="INPUT", socket_type="NodeSocketFloat")
@@ -291,7 +294,7 @@ def add_driver_to_material_value(
     targ.transform_type = "LOC_Z"
     targ.transform_space = "WORLD_SPACE"
 
-    log.info(f"🔗 Material driver added: {mat.name}.{path} ← {source_obj.name}.LOC_Z (×{scale})")
+    log.info(f"🔗 Material driver added: {mat.name}.{path} <- {source_obj.name}.LOC_Z (x{scale})")
     return drv
 
 
@@ -369,7 +372,7 @@ def main():
 
         # Driver for GN input
         log.info("⚙️ Connecting driver Empty.z → GN input")
-        user_keys = [k for k in mod.keys() if not str(k).startswith("_")]
+        user_keys = [k for k in mod if not str(k).startswith("_")]
         if not user_keys:
             raise RuntimeError("No exposed GN inputs on modifier to drive")
         gn_key = user_keys[0]
