@@ -102,7 +102,7 @@ Key ideas:
 
 **animation**
 - Implement driver wiring, keyframe baking, and signal processing helpers (FFT, smoothing) that feed geometry and materials.
-- Enable reusable “drive-by-data” patterns (audio amplitude, CSV curves, physics caches).
+- Enable reusable "drive-by-data" patterns (audio amplitude, CSV curves, physics caches).
 
 **io**
 - Handle asset discovery, linking/appending `.blend` libraries, and exporting renders or glTF/glb packages.
@@ -156,6 +156,21 @@ Key ideas:
 - Split host and script logic: FFT preparation remains host side; geometry, drivers, and material creation move into `projects/audio_grid/script.py` using toolkit helpers.
 - Extract reusable utilities (for example `ensure_target_mesh`, `build_neon_shader`) into `toolkit.geometry` and `toolkit.materials` modules.
 - Replace the global config loader with `AudioGridConfig` in `projects.audio_grid.config`. Default paths live beside project assets instead of hard coded absolute paths.
+
+## CLI Quickstart
+
+- `bundle blender info` auto-discovers common Blender installs (or respects `BUNDLE_BLENDER_PYTHON`/`BUNDLE_BLENDER_EXECUTABLE`) and prints their paths; if discovery fails it guides you to configure overrides.
+- `bundle blender download --version 4.5.0` fetches a Blender release into your writable bundle home (override with `--dest`). Use `--force` to refresh an existing version.
+- `bundle blender install` installs TheBundle into Blender's bundled Python using the auto-discovered interpreter; add `--python` to override it. Override `--package-path` when working outside the repo root, and pass `--no-upgrade-pip` to skip bootstrap upgrades.
+- Retrieve Blender's Python path with `blender --background --python-expr "import sys; print(sys.executable)"` or via the GUI (Scripting -> Console -> `sys.executable`).
+- Re-run the install command after updating TheBundle so Blender's environment stays in sync with your workspace.
+
+### User-space install root
+- Windows: `%LOCALAPPDATA%/TheBundle/blender` (override with `BUNDLE_BLENDER_HOME` or `--dest`).
+- macOS: `~/Library/Application Support/TheBundle/blender`.
+- Linux: `${XDG_DATA_HOME:-~/.local/share}/thebundle/blender`.
+- Cached archives live under the matching cache root (`%LOCALAPPDATA%/TheBundle/cache/blender`, `${XDG_CACHE_HOME:-~/.cache}/thebundle/blender`, etc.) and respect `BUNDLE_BLENDER_CACHE`.
+- Discovery checks this location before system installs, so `bundle blender install` automatically targets the downloaded build.
 
 ## Immediate Next Steps
 1. Scaffold the package skeleton (empty modules per structure above) plus a minimal CLI that prints the registry.

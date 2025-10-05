@@ -2,15 +2,16 @@
 # Apache 2.0 License
 
 from __future__ import annotations
-from pathlib import Path
-import traceback
-import asyncio
 
-import numpy as np
+import asyncio
+import traceback
+from pathlib import Path
+
 import aud
 import bpy
+import numpy as np
 
-from bundle.core import logger, data
+from bundle.core import data, logger
 
 FILE_NAME = "audio_scene6.blend"
 
@@ -34,7 +35,9 @@ log.parent = logger.get_logger("bundle")
 # --------------------------------------------------------------------------- #
 
 
-def load_config(path: str | Path = r"C:\Dev\TheBundle\src\bundle\blender\scripts\audio\configuration.json") -> AudioDriverConfig:
+def load_config(
+    path: str | Path = r"C:\Dev\TheBundle\src\bundle\blender\scripts\audio\configuration.json",
+) -> AudioDriverConfig:
     log.info(f"📂 Loading configuration from {path}")
     cfg = asyncio.run(AudioDriverConfig.from_json(Path(path)))
     log.info(f"✅ Loaded config: {cfg}")
