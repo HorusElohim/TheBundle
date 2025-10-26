@@ -1,0 +1,9 @@
+{
+  "audio": "audio.wav",
+  "object": "AudioDrivenPlane",
+  "frames": "auto",
+  "fps": null,
+  "amp_scale": 7.0,
+  "normalize": 0.98,
+  "smooth": 0
+}
