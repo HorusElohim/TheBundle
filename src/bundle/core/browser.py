@@ -180,14 +180,14 @@ class Browser(entity.Entity):
         return self
 
     @tracer.Async.decorator.call_raise
-    async def new_page(self) -> Page:
+    async def new_page(self, **context_kwargs) -> Page:
         """
         Create a new page within a new browser context.
 
         Returns:
             Page: A new Playwright Page object.
         """
-        await self.new_context()
+        await self.new_context(**context_kwargs)
         context = self.contexts[-1]
         page = await context.new_page()
         logger.debug("%s New page created.", logger.Emoji.success)

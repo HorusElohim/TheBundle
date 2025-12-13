@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import asyncio
+from functools import partial
 from typing import AsyncGenerator
 from urllib.parse import parse_qs, urlparse
 
@@ -14,6 +17,12 @@ from .track import YoutubeTrackData
 log = logger.get_logger(__name__)
 
 PLAYLIST_INDICATOR = "playlist"
+CLIENT_PROFILES: tuple[dict[str, object], ...] = (
+    {"client": "ANDROID"},
+    {"client": "ANDROID_CREATOR"},
+    {"client": "IOS"},
+    {"client": "WEB", "use_po_token": True},
+)
 
 
 @tracer.Async.decorator.call_raise
@@ -60,9 +69,9 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
         standard_url = f"https://www.youtube.com/watch?v={video_id}"
         log.debug(f"Standardized URL: {standard_url}")
 
-        yt = await asyncio.get_event_loop().run_in_executor(
-            None, lambda: YouTube(standard_url, use_po_token=True, po_token_verifier=load_poto_token)
-        )
+        yt = await resolve_with_clients(standard_url)
+        if yt is None:
+            return YoutubeTrackData()
         audio_stream = yt.streams.get_audio_only()
         video_stream = yt.streams.get_highest_resolution()
 
@@ -79,6 +88,24 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
     except PytubeFixError as e:
         log.error(f"Failed to fetch YouTube data for {url}: {e}")
         return YoutubeTrackData()
+
+
+async def resolve_with_clients(url: str) -> YouTube | None:
+    loop = asyncio.get_event_loop()
+    for profile in CLIENT_PROFILES:
+        client_name = profile["client"]
+        kwargs = {"client": client_name}
+        if profile.get("use_po_token"):
+            kwargs.update({"use_po_token": True, "po_token_verifier": load_poto_token})
+        try:
+            yt = await loop.run_in_executor(None, partial(YouTube, url, **kwargs))
+            log.debug("Resolved %s using client %s", url, client_name)
+            return yt
+        except PytubeFixError as exc:
+            log.warning("Client %s failed to resolve %s: %s", client_name, url, exc)
+            continue
+    log.error("All clients failed to resolve %s", url)
+    return None
 
 
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
