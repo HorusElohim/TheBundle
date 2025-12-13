@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/ble/styles.css" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
+    <link rel="manifest" href="/static/site.webmanifest" />
+    <title>BLE World Viewer</title>
+</head>
+<body>
+    <div class="page">
+        <header class="topbar">
+            <div class="brand">
+                <span class="dot"></span>
+                <span class="title">BLE World Viewer</span>
+            </div>
+        </header>
+
+        <main class="content">
+            <section class="hero">
+                <div>
+                    <p class="eyebrow">Discover Nearby Devices</p>
+                    <h1>Minimal, modern control room for your BLE universe.</h1>
+                    <p class="lede">
+                        Track and explore advertising devices in real time. Frames are unpacked through the new
+                        Nordic UART framing codec for reliable reads, and results stay synced across every view.
+                    </p>
+                    <div class="hero-actions">
+                        <div class="slider-control">
+                            <label for="refresh-interval">Refresh every <span id="interval-value">5s</span></label>
+                            <input id="refresh-interval" type="range" min="1" max="15" step="1" value="5" />
+                        </div>
+                        <button id="stream-toggle" class="ghost">Pause stream</button>
+                        <span id="connection-status" class="status-pill">Connecting...</span>
+                    </div>
+                </div>
+                <div class="pill">
+                    <p class="pill-title">Discovery overview</p>
+                    <div class="stats">
+                        <div>
+                            <p class="stat-value" id="device-count">0</p>
+                            <p class="stat-label">devices online</p>
+                        </div>
+                        <div>
+                            <p class="stat-value" id="avg-rssi">-- dBm</p>
+                            <p class="stat-label">average signal</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="panel">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Discover</p>
+                        <h2>Surrounding BLE devices</h2>
+                    </div>
+                    <div class="filters">
+                        <input id="search" type="search" placeholder="Filter by name or address" />
+                    </div>
+                </header>
+                <div id="device-list" class="device-list">
+                    <p class="muted">No devices yet. Tap "Discover now" to scan the airwaves.</p>
+                </div>
+            </section>
+        </main>
+
+        <aside id="device-detail" class="detail hidden">
+            <div class="detail-card">
+                <header class="detail-header">
+                    <div>
+                        <p class="eyebrow">Device detail</p>
+                        <h3 id="detail-name">--</h3>
+                        <p id="detail-address" class="device-meta"></p>
+                    </div>
+                    <button id="detail-close" class="ghost small">Close</button>
+                </header>
+                <div id="detail-body"></div>
+            </div>
+        </aside>
+    </div>
+
+    <script type="module" src="/ble/app.js"></script>
+</body>
+</html>
