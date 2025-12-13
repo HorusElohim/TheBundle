@@ -19,6 +19,7 @@
 
 from __future__ import annotations
 
+import sys
 import time
 from uuid import UUID, uuid5
 
@@ -114,7 +115,7 @@ class Entity(Data):
         """
         Destructor method for the Entity class logging the entity's deletion along with its age.
         """
-        if not LOGGER.hasHandlers():
+        if sys.meta_path is None or not LOGGER.hasHandlers():
             # Avoid logging if no handlers are attached.
             # This can happen on the last entity when the program is exiting.
             return

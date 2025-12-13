@@ -16,4 +16,21 @@ templates = Jinja2Templates(directory=TEMPLATE_PATH)
 
 @router.get("/", response_class=HTMLResponse)
 async def home(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse(
+        "index.html",
+        {
+            "request": request,
+            "sections": [
+                {
+                    "name": "BLE",
+                    "description": "Scan, inspect, and connect to Nordic UART devices in real time.",
+                    "href": "/ble",
+                },
+                {
+                    "name": "YouTube",
+                    "description": "Resolve and download tracks directly into The Bundle workbench.",
+                    "href": "/youtube",
+                },
+            ],
+        },
+    )
