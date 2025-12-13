@@ -9,7 +9,6 @@ from bundle.core import logger, tracer
 from bundle.youtube import media, pytube
 from bundle.youtube.database import Database
 
-from ..core.downloader import Downloader, DownloaderTQDM
 from . import YOUTUBE_PATH
 
 log = logger.get_logger(__name__)
@@ -45,6 +44,9 @@ async def download(url, directory, dry_run, mp3, mp3_only):
     semaphore = asyncio.Semaphore(1)
 
     async for youtube_track in pytube.resolve(url):
+        if not youtube_track.is_resolved():
+            log.error("Unable to resolve metadata for %s", url)
+            continue
         # Check in Database
         if db.has(youtube_track.identifier):
             log.info(f"✨ Already present - {youtube_track.filename}")
@@ -67,6 +69,28 @@ async def download(url, directory, dry_run, mp3, mp3_only):
             sleep_time = 2 + randint(10, 5200) / 1000
             log.info(f"sleeping {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
+
+
+@youtube.command()
+@click.argument("url", type=str)
+@click.option("--limit", type=int, default=0, show_default=False, help="Limit how many entries to display")
+@tracer.Sync.decorator.call_raise
+async def resolve(url, limit):
+    """Resolve a YouTube URL and log the resulting track metadata."""
+    log.info("Resolving %s", url)
+    count = 0
+    async for youtube_track in pytube.resolve(url):
+        if not youtube_track.is_resolved():
+            log.error("Resolver returned an empty track for %s", url)
+            continue
+        log.info(await youtube_track.as_json())
+        count += 1
+        if limit and count >= limit:
+            break
+    if count == 0:
+        log.warning("No track metadata resolved for %s", url)
+    else:
+        log.info("Resolved %d entr%s", count, "y" if count == 1 else "ies")
 
 
 @click.group()
