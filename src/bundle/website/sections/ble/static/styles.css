@@ -30,39 +30,6 @@ body {
     padding: 32px 24px 64px;
 }
 
-.topbar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    background: rgba(20, 24, 36, 0.8);
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    box-shadow: var(--shadow);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    letter-spacing: 0.3px;
-}
-
-.brand .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--primary), var(--accent));
-    box-shadow: 0 0 18px rgba(127, 90, 240, 0.65);
-}
-
-.actions {
-    display: flex;
-    gap: 12px;
-}
-
 button {
     border: none;
     border-radius: 999px;

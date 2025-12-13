@@ -5,11 +5,10 @@ import contextlib
 
 from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.templating import Jinja2Templates
 
 from bundle import ble
 
-from ...common.sections import get_logger, get_static_path, get_template_path
+from ...common.sections import base_context, create_templates, get_logger, get_static_path, get_template_path
 
 NAME = "ble"
 TEMPLATE_PATH = get_template_path(__file__)
@@ -18,7 +17,7 @@ LOGGER = get_logger(NAME)
 MANAGER = ble.Manager()
 
 router = APIRouter()
-templates = Jinja2Templates(directory=TEMPLATE_PATH)
+templates = create_templates(TEMPLATE_PATH)
 
 REFRESH_INTERVAL_MIN = 1.0
 REFRESH_INTERVAL_MAX = 30.0
@@ -26,7 +25,7 @@ REFRESH_INTERVAL_MAX = 30.0
 
 @router.get("/ble", response_class=HTMLResponse)
 async def ble_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+    return templates.TemplateResponse("index.html", base_context(request))
 
 
 @router.get("/ble/api/devices", response_class=JSONResponse)
@@ -50,6 +49,9 @@ async def ble_scan_stream(websocket: WebSocket):
                 scan = await MANAGER.scan(timeout=scan_timeout)
                 payload = await scan.as_dict()
                 await websocket.send_json({"type": "scan", "data": payload})
+            except asyncio.CancelledError:
+                stop_event.set()
+                break
             except WebSocketDisconnect:
                 stop_event.set()
                 break
@@ -73,6 +75,8 @@ async def ble_scan_stream(websocket: WebSocket):
                     refresh_interval = _clamp_interval(interval)
                 elif message_type == "close":
                     stop_event.set()
+        except asyncio.CancelledError:
+            stop_event.set()
         except WebSocketDisconnect:
             stop_event.set()
         except Exception as exc:  # pragma: no cover - malformed client input
