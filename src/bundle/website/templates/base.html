@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="{{ url_for('static', path='theme.css') }}" />
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon-16x16.png') }}" />
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon-32x32.png') }}" />
+    <link rel="apple-touch-icon" href="{{ url_for('static', path='apple-touch-icon.png') }}" />
+    <link rel="manifest" href="{{ url_for('static', path='site.webmanifest') }}" />
+    {% block styles %}{% endblock %}
+    <title>{% block title %}The Bundle{% endblock %}</title>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <div class="page-shell">
+        <nav class="global-nav">
+            <a class="nav-brand" href="/">
+                <span class="dot"></span>
+                <div class="brand-copy">
+                    <span class="eyebrow">The Bundle</span>
+                    <p>Labs</p>
+                </div>
+            </a>
+            <div class="nav-links">
+                {% set current_path = request.url.path %}
+                {% for section in nav_sections or [] %}
+                    {% set is_active = (section.href == '/' and current_path == '/') or (section.href != '/' and current_path.startswith(section.href)) %}
+                    <a href="{{ section.href }}" class="{% if is_active %}active{% endif %}">
+                        {{ section.name }}
+                    </a>
+                {% endfor %}
+            </div>
+            <div class="nav-actions">
+                {% block nav_actions %}{% endblock %}
+            </div>
+        </nav>
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

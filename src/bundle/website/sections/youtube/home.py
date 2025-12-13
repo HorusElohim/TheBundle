@@ -4,7 +4,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-from fastapi.templating import Jinja2Templates
 
 from bundle.core.downloader import Downloader
 from bundle.youtube.media import MP4
@@ -12,7 +11,7 @@ from bundle.youtube.pytube import resolve
 from bundle.youtube.track import YoutubeTrackData
 
 from ...common.downloader import DownloaderWebSocket
-from ...common.sections import get_logger, get_static_path, get_template_path
+from ...common.sections import base_context, create_templates, get_logger, get_static_path, get_template_path
 
 NAME = "youtube"
 TEMPLATE_PATH = get_template_path(__file__)
@@ -23,7 +22,7 @@ MUSIC_PATH = Path(__file__).parent / "static"
 
 
 router = APIRouter()
-templates = Jinja2Templates(directory=TEMPLATE_PATH)
+templates = create_templates(TEMPLATE_PATH)
 
 
 class TrackMetadata(YoutubeTrackData):
@@ -32,7 +31,7 @@ class TrackMetadata(YoutubeTrackData):
 
 @router.get("/youtube", response_class=HTMLResponse)
 async def youtube(request: Request):
-    return templates.TemplateResponse("youtube.html", {"request": request})
+    return templates.TemplateResponse("youtube.html", base_context(request))
 
 
 @router.websocket("/ws/youtube/download_track")

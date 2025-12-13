@@ -1,3 +1,5 @@
+import { wsNotifier } from '/static/js/ws-status.js';
+
 const listEl = document.getElementById('device-list');
 const deviceCountEl = document.getElementById('device-count');
 const avgRssiEl = document.getElementById('avg-rssi');
@@ -21,6 +23,7 @@ let socket;
 let reconnectTimer;
 let allowReconnect = true;
 let isPaused = false;
+const notify = wsNotifier('BLE');
 
 function setStatus(label, variant = 'neutral') {
     const base = 'status-pill';
@@ -200,12 +203,14 @@ function connectSocket() {
     }
 
     setStatus('Connecting...', 'neutral');
+    notify.connecting();
     showMessage('Preparing live session...');
 
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     socket = new WebSocket(`${protocol}://${window.location.host}/ble/ws/scan`);
     socket.addEventListener('open', () => {
         setStatus('Streaming', 'success');
+        notify.connected();
         sendIntervalConfig();
     });
     socket.addEventListener('message', handleMessage);
@@ -213,13 +218,16 @@ function connectSocket() {
         socket = null;
         if (isPaused) {
             setStatus('Paused', 'neutral');
+            notify.disconnected();
             return;
         }
         setStatus('Disconnected', 'error');
+        notify.disconnected();
         showMessage('Disconnected from BLE session. Reconnecting...');
         scheduleReconnect();
     });
     socket.addEventListener('error', () => {
+        notify.error();
         socket.close();
     });
 }

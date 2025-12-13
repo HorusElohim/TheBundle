@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import asyncio
+
 from bundle.core import Entity, data, logger, tracer
 
 from .link import NordicLink
@@ -27,7 +29,11 @@ class Manager(Entity):
         limit = timeout if timeout is not None else self.default_timeout
         log.debug("Manager.scan() timeout=%s", limit)
         scanner = self._scanner if timeout is None else Scanner(timeout=limit)
-        return await scanner.scan(timeout=limit)
+        try:
+            return await scanner.scan(timeout=limit)
+        except asyncio.CancelledError:
+            log.debug("Manager.scan() cancelled, returning empty scan result")
+            return ScanResult(timeout=limit, devices=[])
 
     @tracer.Async.decorator.call_raise
     async def open(
