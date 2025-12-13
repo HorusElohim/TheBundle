@@ -41,8 +41,12 @@ version_file = "src/bundle/_version.py"
 test = ["pytest", "pytest-asyncio", "nest_asyncio"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
+ble = [
+    "bleak>=0.22.1",
+    "pyyaml",
+]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
-web = ["fastapi", "uvicorn[standard]", "websockets", "jinja2"]
+web = ["fastapi", "uvicorn[standard]", "websockets", "jinja2", "bleak>=0.22.1", "pyyaml"]
 all = [
     "pytest",
     "pytest-asyncio",
