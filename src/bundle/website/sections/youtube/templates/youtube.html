@@ -3,6 +3,8 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bundle • YouTube Studio</title>
     <link rel="stylesheet" href="/youtube/styles.css">
     <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png">
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png">
@@ -11,40 +13,99 @@
 </head>
 
 <body>
-    <div class="container">
-        <h1 class="main_title"> Youtube Downloader </h1>
-        <div class="music-card">
-
-            <div id="metadata-container" style="display:none;">
-                <div id="thumbnail-container" class="image">
-                    <img id="track-thumbnail" src="">
-                </div>
-                <div class="info">
-                    <h2 id="track-title" class="title"></h2>
-                    <p id="track-author" class="artist"></p>
+    <div class="page">
+        <header class="topbar">
+            <div class="brand">
+                <span class="dot"></span>
+                <div>
+                    <span class="eyebrow">TheBundle</span>
+                    <p>Youtube Studio</p>
                 </div>
             </div>
-            <div class="input-area">
-                <input type="text" id="youtube-url" placeholder="Enter YouTube URL here" required>
-                <div class="toggle" id="format-toggle">
-                    <label for="mp3">MP3
-                        <input type="radio" id="mp3" name="format" value="mp3" checked>
-                    </label>
-                    <label for="mp4">MP4
-                        <input type="radio" id="mp4" name="format" value="mp4">
-                    </label>
-                </div>
-                <button id="download-btn">Download</button>
-            </div>
-        </div>
+            <span id="ws-status" class="status-pill">Connecting...</span>
+        </header>
 
-        <!-- Progress Bar -->
-        <div id="progress-container" style="display:none;">
-            <progress id="download-progress" value="0" max="100"></progress>
-            <div id="progress-info"></div>
-        </div>
+        <main class="content">
+            <section class="hero">
+                <div class="hero-copy">
+                    <p class="eyebrow">Bundled downloads</p>
+                    <h1>Bring any video, mix, or playlist into your library.</h1>
+                    <p class="lede">
+                        Powered by <code>bundle.youtube</code>: we resolve playlists, fetch thumbnails, tag the media,
+                        and stream progress in real time.
+                    </p>
+                    <ul class="feature-list">
+                        <li>MP3 & MP4 export</li>
+                        <li>Metadata + artwork embedding</li>
+                        <li>Throttling-resistant downloads</li>
+                    </ul>
+                </div>
+                <div class="input-card">
+                    <label for="youtube-url">YouTube URL</label>
+                    <div class="input-wrap">
+                        <input type="url" id="youtube-url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" />
+                    </div>
+                    <div class="radio-group" id="format-toggle">
+                        <input type="radio" id="format-mp4" name="format" value="mp4" checked />
+                        <label for="format-mp4">MP4 Video</label>
+                        <input type="radio" id="format-mp3" name="format" value="mp3" />
+                        <label for="format-mp3">MP3 Audio</label>
+                    </div>
+                    <button id="download-btn" class="primary">Download</button>
+                    <p id="form-hint" class="muted">Paste a URL and the studio will queue the job instantly.</p>
+                </div>
+            </section>
+
+            <section class="panel">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Current transfer</p>
+                        <h2>Live status</h2>
+                    </div>
+                    <span id="status-message" class="muted">Waiting for a request…</span>
+                </header>
+
+                <div id="metadata-card" class="metadata-card hidden">
+                    <img id="track-thumbnail" src="" alt="Track artwork" />
+                    <div>
+                        <p id="track-title" class="track-title">--</p>
+                        <p id="track-author" class="track-author muted">--</p>
+                    </div>
+                </div>
+
+                    <div id="progress-card" class="progress-card hidden">
+                        <div class="progress-header">
+                            <div>
+                                <p class="eyebrow">Transfer</p>
+                                <p id="progress-phase" class="muted">Idle</p>
+                            </div>
+                            <button id="progress-cancel" title="Cancel transfer">×</button>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill"></div>
+                        </div>
+                        <div class="progress-info">
+                            <span id="progress-percentage">0%</span>
+                            <span id="progress-bytes">0 / 0</span>
+                            <span id="progress-speed">--</span>
+                        </div>
+                    </div>
+            </section>
+
+            <section class="panel">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Recent files</p>
+                        <h2>Download feed</h2>
+                    </div>
+                </header>
+                <div id="history" class="history-grid">
+                    <p class="muted" id="history-empty">No downloads yet—your next job will appear here.</p>
+                </div>
+            </section>
+        </main>
     </div>
-    <script src="/youtube/youtubePage.js"></script>
+    <script type="module" src="/youtube/app.js"></script>
 </body>
 
 </html>

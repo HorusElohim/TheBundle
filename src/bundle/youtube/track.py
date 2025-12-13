@@ -37,6 +37,10 @@ class YoutubeTrackData(TrackData):
     video_url: str = data.Field(default_factory=str)
     thumbnail_url: str = data.Field(default_factory=str)
 
+    def is_resolved(self) -> bool:
+        """Return True when the resolver filled the stream URLs."""
+        return bool(self.video_url.strip())
+
 
 class MP3TrackData(TrackData):
     path: Path

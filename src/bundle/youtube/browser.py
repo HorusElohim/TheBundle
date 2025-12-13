@@ -2,12 +2,26 @@ from __future__ import annotations
 
 import asyncio
 import json
+from urllib.parse import parse_qsl, urlencode, urlparse, urlunparse
 
-from playwright.async_api import Page, Request
+from playwright.async_api import Frame, Page, Request
 
 from bundle.core import browser, data, entity, logger, tracer
 
 log = logger.get_logger(__name__)
+
+DEFAULT_EMBED_URL = "https://www.youtube-nocookie.com/embed/ouEl3qTLc0M?autoplay=1&mute=1"
+REFERER_ORIGIN = "https://bundle.local"
+REFERER_URL = f"{REFERER_ORIGIN}/youtube/token"
+
+
+def build_embed_url(embed_url: str) -> str:
+    parsed = urlparse(embed_url)
+    query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    query["origin"] = REFERER_ORIGIN
+    query.setdefault("enablejsapi", "1")
+    encoded_query = urlencode(query, doseq=True)
+    return urlunparse(parsed._replace(query=encoded_query))
 
 
 class PotoTokenEntity(entity.Entity):
@@ -57,11 +71,17 @@ class PotoTokenBrowser(browser.Browser):
         """
         Wait for the video player element and click it to trigger the token request.
         """
-        player, exception = await tracer.Async.call(page.wait_for_selector, "#movie_player", timeout=timeout)
-        if exception:
-            log.warning(f"Unable to locate video player: {exception}")
-        else:
+        search_contexts: list[Page | Frame] = [page]
+        search_contexts.extend(frame for frame in page.frames if frame != page.main_frame)
+
+        for context in search_contexts:
+            player, exception = await tracer.Async.call(context.wait_for_selector, "#movie_player", timeout=timeout)
+            if exception:
+                continue
             await player.click()
+            return
+
+        log.warning("Unable to locate video player in any frame.")
 
     async def wait_for_extraction(self, timeout: float = 30.0) -> None:
         """
@@ -70,9 +90,7 @@ class PotoTokenBrowser(browser.Browser):
         await asyncio.wait_for(self.extraction_event.wait(), timeout=timeout)
 
     @tracer.Async.decorator.call_raise
-    async def extract_token(
-        self, url: str = "https://www.youtube.com/embed/vPOhoud5NIM", timeout: float = 30.0
-    ) -> PotoTokenEntity:
+    async def extract_token(self, url: str | None = None, timeout: float = 30.0) -> PotoTokenEntity:
         """
         Orchestrates the token extraction process.
 
@@ -91,13 +109,14 @@ class PotoTokenBrowser(browser.Browser):
         Returns:
             A PotoTokenEntity with the extracted token data, or None if extraction times out.
         """
+        embed_url = build_embed_url(url or DEFAULT_EMBED_URL)
         page: Page = await self.new_page()
 
         # Step 1: Listen for outgoing requests.
         page.on("request", self.handle_request)
 
-        # Step 2: Navigate to the target URL.
-        await page.goto(url)
+        # Step 2: Navigate to the target URL with an explicit referer, satisfying YouTube's client identity checks.
+        await page.goto(embed_url, referer=REFERER_URL, wait_until="domcontentloaded")
 
         # Step 3: Click on the video player element.
         await self.click_player(page)
