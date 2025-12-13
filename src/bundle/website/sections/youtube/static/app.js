@@ -1,10 +1,11 @@
 const DEFAULT_HINT = 'Paste a URL and the studio will queue the job instantly.';
 
+import { wsNotifier } from '/static/js/ws-status.js';
+
 const elements = {
     urlInput: document.getElementById('youtube-url'),
     formatRadios: document.querySelectorAll("input[name='format']"),
     downloadBtn: document.getElementById('download-btn'),
-    statusBadge: document.getElementById('ws-status'),
     statusMessage: document.getElementById('status-message'),
     formHint: document.getElementById('form-hint'),
     metadataCard: document.getElementById('metadata-card'),
@@ -35,14 +36,7 @@ const state = {
 };
 
 const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/youtube/download_track`;
-
-function setStatusBadge(text, variant) {
-    elements.statusBadge.textContent = text;
-    elements.statusBadge.classList.remove('success', 'error');
-    if (variant) {
-        elements.statusBadge.classList.add(variant);
-    }
-}
+const notify = wsNotifier('YouTube');
 
 function setStatusMessage(message) {
     elements.statusMessage.textContent = message;
@@ -164,11 +158,11 @@ function connectWebSocket() {
         return;
     }
 
-    setStatusBadge('Connecting…');
+    notify.connecting();
     state.ws = new WebSocket(wsUrl);
 
     state.ws.addEventListener('open', () => {
-        setStatusBadge('Connected', 'success');
+        notify.connected();
         if (state.pendingPayload) {
             state.ws.send(JSON.stringify(state.pendingPayload));
             state.pendingPayload = null;
@@ -181,7 +175,7 @@ function connectWebSocket() {
     });
 
     state.ws.addEventListener('close', () => {
-        setStatusBadge('Offline', 'error');
+        notify.disconnected();
         if (elements.downloadBtn.disabled) {
             finishTransfer('Connection lost. Reconnecting…', 'Connection dropped—please retry once reconnected.');
         }
@@ -194,7 +188,7 @@ function connectWebSocket() {
     });
 
     state.ws.addEventListener('error', () => {
-        setStatusBadge('Error', 'error');
+        notify.error();
         if (elements.downloadBtn.disabled) {
             finishTransfer('Connection error', 'Connection error—try again in a moment.');
         }

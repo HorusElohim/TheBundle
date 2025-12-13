@@ -1,33 +1,28 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="/home/styles.css" />
-    <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
-    <link rel="apple-touch-icon" href="/static/apple-touch-icon.png" />
-    <link rel="manifest" href="/static/site.webmanifest" />
-    <title>The Bundle</title>
-</head>
-<body>
-    <main class="landing">
-        <header>
-            <p class="eyebrow">Welcome to The Bundle</p>
-            <h1>Choose a lab to explore.</h1>
-            <p class="lede">Every lab is powered by Bundle primitives, sharing transports, telemetry, and tracing.</p>
-        </header>
-        <section class="sections">
-            {% for section in sections %}
-            <article class="card">
-                <div>
-                    <h2>{{ section.name }}</h2>
-                    <p>{{ section.description }}</p>
-                </div>
-                <a class="primary" href="{{ section.href }}">Open</a>
-            </article>
-            {% endfor %}
-        </section>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}The Bundle{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('home', path='styles.css') }}" />
+{% endblock %}
+
+{% block content %}
+<main class="landing">
+    <header>
+        <p class="eyebrow">Welcome to The Bundle</p>
+        <h1>Choose a lab to explore.</h1>
+        <p class="lede">Every lab is powered by Bundle primitives, sharing transports, telemetry, and tracing.</p>
+    </header>
+    <section class="sections">
+        {% for section in sections %}
+        <article class="card">
+            <div>
+                <h2>{{ section.name }}</h2>
+                <p>{{ section.description }}</p>
+            </div>
+            <a class="primary" href="{{ section.href }}">Open</a>
+        </article>
+        {% endfor %}
+    </section>
+</main>
+{% endblock %}
