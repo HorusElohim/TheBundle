@@ -1,3 +1,5 @@
 include *.png
 include *.html
 include *.css
+recursive-include src/bundle/website/sections/excalibur/static *
+recursive-include src/bundle/website/sections/excalibur/templates *

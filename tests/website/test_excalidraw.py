@@ -9,4 +9,4 @@ def test_excalidraw_page_and_assets(client):
 
     script = client.get("/excalidraw/app.js")
     assert script.status_code == HTTPStatus.OK
-    assert "excalidraw.com" in script.text
+    assert "excalidraw-web/index.html" in script.text

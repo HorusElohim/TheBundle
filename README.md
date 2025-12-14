@@ -15,12 +15,6 @@
 pip install thebundle
 ```
 
-**Extras**:
-- Website stack (FastAPI server plus section dependencies):
-  ```sh
-  pip install -e ".[website]"
-  ```
-- The `excalidraw` section embeds the Excalidraw canvas directly from excalidraw.com; no local build is required to use it.
 
 ### Continuous Integration: Platforms & Python Versions
 
@@ -35,10 +29,9 @@ For more information, see the inline documentation in each module and the exampl
 - [Core Modules Guide](src/bundle/core/README.md)
 - [Testing Module Guide](src/bundle/testing/README.md)
 - [Pybind Subpackage Guide](src/bundle/pybind/README.md)
+- [Website Guide](src/bundle/website/README.md)
 
 
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
-
-
