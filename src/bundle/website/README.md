@@ -9,6 +9,11 @@ This folder contains the FastAPI-powered marketing/utility site for The Bundle. 
 - `sections/__init__.py`: `SectionDefinition` registry + static/router mounting.
 - `common/sections.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
 
+## Install & run
+- Install website deps: `pip install -e ".[website]"`
+- Start the server (from repo root): `bundle website start`
+- Navigate to `http://127.0.0.1:8000/` (sections like `/ble`, `/youtube`, `/excalidraw`)
+
 ## Design system
 - Global layout: `base.html` + `theme.css` give a modern, translucent navbar with a reserved actions slot (for status pills).
 - Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-section CSS sets its own accents/backgrounds.
@@ -81,3 +86,26 @@ SectionDefinition(
 
 7) **Run and verify**  
 Start the site: `bundle website start` → visit `/blog` → confirm `/blog/styles.css` loads and the nav highlights “Blog.”
+
+## Excalidraw (self-hosted)
+- Source: `src/bundle/website/vendor/excalidraw` (submodule; branch/tag as configured).
+- Served bundle: `src/bundle/website/sections/excalibur/static/excalidraw-web/` (copied build output).
+- PWA is disabled by default; enable by setting `VITE_APP_ENABLE_PWA=true` before build.
+
+### Update / rebuild the bundle
+1. Update the submodule (or fork checkout) to the desired ref:
+   ```sh
+   git submodule update --init --recursive
+   cd src/bundle/website/vendor/excalidraw
+   git fetch && git checkout <ref>
+   ```
+2. Build with Node 18–22 (ignore engines with `YARN_IGNORE_ENGINES=1` if needed):
+   ```sh
+   YARN_IGNORE_ENGINES=1 corepack yarn --cwd src/bundle/website/vendor/excalidraw/excalidraw-app build:app
+   ```
+3. Replace the served assets:
+   ```sh
+   rm -rf src/bundle/website/sections/excalibur/static/excalidraw-web
+   cp -R src/bundle/website/vendor/excalidraw/excalidraw-app/build/* src/bundle/website/sections/excalibur/static/excalidraw-web/
+   ```
+4. Restart the dev server and hard-reload `/excalidraw` (clearing any cached service worker).
