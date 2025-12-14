@@ -5,7 +5,9 @@ from typing import Any
 from fastapi.staticfiles import StaticFiles
 
 from .. import common
-from . import ble, home, youtube
+from . import ble
+from . import excalibur as excalidraw
+from . import home, youtube
 
 LOGGER = common.sections.get_logger("sections")
 
@@ -46,6 +48,14 @@ SECTION_REGISTRY: tuple[SectionDefinition, ...] = (
         description="Resolve and download tracks directly into The Bundle workbench.",
         router=youtube.router,
         static_path=youtube.STATIC_PATH,
+    ),
+    SectionDefinition(
+        name="Excalidraw",
+        slug="excalidraw",
+        href="/excalidraw",
+        description="Draw and brainstorm with the Excalidraw canvas.",
+        router=excalidraw.router,
+        static_path=excalidraw.STATIC_PATH,
     ),
 )
 
