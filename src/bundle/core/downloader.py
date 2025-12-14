@@ -19,17 +19,19 @@
 
 import asyncio
 from pathlib import Path
+from typing import Any
 
 import aiohttp
 from aiofiles import open as aio_open
 from tqdm.asyncio import tqdm_asyncio
 
-from ..core import logger, tracer
+from . import data, logger, tracer
+from .entity import Entity
 
 log = logger.get_logger(__name__)
 
 
-class Downloader:
+class Downloader(Entity):
     """
     Handles asynchronous downloading of files from a specified URL.
 
@@ -46,16 +48,26 @@ class Downloader:
         download() -> bool: Asynchronously downloads a file from `url` to `destination` or to `buffer`.
     """
 
-    def __init__(
-        self,
-        url: str,
-        destination: Path | None = None,
-        chunk_size: int = 4096,
-    ):
-        self.url = url
-        self.destination = destination
-        self.chunk_size = chunk_size
-        self.buffer = bytearray()
+    url: str
+    destination: Path | None = None
+    chunk_size: int = 4096
+    name: str = data.Field(default="downloader")
+    _buffer: bytearray = data.PrivateAttr(default_factory=bytearray)
+
+    @data.model_validator(mode="after")
+    def _assign_name(self):
+        """Use the destination or URL as a friendly identifier for logging."""
+        if self.name in {"", "default", "downloader"}:
+            if self.destination:
+                self.name = Path(self.destination).name
+            else:
+                self.name = self.url
+        return self
+
+    @property
+    def buffer(self) -> bytearray:
+        """Expose the in-memory buffer for downstream consumers."""
+        return self._buffer
 
     def start(self, byte_size: int):
         """Initializes the download process. Placeholder for subclasses to implement."""
@@ -99,7 +111,7 @@ class Downloader:
                                 await asyncio.sleep(0)
                     else:
                         async for chunk in response.content.iter_chunked(self.chunk_size):
-                            self.buffer.extend(chunk)
+                            self._buffer.extend(chunk)
                             await tracer.Async.call_raise(self.update, len(chunk))
                             await asyncio.sleep(0)
                     status = True
@@ -120,9 +132,11 @@ class DownloaderTQDM(Downloader):
     progress bar that updates with each downloaded chunk.
     """
 
+    _progress_bar: Any = data.PrivateAttr(default=None)
+
     def start(self, byte_size: int):
         """Initializes the TQDM progress bar."""
-        self.progress_bar = tqdm_asyncio(
+        self._progress_bar = tqdm_asyncio(
             total=byte_size,
             desc=f"Downloading {self.destination.name if self.destination else 'file'}",
             unit="B",
@@ -132,10 +146,10 @@ class DownloaderTQDM(Downloader):
 
     def update(self, byte_count: int):
         """Updates the TQDM progress bar with the number of bytes downloaded."""
-        if hasattr(self, "progress_bar"):
-            self.progress_bar.update(byte_count)
+        if self._progress_bar:
+            self._progress_bar.update(byte_count)
 
     def end(self):
         """Closes the TQDM progress bar."""
-        if hasattr(self, "progress_bar"):
-            self.progress_bar.close()
+        if self._progress_bar:
+            self._progress_bar.close()
