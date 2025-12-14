@@ -5,7 +5,7 @@ This folder contains the FastAPI-powered marketing/utility site for The Bundle. 
 - `__init__.py`: `get_app()` mounts `/static`, registers sections, serves favicon/manifest.
 - `templates/base.html`: shared head + global navbar + page shell used by every section.
 - `static/theme.css`: global tokens, nav styling, scrollbar fixes.
-- `sections/home/home.py`, `sections/ble/ble.py`, `sections/youtube/home.py`: section routers.
+- `sections/home/home.py`, `sections/ble/ble.py`, `sections/emf/emf.py`, `sections/youtube/home.py`: section routers.
 - `sections/__init__.py`: `SectionDefinition` registry + static/router mounting.
 - `common/sections.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
 

@@ -5,7 +5,7 @@ from typing import Any
 from fastapi.staticfiles import StaticFiles
 
 from .. import common
-from . import ble, home, youtube
+from . import ble, emf, home, youtube
 
 LOGGER = common.sections.get_logger("sections")
 
@@ -30,6 +30,14 @@ SECTION_REGISTRY: tuple[SectionDefinition, ...] = (
         description="Choose a lab to explore.",
         router=home.router,
         static_path=home.STATIC_PATH,
+    ),
+    SectionDefinition(
+        name="EMF",
+        slug="emf",
+        href="/emf",
+        description="Electromagnetic field simulation manifesto and architecture.",
+        router=emf.router,
+        static_path=emf.STATIC_PATH,
     ),
     SectionDefinition(
         name="BLE",

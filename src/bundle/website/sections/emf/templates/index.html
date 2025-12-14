@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}EMF · The Bundle{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('emf', path='styles.css') }}" />
+{% endblock %}
+
+{% block body_class %}emf{% endblock %}
+
+{% block content %}
+<section class="hero">
+    <div class="eyebrow">Legacy Project — EMF</div>
+    <h1>Electromagnetic Field Simulation for Vectorized and Voxelized Reality</h1>
+    <p class="lede">
+        Fields are the truth. Structure gives them form. Artifacts preserve them forever. The EMF section is
+        the canonical home for deterministic, GPU-first electromagnetic simulation inside The Bundle.
+    </p>
+</section>
+
+<section class="manifesto-grid">
+    <article class="panel">
+        <p class="tag">Mission</p>
+        <h2>Physics-first, reproducible, performant.</h2>
+        <p>
+            Plug-and-play electromagnetic field simulation that ingests any 3D structure—molecular,
+            mesoscopic, or macroscopic—and produces validated behavior with transparent provenance.
+        </p>
+    </article>
+    <article class="panel">
+        <p class="tag">Architecture</p>
+        <h2>Layered and deterministic.</h2>
+        <p>
+            Geometry, physics, solvers, runtime, and UI remain strictly separated. Solvers are stateless,
+            pure, and GPU-oriented with explicit device and precision policies.
+        </p>
+    </article>
+    <article class="panel">
+        <p class="tag">Artifact</p>
+        <h2>The single source of truth.</h2>
+        <p>
+            Every run emits an immutable artifact containing structure, materials, solver configuration,
+            environment, results, and validation diagnostics—always replayable and hashable.
+        </p>
+    </article>
+</section>
+
+<section class="stacked">
+    <div class="section-header">
+        <div class="eyebrow">Foundational Principles</div>
+        <h3>Non-negotiable guardrails for the EMF system.</h3>
+    </div>
+    <ol class="pill-list">
+        <li>Physics first—visualization follows correctness.</li>
+        <li>Determinism is mandatory; every simulation can be replayed.</li>
+        <li>GPU-class performance with explicit precision and stability policies.</li>
+        <li>Artifacts over side effects; outputs are immutable and inspectable.</li>
+        <li>Layered architecture with strict separation of concerns.</li>
+        <li>No black boxes; all derived values trace back to equations and discretization.</li>
+        <li>Longevity over fashion; frameworks may change, principles do not.</li>
+    </ol>
+</section>
+
+<section class="split">
+    <div class="card">
+        <div class="eyebrow">Simulation Modes</div>
+        <h3>Choose the appropriate regime for the study.</h3>
+        <ul>
+            <li>Electrostatic / magnetostatic (Poisson-based)</li>
+            <li>Quasi-static EM</li>
+            <li>Time-domain full-wave (FDTD / Yee grid)</li>
+            <li>Frequency-domain harmonic analysis</li>
+            <li>Hybrid regimes (future milestone)</li>
+        </ul>
+        <p class="note">The chosen regime is explicit in every simulation artifact.</p>
+    </div>
+    <div class="card">
+        <div class="eyebrow">Boundary Conditions</div>
+        <h3>Boundary behavior is part of the contract.</h3>
+        <ul>
+            <li>PEC / PMC</li>
+            <li>Absorbing boundaries (PML, ABC)</li>
+            <li>Periodic domains (crystalline / metamaterials)</li>
+            <li>Open-space approximations</li>
+        </ul>
+    </div>
+</section>
+
+<section class="stacked">
+    <div class="section-header">
+        <div class="eyebrow">Structural Input Model</div>
+        <h3>Any 3D reality, vectorized or voxelized.</h3>
+    </div>
+    <div class="input-grid">
+        <div class="card">
+            <h4>Vectorized Structures</h4>
+            <p class="note">Meshes, analytic primitives, molecular bonds, and atomic spheres.</p>
+            <p>Deterministic conversion to SDFs, voxel grids, or material property volumes.</p>
+        </div>
+        <div class="card">
+            <h4>Voxelized Structures</h4>
+            <p class="note">Density fields, permittivity/permeability maps, conductivity volumes.</p>
+            <p>Voxel grids carry coordinate frames, units, sampling resolution, and interpolation semantics.</p>
+        </div>
+        <div class="card">
+            <h4>Scale Bridging</h4>
+            <p class="note">Molecular → macroscopic.</p>
+            <p>Explicit unit discipline, coarse-grained material models, and resolution policies tuned to field gradients.</p>
+        </div>
+    </div>
+</section>
+
+<section class="stacked">
+    <div class="section-header">
+        <div class="eyebrow">USD as Structural Backbone</div>
+        <h3>What exists, not how it behaves.</h3>
+    </div>
+    <div class="usd-grid">
+        <div class="card">
+            <h4>Why USD</h4>
+            <p>Hierarchical composition, layered overrides, time-sampled data, and industry adoption for structured scenes.</p>
+        </div>
+        <div class="card">
+            <h4>Responsibilities</h4>
+            <p>Scene hierarchy, transforms, material region tagging, semantic grouping, and time-varying structure.</p>
+        </div>
+        <div class="card">
+            <h4>Not Responsibilities</h4>
+            <p>USD never solves fields or replaces solver data structures—it defines structure and meaning only.</p>
+        </div>
+    </div>
+</section>
+
+<section class="stacked">
+    <div class="section-header">
+        <div class="eyebrow">Validation & Integrity</div>
+        <h3>Scientific honesty is mandatory.</h3>
+    </div>
+    <div class="validation">
+        <p>Each solver is verified against analytical solutions, canonical benchmarks, and regression artifacts.</p>
+        <p>Execution is observable, interruptible, repeatable, and free from hidden global state.</p>
+    </div>
+</section>
+{% endblock %}
