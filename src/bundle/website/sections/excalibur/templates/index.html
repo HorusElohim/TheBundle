@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block title %}Excalidraw | The Bundle{% endblock %}
+
+{% block body_class %}excalidraw-page{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('excalidraw', path='styles.css') }}" />
+{% endblock %}
+
+{% block content %}
+<section class="excalidraw-stage">
+    <iframe
+        id="excalidraw-embed"
+        class="excalidraw-frame"
+        title="Excalidraw canvas"
+        allow="clipboard-read; clipboard-write; fullscreen"
+        loading="lazy"
+    ></iframe>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('excalidraw', path='app.js') }}"></script>
+{% endblock %}
