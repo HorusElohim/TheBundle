@@ -44,7 +44,7 @@ templates = create_templates(TEMPLATE_PATH)
 
 @router.get("/blog", response_class=HTMLResponse)
 async def blog(request: Request):
-    return templates.TemplateResponse("blog.html", base_context(request, {"title": "Bundle Blog"}))
+    return templates.TemplateResponse(request, "blog.html", base_context(request, {"title": "Bundle Blog"}))
 ```
 
 3) **Template** (`sections/blog/templates/blog.html`)
