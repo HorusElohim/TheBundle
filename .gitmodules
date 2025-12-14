@@ -1,0 +1,4 @@
+[submodule "src/bundle/website/vendor/excalidraw"]
+	path = src/bundle/website/vendor/excalidraw
+	url = git@github.com:HorusElohim/excalidraw.git
+	branch = dev/iframe
