@@ -15,4 +15,4 @@ templates = create_templates(TEMPLATE_PATH)
 @router.get("/excalidraw", response_class=HTMLResponse)
 async def excalidraw_page(request: Request):
     context = base_context(request, {"title": "Excalidraw"})
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse(request, "index.html", context)

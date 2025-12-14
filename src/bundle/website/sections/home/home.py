@@ -18,4 +18,4 @@ async def home(request: Request):
     sections_registry = getattr(request.app.state, "sections_registry", [])
     section_cards = [section for section in sections_registry if section.slug != "home" and section.show_on_home]
     context = base_context(request, {"sections": section_cards})
-    return templates.TemplateResponse("index.html", context)
+    return templates.TemplateResponse(request, "index.html", context)

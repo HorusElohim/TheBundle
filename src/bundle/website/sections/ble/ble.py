@@ -25,7 +25,7 @@ REFRESH_INTERVAL_MAX = 30.0
 
 @router.get("/ble", response_class=HTMLResponse)
 async def ble_dashboard(request: Request):
-    return templates.TemplateResponse("index.html", base_context(request))
+    return templates.TemplateResponse(request, "index.html", base_context(request))
 
 
 @router.get("/ble/api/devices", response_class=JSONResponse)
