@@ -10,10 +10,17 @@
 
 **TheBundle** is a modern, extensible Python framework for robust, maintainable, and high-performance software projects. It provides a suite of core modules for logging, tracing, data modeling, process management, ZeroMQ sockets, browser automation, and more—plus advanced testing and pybind11/C++ extension tooling.
 
-**Install**:  
+**Install**:
 ```sh
 pip install thebundle
 ```
+
+**Extras**:
+- Website stack (FastAPI server plus section dependencies):
+  ```sh
+  pip install -e ".[website]"
+  ```
+- The `excalidraw` section embeds the Excalidraw canvas directly from excalidraw.com; no local build is required to use it.
 
 ### Continuous Integration: Platforms & Python Versions
 
@@ -33,6 +40,5 @@ For more information, see the inline documentation in each module and the exampl
 ## License
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
-
 
 

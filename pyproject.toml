@@ -47,6 +47,18 @@ ble = [
 ]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 web = ["fastapi", "uvicorn[standard]", "websockets", "jinja2", "bleak>=0.22.1", "pyyaml"]
+website = [
+    "fastapi",
+    "uvicorn[standard]",
+    "websockets",
+    "jinja2",
+    "httpx",
+    "bleak>=0.22.1",
+    "pyyaml",
+    "pytubefix",
+    "mutagen",
+    "ffmpeg-python",
+]
 all = [
     "pytest",
     "pytest-asyncio",
