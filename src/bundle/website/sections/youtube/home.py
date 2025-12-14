@@ -61,7 +61,7 @@ class TrackMetadata(YoutubeTrackData, WebSocketDataMixin):
 
 @router.get("/youtube", response_class=HTMLResponse)
 async def youtube(request: Request):
-    return templates.TemplateResponse("youtube.html", base_context(request))
+    return templates.TemplateResponse(request, "youtube.html", base_context(request))
 
 
 @router.websocket("/ws/youtube/download_track")
