@@ -7,22 +7,117 @@
 {% endblock %}
 
 {% block content %}
-<main class="landing">
-    <header>
-        <p class="eyebrow">Welcome to The Bundle</p>
-        <h1>Choose a lab to explore.</h1>
-        <p class="lede">Every lab is powered by Bundle primitives, sharing transports, telemetry, and tracing.</p>
-    </header>
-    <section class="sections">
-        {% for section in sections %}
-        <article class="card">
-            <div>
-                <h2>{{ section.name }}</h2>
-                <p>{{ section.description }}</p>
+<main class="home">
+    <section class="panel hero">
+        <div class="hero__copy">
+            <p class="eyebrow">Open source runtime toolkit</p>
+            <h1>Build, observe, and ship faster with The Bundle.</h1>
+            <p class="lede">
+                The Bundle stitches transports, telemetry, tracing, and browser automation into one coherent toolkit.
+                Design experiments, stand up utilities, and keep observability baked in from the first commit.
+            </p>
+            <div class="hero__actions">
+                <a class="button primary" href="#install">Install the Bundle</a>
+                <a class="button ghost" href="https://github.com/HorusElohim/TheBundle" target="_blank" rel="noreferrer">
+                    View on GitHub
+                </a>
             </div>
-            <a class="primary" href="{{ section.href }}">Open</a>
-        </article>
-        {% endfor %}
+            <ul class="hero__meta">
+                <li>Python 3.10–3.12 • macOS, Linux, Windows</li>
+                <li>Unified primitives for logging, tracing, sockets, and process orchestration</li>
+                <li>Ready-to-run labs (BLE, YouTube, Excalibur) powered by the same core</li>
+            </ul>
+        </div>
+        <div class="hero__panel">
+            <div class="callout">
+                <p class="eyebrow">CLI</p>
+                <h3>bundle website start</h3>
+                <p class="muted">Launch the experience locally with a single command.</p>
+            </div>
+            <div class="stats">
+                <div>
+                    <span class="stat__value">FastAPI</span>
+                    <span class="stat__label">modern web core</span>
+                </div>
+                <div>
+                    <span class="stat__value">PyPI</span>
+                    <span class="stat__label">pip installable</span>
+                </div>
+                <div>
+                    <span class="stat__value">Tracing-first</span>
+                    <span class="stat__label">telemetry everywhere</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="install" class="panel install">
+        <div class="section__head">
+            <p class="eyebrow">Get started in minutes</p>
+            <h2>Install the Bundle</h2>
+            <p class="muted">Ship the same stack across macOS, Linux, and Windows—no extra build steps required.</p>
+        </div>
+        <div class="install__steps">
+            <article>
+                <p class="step">Step 1</p>
+                <h3>Grab the package</h3>
+                <p class="muted">Install the CLI, runtime, and labs from PyPI.</p>
+                <div class="code-block"><code>pip install thebundle</code></div>
+            </article>
+            <article>
+                <p class="step">Step 2</p>
+                <h3>Launch locally</h3>
+                <p class="muted">Start the FastAPI-powered site and browse labs from the navbar.</p>
+                <div class="code-block"><code>bundle website start</code></div>
+            </article>
+            <article>
+                <p class="step">Step 3</p>
+                <h3>Explore the primitives</h3>
+                <p class="muted">Inspect logging, telemetry, sockets, tracing, and browser utilities in one place.</p>
+                <div class="code-block"><code>python -m bundle --help</code></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="panel feature-grid">
+        <div class="section__head">
+            <p class="eyebrow">Why Bundle</p>
+            <h2>Everything you need to wire modern tools together.</h2>
+            <p class="muted">Bundle primitives share transports, observability, and process management so you can focus on your experiments.</p>
+        </div>
+        <div class="grid">
+            <article>
+                <h3>Observability built in</h3>
+                <p class="muted">Tracing, logging, and metrics are unified so labs and services emit the same signals.</p>
+            </article>
+            <article>
+                <h3>Transport aware</h3>
+                <p class="muted">ZeroMQ and process orchestration utilities keep distributed experiments simple.</p>
+            </article>
+            <article>
+                <h3>Browser capable</h3>
+                <p class="muted">Ship automation with Playwright-ready helpers and self-hosted Excalibur tooling.</p>
+            </article>
+            <article>
+                <h3>Test focused</h3>
+                <p class="muted">Advanced testing harnesses match the primitives, from BLE to YouTube integrations.</p>
+            </article>
+        </div>
+    </section>
+
+    <section id="labs" class="panel labs">
+        <div class="section__head">
+            <p class="eyebrow">Labs are one click away</p>
+            <h2>Use the navbar to jump into a lab when you need it.</h2>
+            <p class="muted">Keep the homepage focused on Bundle itself. Labs stay accessible from the global navigation.</p>
+        </div>
+        {% if sections %}
+        <div class="chips">
+            {% for section in sections %}
+            <a class="chip" href="{{ section.href }}">{{ section.name }}</a>
+            {% endfor %}
+        </div>
+        {% endif %}
     </section>
 </main>
 {% endblock %}
