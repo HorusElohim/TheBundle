@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Bundle • Audio{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('audio', path='/audio.css') }}?v={{ asset_version }}">
+{% endblock %}
+
+{% block content %}
+<div class="page">
+    <main class="content">
+        <section class="hero">
+            <div class="hero-copy">
+                <p class="eyebrow">Bundle Audio Module</p>
+                <h1>Load, stream, and inspect audio files.</h1>
+                <p class="lede">
+                    Declarative state, explicit transforms, and streaming waveform chunks keep the UI simple
+                    while remaining GPU-ready for future upgrades.
+                </p>
+            </div>
+            <div class="input-card is-hidden">
+                <label for="audio-path">Audio File</label>
+                <div class="input-wrap">
+                    <input
+                        type="text"
+                        id="audio-path"
+                        placeholder="/path/to/audio.wav"
+                        autocomplete="off"
+                        autocapitalize="off"
+                        autocorrect="off"
+                        spellcheck="false"
+                    />
+                </div>
+                <button id="load-audio" class="primary">Load</button>
+            </div>
+        </section>
+
+        <section class="panel">
+            <header class="panel-header">
+                <div>
+                    <h2>Audio Waveform</h2>
+                </div>
+                <span class="muted" id="status-text">Idle</span>
+            </header>
+            <div class="waveform-stage" id="waveform-stage">
+                <canvas id="waveform" width="1024" height="240"></canvas>
+                <div class="waveform-empty" id="waveform-empty">
+                    <label id="upload-drop" class="upload-drop" for="audio-upload" tabindex="0">
+                        <div class="upload-plus">+</div>
+                        <div class="upload-text">Drag the audio here or click + for import.</div>
+                    </label>
+                </div>
+                <input type="file" id="audio-upload" accept=".wav,.wave,.aif,.aiff" />
+            </div>
+            <p class="muted waveform-hint">Scroll to zoom. Shift + drag to pan. Drag to select. Click to seek.</p>
+            <div class="playback">
+                <button id="play-toggle">Play</button>
+                <span id="playback-time" class="muted">0:00 / 0:00</span>
+            </div>
+            <div class="controls">
+                <span id="selection" class="muted">No selection</span>
+                <button id="clear-transforms">Clear transforms</button>
+            </div>
+            <audio id="audio-player" preload="metadata"></audio>
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    window.BUNDLE_AUDIO_CONFIG = {
+        wsEndpoint: "{{ ws_endpoint }}"
+    };
+</script>
+<script type="module" src="{{ url_for('audio', path='/audio.js') }}?v={{ asset_version }}"></script>
+{% endblock %}
