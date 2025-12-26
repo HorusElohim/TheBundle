@@ -5,7 +5,7 @@ from typing import Any
 from fastapi.staticfiles import StaticFiles
 
 from .. import common
-from . import ble
+from . import audio, ble
 from . import excalibur as excalidraw
 from . import home, youtube
 
@@ -40,6 +40,14 @@ SECTION_REGISTRY: tuple[SectionDefinition, ...] = (
         description="Scan, inspect, and connect to Nordic UART devices in real time.",
         router=ble.router,
         static_path=ble.STATIC_PATH,
+    ),
+    SectionDefinition(
+        name="Audio",
+        slug="audio",
+        href="/audio",
+        description="Load, stream, and apply virtual transforms to audio files.",
+        router=audio.router,
+        static_path=audio.STATIC_PATH,
     ),
     SectionDefinition(
         name="YouTube",
