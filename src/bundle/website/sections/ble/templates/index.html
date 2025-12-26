@@ -3,13 +3,13 @@
 {% block title %}BLE World Viewer{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('ble', path='/styles.css') }}?v=2" />
+<link rel="stylesheet" href="{{ url_for('ble', path='/styles.css') }}?v={{ asset_version }}" />
 {% endblock %}
 
 {% block content %}
 <div class="page">
     <main class="content">
-        <section class="hero">
+        <section class="hero glow-panel">
             <div>
                 <p class="eyebrow">Discover Nearby Devices</p>
                 <h1>Minimal, modern control room for your BLE universe.</h1>
@@ -41,7 +41,7 @@
             </div>
         </section>
 
-        <section class="panel">
+        <section class="panel glow-panel">
             <header class="panel-header">
                 <div>
                     <p class="eyebrow">Discover</p>

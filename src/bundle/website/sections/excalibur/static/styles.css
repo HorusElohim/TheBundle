@@ -1,7 +1,5 @@
-@import url('/static/theme.css');
 
-.excalidraw-page .page-shell {
-    max-width: none;
+ .excalidraw-page .page-shell {
     padding: 12px 12px 32px;
     min-height: 100vh;
     display: flex;
@@ -22,12 +20,9 @@
     width: 100%;
     border-radius: 18px;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    background:
-        radial-gradient(circle at 16% 18%, rgba(127, 90, 240, 0.16), transparent 36%),
-        radial-gradient(circle at 82% 12%, rgba(51, 195, 240, 0.16), transparent 30%),
-        #0b0f1a;
-    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+    border: 1px solid var(--surface-border);
+    background: var(--surface);
+    box-shadow: var(--panel-glow);
 }
 
 .excalidraw-stage .excalidraw-frame {

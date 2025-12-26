@@ -41,6 +41,7 @@ def base_context(request: Any, extra: Mapping[str, Any] | None = None) -> dict[s
     Shared context payload for templates so we only wire request/nav data once.
     """
     extra = extra or {}
-    nav_sections = getattr(getattr(request, "app", None), "state", None)
-    nav_sections = getattr(nav_sections, "nav_sections", [])
-    return {"request": request, "nav_sections": nav_sections, **extra}
+    app_state = getattr(getattr(request, "app", None), "state", None)
+    nav_sections = getattr(app_state, "nav_sections", [])
+    asset_version = getattr(app_state, "asset_version", "dev")
+    return {"request": request, "nav_sections": nav_sections, "asset_version": asset_version, **extra}
