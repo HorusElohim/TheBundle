@@ -1,3 +1,5 @@
+from time import time
+
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +14,7 @@ STATIC_PATH = common.sections.get_static_path(__file__)
 
 def get_app() -> FastAPI:
     app = FastAPI(title="Bundle Website")
+    app.state.asset_version = str(int(time()))
 
     app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
 

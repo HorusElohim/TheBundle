@@ -3,13 +3,13 @@
 {% block title %}Bundle • YouTube Studio{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('youtube', path='/styles.css') }}?v=1">
+<link rel="stylesheet" href="{{ url_for('youtube', path='/styles.css') }}?v={{ asset_version }}">
 {% endblock %}
 
 {% block content %}
 <div class="page">
     <main class="content">
-        <section class="hero">
+        <section class="hero glow-panel">
             <div class="hero-copy">
                 <p class="eyebrow">Bundled downloads</p>
                 <h1>Bring any video, mix, or playlist into your library.</h1>
@@ -39,7 +39,7 @@
             </div>
         </section>
 
-        <section class="panel">
+        <section class="panel glow-panel">
             <header class="panel-header">
                 <div>
                     <p class="eyebrow">Current transfer</p>
@@ -75,7 +75,7 @@
                 </div>
         </section>
 
-        <section class="panel">
+        <section class="panel glow-panel">
             <header class="panel-header">
                 <div>
                     <p class="eyebrow">Recent files</p>
