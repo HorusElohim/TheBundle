@@ -1,0 +1,63 @@
+.usd-page .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+.usd-page .input-card {
+    background: var(--panel-alt-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.usd-page .input-card input {
+    width: 100%;
+}
+
+.usd-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+.usd-viewer iframe {
+    width: 100%;
+    min-height: 420px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: #000;
+}
+
+.usd-meta .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem 1.5rem;
+}
+
+.usd-meta dt {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+}
+
+.usd-meta dd {
+    font-size: 1.2rem;
+    margin: 0.1rem 0 0;
+    font-weight: 600;
+}
+
+.error-box {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--warning-border, #f0b429);
+    background: var(--warning-bg, rgba(240, 180, 41, 0.1));
+    color: var(--warning-text, #c07600);
+}
+
+.hidden {
+    display: none;
+}

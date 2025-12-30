@@ -1,6 +1,6 @@
 from time import time
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -17,6 +17,14 @@ def get_app() -> FastAPI:
     app.state.asset_version = str(int(time()))
 
     app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
+
+    @app.middleware("http")
+    async def apply_cross_origin_policies(request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/usd") or request.url.path.startswith("/ws/usd"):
+            response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+            response.headers["Cross-Origin-Embedder-Policy"] = "require-corp"
+        return response
 
     # Serve favicon explicitly
     @app.get("/favicon.ico", include_in_schema=False)
