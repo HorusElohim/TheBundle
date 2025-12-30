@@ -1,0 +1,155 @@
+:root,
+[data-theme='dark'],
+[data-theme='light'] {
+    --radius: 18px;
+    --border: var(--surface-border);
+    --panel: var(--surface);
+    --muted: var(--text-muted);
+    --shadow: 0 24px 50px rgba(0, 0, 0, 0.16);
+}
+
+.page {
+    max-width: 1080px;
+}
+
+.playground .hero {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 28px;
+    padding: 28px;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+}
+
+.playground .hero h1 {
+    margin: 10px 0 12px;
+    font-size: clamp(28px, 4vw, 36px);
+}
+
+.playground .hero .callout {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px;
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: var(--shadow);
+}
+
+.playground .hero__actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+}
+
+.playground .meta {
+    list-style: none;
+    padding: 0;
+    margin: 14px 0 0;
+    display: grid;
+    gap: 6px;
+    color: var(--muted);
+}
+
+.playground .meta li code {
+    background: rgba(0, 0, 0, 0.06);
+    padding: 4px 8px;
+    border-radius: 8px;
+}
+
+.playground .sandbox {
+    margin-top: 18px;
+}
+
+.sandbox__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.sandbox__actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.pill {
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(0, 0, 0, 0.05);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.pill--ghost {
+    background: transparent;
+}
+
+.sandbox__grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.canvas,
+.notes {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.04);
+}
+
+.canvas__header,
+.notes__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+}
+
+.canvas__body {
+    margin-top: 12px;
+    min-height: 200px;
+    display: grid;
+    place-items: start;
+}
+
+.status {
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.status--info {
+    color: var(--muted);
+}
+
+.notes__list {
+    margin: 12px 0 0;
+    padding-left: 16px;
+    display: grid;
+    gap: 8px;
+}
+
+.checklist {
+    display: grid;
+    gap: 10px;
+}
+
+.steps {
+    margin: 0;
+    padding-left: 18px;
+    display: grid;
+    gap: 8px;
+}
+
+@media (max-width: 880px) {
+    .sandbox__grid {
+        grid-template-columns: 1fr;
+    }
+}
