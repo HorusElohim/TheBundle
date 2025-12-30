@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from .. import common
 from . import ble
 from . import excalibur as excalidraw
-from . import home, youtube
+from . import home, playground, youtube
 
 LOGGER = common.sections.get_logger("sections")
 
@@ -56,6 +56,14 @@ SECTION_REGISTRY: tuple[SectionDefinition, ...] = (
         description="Draw and brainstorm with the Excalidraw canvas.",
         router=excalidraw.router,
         static_path=excalidraw.STATIC_PATH,
+    ),
+    SectionDefinition(
+        name="Playground",
+        slug="playground",
+        href="/playground",
+        description="Prototype widgets quickly with backend and frontend hooks.",
+        router=playground.router,
+        static_path=playground.STATIC_PATH,
     ),
 )
 
