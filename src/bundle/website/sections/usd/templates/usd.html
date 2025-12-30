@@ -23,25 +23,15 @@
                 </ul>
             </div>
             <div class="input-card">
-                <label for="usd-path">USD file path</label>
-                <div class="input-wrap">
-                    <input type="text" id="usd-path" placeholder="/path/to/scene.usd" autocomplete="off" />
-                </div>
-                <button id="load-btn" class="primary">Load scene</button>
-                <p id="form-hint" class="muted">Paths are resolved by the backend; errors are returned as events.</p>
+                <label for="usd-file">Upload a USD file</label>
+                <p class="muted">Drop a file onto the viewer or choose one here.</p>
+                <input type="file" id="usd-file" accept=".usd,.usda,.usdc,.usdz" />
+                <button id="upload-btn" class="primary">Choose USD file</button>
+                <p id="form-hint" class="muted">Files are uploaded server-side and then loaded into the scene.</p>
             </div>
         </section>
 
         <section class="panel glow-panel usd-grid">
-            <div class="usd-viewer">
-                <header class="panel-header">
-                    <div>
-                        <p class="eyebrow">Viewer</p>
-                        <h2>Embedded USD viewport</h2>
-                    </div>
-                </header>
-                <iframe id="usd-viewer" src="{{ url_for('usd', path='/usd-viewer/index.html') }}?v={{ asset_version }}" title="USD viewer"></iframe>
-            </div>
             <div class="usd-meta">
                 <header class="panel-header">
                     <div>
@@ -69,6 +59,23 @@
                     </div>
                 </dl>
                 <div id="errors" class="error-box hidden" role="status"></div>
+            </div>
+            <div class="usd-viewer">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Viewer</p>
+                        <h2>Embedded USD viewport</h2>
+                    </div>
+                </header>
+                <div id="usd-drop-target" class="viewer-shell">
+                    <iframe id="usd-viewer" src="{{ url_for('usd', path='/usd-viewer/index.html') }}?v={{ asset_version }}" title="USD viewer" allow="cross-origin-isolated"></iframe>
+                    <div id="usd-drop-overlay" class="drop-overlay" role="button" tabindex="0">
+                        <div>
+                            <h3>Drop USD file</h3>
+                            <p>Release to upload and load the scene.</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
     </main>

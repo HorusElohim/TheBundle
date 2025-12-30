@@ -1,43 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>USD Viewer</title>
-    <style>
-        :root {
-            color-scheme: dark;
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        }
-        body {
-            margin: 0;
-            display: grid;
-            place-items: center;
-            min-height: 100vh;
-            background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.1), transparent 40%), #0f1116;
-            color: #e5e7eb;
-        }
-        .placeholder {
-            text-align: center;
-            padding: 2rem;
-            border: 1px dashed rgba(255,255,255,0.25);
-            border-radius: 12px;
-            background: rgba(255,255,255,0.03);
-        }
-        .placeholder h1 {
-            margin: 0 0 0.5rem 0;
-            font-size: 1.5rem;
-        }
-        .placeholder p {
-            margin: 0;
-            color: #a3aab6;
-        }
-    </style>
+  <title>USD Viewer</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, user-scalable=no, viewport-fit=cover" />
+  <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:creator" content="https://autodesk-forks.github.io/USD/ and @hybridherbst"/>
+  <meta property="og:url" content="https://usd-viewer.glitch.me/" />
+  <meta property="og:title" content="USD Viewer" />
+  <meta property="og:description" content="Simple USD Viewer based on Autodesk's USD WASM Fork" />
+  <meta property="og:image" content="https://cdn.glitch.global/bee386a1-31e6-4710-8850-a1d5b7026a09/usd-viewer-preview2.webp?v=1646525510950" />
+
+  
+  <link rel="stylesheet" href="css/styles.css">
 </head>
-<body>
-    <div class="placeholder">
-        <h1>USD Viewer</h1>
-        <p>Drop in your preferred USD viewport build here.</p>
-    </div>
+<body class="bundle-embed">
+  <script type="text/javascript" async src="modules/es-module-shims@1.8.0.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.163.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.163.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="https://unpkg.com/three@0.163.0/build/three.module.js"></script>
+  <script type="module" src ="index.js"></script>
+  <script type="module">
+    import { init } from './index.js';
+    init();
+  </script>
+  <div id="container" style="position:absolute; margin:5px;">
+    <div class="buttons">
+    <a class="file" href="?file=">Clear<br/><span>Drop USDZ to load</span></a>
+    
+    <a class="file hide" href="?file=https://cdn.glitch.global/875126f0-13ba-4f4c-be84-8cf16c90f4b4/speeder.usdz?v=1712012977504&cameraX=20&cameraY=10&cameraZ=20">Speeder</a>
+    <a class="file hide" href="?file=https://cdn.glitch.global/875126f0-13ba-4f4c-be84-8cf16c90f4b4/spherebot2.usdz?v=1712012969693&cameraY=30&cameraZ=100">Spherebot2</a>
+    <!-- <button><a href="?file=spherebot2.usdz&cameraY=30&cameraZ=100">Spherebot2 (local)</a></button> -->
+    <a class="file hide" href="?file=https://cdn.glitch.global/875126f0-13ba-4f4c-be84-8cf16c90f4b4/gearbox.usdz?v=1712012939566&cameraY=30&cameraZ=300">GearBox</a>
+    <a class="file hide" href="?file=https://cdn.glitch.global/875126f0-13ba-4f4c-be84-8cf16c90f4b4/knife.usdz?v=1712012954472&cameraX=100&cameraY=50&cameraZ=200">Knife</a>
+    
+    <a class="filename"></a>
+    <a href="https://autodesk-forks.github.io/USD/" target="_blank">About</a>
+    <a href="https://github.com/needle-tools/usd-viewer" target="_blank">GitHub</a>
+      
+    <br/>
+
+    <!--
+    <button><a href="#" id="export-usdz">Export as USDZ</a></button>
+    -->
+
+    <a id="export-gltf">Export as .glb</a></button>
+    <br/>
+  </div>
+  <div class="buttons">
+    <a href="https://github.com/usd-wg/assets">usd-wg/assets</a>
+    <a class="file" href="?file=https://github.com/usd-wg/assets/blob/main/full_assets/Teapot/Teapot.usd">Teapot</a>
+    <a class="file" href="?file=https://github.com/usd-wg/assets/blob/jcowles/discoverability/full_assets/McUsd/McUsd.usda">McUsd</a>
+    <a class="file" href="?file=https://github.com/usd-wg/assets/blob/jcowles/discoverability/full_assets/CarbonFrameBike/index.usda">Bike .usda</a>
+    <a class="file" href="?file=https://github.com/usd-wg/assets/blob/jcowles/discoverability/full_assets/CarbonFrameBike/CarbonFrameBike.usdz">Bike .usdz</a>
+    <a class="file" href="?file=https://github.com/usd-wg/assets/blob/main/full_assets/Vehicles/USD_Mini_Car_Kit/assets/vehicles/vehicleVariants.usda">Vehicles</a>
+    <a class="file" href="?file=https://cloud-staging.needle.tools/-/assets/Z23hmXBZCdB4p-ZCdB4p/file.usdz">Kitchen Set</a>
+  </div>
+    
+    <p id="message-log">
+      Waiting for initialization to start...
+    </p>
+  </div>
+  <div class="footer">
+    <a id="quick-look-link" rel="ar" href="#"><img width="128" height="128" src="ARKit_Glyph.svg" title="ARKit Glyph" style="max-width:100%; height:auto;"></a>
+  </div>
 </body>
 </html>

@@ -17,19 +17,61 @@
     width: 100%;
 }
 
+.usd-page .input-card input[type="file"] {
+    display: none;
+}
+
 .usd-grid {
     display: grid;
-    grid-template-columns: 1.3fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1.5rem;
-    align-items: stretch;
+}
+
+.usd-viewer .viewer-shell {
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
 }
 
 .usd-viewer iframe {
     width: 100%;
-    min-height: 420px;
-    border: 1px solid var(--border-color);
-    border-radius: 12px;
+    min-height: 78vh;
+    border: 0;
+    border-radius: 0;
     background: #000;
+}
+
+.usd-viewer .drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+    background: rgba(12, 16, 22, 0.86);
+    color: #f4f6fb;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.usd-viewer .drop-overlay h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+.usd-viewer .drop-overlay p {
+    margin: 0;
+    color: rgba(244, 246, 251, 0.7);
+}
+
+.usd-viewer .viewer-shell.drag-active .drop-overlay {
+    opacity: 1;
+    pointer-events: auto;
 }
 
 .usd-meta .meta-grid {

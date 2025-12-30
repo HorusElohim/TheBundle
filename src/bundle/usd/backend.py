@@ -46,7 +46,11 @@ class USDBackend:
         Usd, UsdGeom = _require_pxr()
         prim_count = sum(1 for _ in stage_handle.Traverse())
         layer_count = len(stage_handle.GetLayerStack())
-        meters_per_unit = stage_handle.GetMetersPerUnit()
+        if hasattr(stage_handle, "GetMetersPerUnit"):
+            meters_per_unit = stage_handle.GetMetersPerUnit()
+        else:
+            # Older USD versions expose this on UsdGeom instead of Stage.
+            meters_per_unit = UsdGeom.GetStageMetersPerUnit(stage_handle)
         up_axis = UsdGeom.GetStageUpAxis(stage_handle)
         return SceneInfo(
             prim_count=prim_count,
