@@ -1,0 +1,13 @@
+{% set widget_slug = widget.slug if widget is defined else "ws-toast" %}
+{% set widget_ws_path = widget.ws_path if widget is defined and widget.ws_path else "/ws/ecc" %}
+<section class="panel glow-panel ws-toast-widget" data-widget="{{ widget_slug }}" data-ws-path="{{ widget_ws_path }}">
+    <header class="ws-toast__header">
+        <div>
+            <p class="ws-toast__eyebrow">WebSocket</p>
+            <h2>Toast feed</h2>
+            <p class="muted">Surface incoming messages as lightweight toasts.</p>
+        </div>
+        <span class="ws-toast__status" data-role="status">Idle</span>
+    </header>
+    <div class="ws-toast__list" data-role="toast-list"></div>
+</section>
