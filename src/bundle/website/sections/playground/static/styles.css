@@ -1,0 +1,62 @@
+:root,
+[data-theme='dark'] {
+    --playground-accent: #33c3f0;
+}
+
+[data-theme='light'] {
+    --playground-accent: #2a9cda;
+}
+
+body {
+    background:
+        radial-gradient(circle at 12% 18%, rgba(51, 195, 240, 0.12), transparent 40%),
+        radial-gradient(circle at 88% 8%, rgba(127, 90, 240, 0.12), transparent 36%),
+        var(--page-bg);
+}
+
+[data-theme='light'] body {
+    background:
+        radial-gradient(circle at 12% 18%, rgba(51, 195, 240, 0.08), transparent 40%),
+        radial-gradient(circle at 88% 8%, rgba(127, 90, 240, 0.08), transparent 36%),
+        var(--page-bg);
+}
+
+.playground {
+    width: min(1100px, 100%);
+    margin: 0 auto;
+    display: grid;
+    gap: 24px;
+    padding: 12px 0 48px;
+}
+
+.playground__intro {
+    display: grid;
+    gap: 8px;
+}
+
+.playground__status {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.playground__intro h1 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 36px);
+    line-height: 1.2;
+}
+
+.playground .muted {
+    margin: 0;
+    color: var(--text-muted);
+    max-width: 640px;
+}
+
+.playground .eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+    color: var(--playground-accent);
+}

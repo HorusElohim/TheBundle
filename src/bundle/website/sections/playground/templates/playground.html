@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}Playground · The Bundle{% endblock %}
+
+{% import "widgets/macros.html" as widget_macros with context %}
+
+{% block styles %}
+{{ widget_macros.styles(widget_assets) }}
+<link rel="stylesheet" href="{{ url_for('playground', path='styles.css') }}?v={{ asset_version }}" />
+{% endblock %}
+
+{% block content %}
+<main class="playground">
+    <header class="playground__intro">
+        <p class="eyebrow">Playground</p>
+        <h1>Widget sandbox</h1>
+        <p class="muted">Prototype widgets with synchronized backend + frontend hooks.</p>
+        <div class="playground__status">
+            <span class="ws-pill ws-pill--ghost" data-role="ws-status" data-ws-path="/ws/ecc">WS: idle</span>
+            <span class="muted">Shared channel across widgets and section scripts.</span>
+        </div>
+    </header>
+
+    {{ widget_macros.render(widgets) }}
+</main>
+{% endblock %}
+
+{% block scripts %}
+{{ widget_macros.scripts(widget_assets) }}
+<script type="module" src="{{ url_for('playground', path='ws-status.js') }}?v={{ asset_version }}"></script>
+{% endblock %}

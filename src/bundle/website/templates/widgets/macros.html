@@ -1,0 +1,23 @@
+{% macro styles(widget_assets) -%}
+{% if widget_assets %}
+{% for asset in widget_assets.styles %}
+<link rel="stylesheet" href="{{ url_for('static', path=asset.path) }}?v={{ asset_version }}" />
+{% endfor %}
+{% endif %}
+{%- endmacro %}
+
+{% macro scripts(widget_assets) -%}
+{% if widget_assets %}
+{% for asset in widget_assets.scripts %}
+<script{% if asset.module %} type="module"{% endif %} src="{{ url_for('static', path=asset.path) }}?v={{ asset_version }}"></script>
+{% endfor %}
+{% endif %}
+{%- endmacro %}
+
+{% macro render(widgets) -%}
+{% if widgets %}
+{% for widget in widgets %}
+{% include widget.template %}
+{% endfor %}
+{% endif %}
+{%- endmacro %}
