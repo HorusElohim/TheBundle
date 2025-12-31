@@ -1,20 +1,18 @@
-#!/usr/bin/env python3
-"""
-Generate a USD scene for Paris using OpenStreetMap Overpass.
-Outputs separate meshes for roads, lane stripes, and building footprints.
-"""
+"""Utilities for generating USD map geometry from OpenStreetMap."""
 
 from __future__ import annotations
 
-import argparse
 import json
 import math
-import sys
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Tuple
+
+from bundle.core import logger
+
+LOG = logger.get_logger(__name__)
 
 OVERPASS_ENDPOINT = "https://overpass-api.de/api/interpreter"
 
@@ -26,16 +24,30 @@ class BBox:
     north: float
     east: float
 
-    @classmethod
-    def from_string(cls, value: str) -> "BBox":
-        parts = [p.strip() for p in value.split(",")]
-        if len(parts) != 4:
-            raise ValueError("bbox must be 'south,west,north,east'")
-        return cls(*(float(p) for p in parts))
-
     @property
     def center(self) -> Tuple[float, float]:
         return (self.south + self.north) / 2.0, (self.west + self.east) / 2.0
+
+    def __str__(self) -> str:
+        return f"{self.south:.5f},{self.west:.5f},{self.north:.5f},{self.east:.5f}"
+
+
+def bbox_from_center(center_lat: float, center_lon: float, radius_km: float) -> BBox:
+    if radius_km <= 0:
+        raise ValueError("radius_km must be > 0")
+    lat_rad = math.radians(center_lat)
+    lat_delta = radius_km / 110.574
+    cos_lat = math.cos(lat_rad)
+    if abs(cos_lat) < 1e-6:
+        lon_delta = radius_km / 111.32
+    else:
+        lon_delta = radius_km / (111.32 * cos_lat)
+    return BBox(
+        south=center_lat - lat_delta,
+        west=center_lon - lon_delta,
+        north=center_lat + lat_delta,
+        east=center_lon + lon_delta,
+    )
 
 
 def fetch_overpass(query: str, endpoint: str) -> dict:
@@ -66,9 +78,7 @@ out body;
 
 
 def latlon_to_local(lat: float, lon: float, lat0: float, lon0: float) -> Tuple[float, float]:
-    # Equirectangular projection around the bbox center.
     earth_radius = 6378137.0
-    lat_rad = math.radians(lat)
     lat0_rad = math.radians(lat0)
     x = (math.radians(lon - lon0)) * math.cos(lat0_rad) * earth_radius
     z = (math.radians(lat - lat0)) * earth_radius
@@ -279,6 +289,15 @@ def triangulate_polygon(poly: List[Tuple[float, float]]) -> List[Tuple[int, int,
     return triangles
 
 
+def compute_extent(points: List[Tuple[float, float, float]]):
+    if not points:
+        return None
+    xs = [p[0] for p in points]
+    ys = [p[1] for p in points]
+    zs = [p[2] for p in points]
+    return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
+
+
 def write_mesh(
     handle,
     name: str,
@@ -291,7 +310,7 @@ def write_mesh(
     if not points:
         return
     extent = compute_extent(points)
-    handle.write(f'    def Mesh "{name}" {{\n')
+    handle.write(f"    def Mesh \"{name}\" {{\n")
     if extent:
         min_pt, max_pt = extent
         handle.write(
@@ -299,7 +318,7 @@ def write_mesh(
             % (min_pt[0], min_pt[1], min_pt[2], max_pt[0], max_pt[1], max_pt[2])
         )
     handle.write("        bool doubleSided = 1\n")
-    handle.write('        uniform token subdivisionScheme = "none"\n')
+    handle.write("        uniform token subdivisionScheme = \"none\"\n")
     handle.write("        int[] faceVertexCounts = [\n")
     handle.write("            " + ", ".join(str(c) for c in counts) + "\n")
     handle.write("        ]\n")
@@ -315,9 +334,12 @@ def write_mesh(
         for x, y, z in normals:
             handle.write(f"            ({x:.3f}, {y:.3f}, {z:.3f}),\n")
         handle.write("        ]\n")
-        handle.write('        uniform token normals:interpolation = "vertex"\n')
-    handle.write("        color3f[] primvars:displayColor = [(%0.3f, %0.3f, %0.3f)]\n" % color)
-    handle.write('        uniform token primvars:displayColor:interpolation = "constant"\n')
+        handle.write("        uniform token normals:interpolation = \"vertex\"\n")
+    handle.write(
+        "        color3f[] primvars:displayColor = [(%0.3f, %0.3f, %0.3f)]\n"
+        % color
+    )
+    handle.write("        uniform token primvars:displayColor:interpolation = \"constant\"\n")
     handle.write("    }\n")
 
 
@@ -329,8 +351,8 @@ def write_usda(
 ) -> None:
     with output_path.open("w", encoding="utf-8") as handle:
         handle.write("#usda 1.0\n")
-        handle.write('(\n    defaultPrim = "World"\n    metersPerUnit = 1.0\n    upAxis = "Y"\n)\n\n')
-        handle.write('def Xform "World" {\n')
+        handle.write("(\n    defaultPrim = \"World\"\n    metersPerUnit = 1.0\n    upAxis = \"Y\"\n)\n\n")
+        handle.write("def Xform \"World\" {\n")
         write_mesh(
             handle,
             "Roads",
@@ -361,110 +383,38 @@ def write_usda(
         handle.write("}\n")
 
 
-def compute_extent(points: List[Tuple[float, float, float]]):
-    if not points:
-        return None
-    xs = [p[0] for p in points]
-    ys = [p[1] for p in points]
-    zs = [p[2] for p in points]
-    return (min(xs), min(ys), min(zs)), (max(xs), max(ys), max(zs))
+def download_map(
+    *,
+    center_lat: float,
+    center_lon: float,
+    radius_km: float,
+    highway_regex: str,
+    output: Path,
+    include_buildings: bool = True,
+    width: float = 6.0,
+    width_scale: float = 1.0,
+    lane_width: float = 0.6,
+    lane_height: float = 0.03,
+    scale: float = 1.0,
+    max_ways: int = 0,
+    max_buildings: int = 0,
+    simplify: float = 0.0,
+    building_simplify: float | None = None,
+    endpoint: str = OVERPASS_ENDPOINT,
+    debug: bool = False,
+) -> Path:
+    if debug:
+        LOG.setLevel("DEBUG")
 
+    bbox = bbox_from_center(center_lat, center_lon, radius_km)
+    LOG.debug("Using bbox: %s (center=%0.5f,%0.5f radius=%0.2fkm)", bbox, center_lat, center_lon, radius_km)
+    query = build_query(bbox, highway_regex, include_buildings)
+    LOG.debug("Query: %s", query.replace("\n", " "))
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description="Generate a USD road mesh for Paris from OpenStreetMap.")
-    parser.add_argument(
-        "--bbox",
-        default="48.815,2.224,48.902,2.469",
-        help="BBox south,west,north,east (default: central Paris).",
-    )
-    parser.add_argument(
-        "--highway",
-        default="primary|secondary|tertiary|residential",
-        help="OSM highway regex filter.",
-    )
-    parser.add_argument(
-        "--no-buildings",
-        action="store_false",
-        dest="include_buildings",
-        default=True,
-        help="Disable building footprint polygons.",
-    )
-    parser.add_argument(
-        "--width",
-        type=float,
-        default=6.0,
-        help="Road width in meters.",
-    )
-    parser.add_argument(
-        "--width-scale",
-        type=float,
-        default=1.0,
-        help="Multiplier applied to the road width.",
-    )
-    parser.add_argument(
-        "--lane-width",
-        type=float,
-        default=0.6,
-        help="Lane stripe width in meters (0 disables).",
-    )
-    parser.add_argument(
-        "--lane-height",
-        type=float,
-        default=0.03,
-        help="Lane stripe height offset to avoid z-fighting.",
-    )
-    parser.add_argument(
-        "--simplify",
-        type=float,
-        default=0.0,
-        help="Simplify roads by this tolerance in meters (0 disables).",
-    )
-    parser.add_argument(
-        "--building-simplify",
-        type=float,
-        default=None,
-        help="Simplify building footprints (defaults to --simplify).",
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        default=1.0,
-        help="Scale factor applied to coordinates.",
-    )
-    parser.add_argument(
-        "--max-ways",
-        type=int,
-        default=0,
-        help="Limit number of ways (0 = no limit).",
-    )
-    parser.add_argument(
-        "--max-buildings",
-        type=int,
-        default=0,
-        help="Limit number of buildings (0 = no limit).",
-    )
-    parser.add_argument(
-        "--output",
-        default="data/paris_roads.usda",
-        help="Output USD file path.",
-    )
-    parser.add_argument(
-        "--endpoint",
-        default=OVERPASS_ENDPOINT,
-        help="Overpass API endpoint.",
-    )
-    args = parser.parse_args()
-
-    try:
-        bbox = BBox.from_string(args.bbox)
-    except ValueError as exc:
-        print(f"Invalid bbox: {exc}", file=sys.stderr)
-        return 1
-
-    query = build_query(bbox, args.highway, args.include_buildings)
-    print("Fetching OSM data from Overpass...")
-    payload = fetch_overpass(query, args.endpoint)
+    LOG.info("Fetching OSM data from Overpass…")
+    payload = fetch_overpass(query, endpoint)
     elements = payload.get("elements", [])
+    LOG.debug("Elements received: %d", len(elements))
 
     nodes: dict[int, Tuple[float, float]] = {}
     ways: List[List[int]] = []
@@ -476,15 +426,16 @@ def main() -> int:
             tags = element.get("tags", {})
             if "highway" in tags:
                 ways.append(element.get("nodes", []))
-            if args.include_buildings and "building" in tags:
+            if include_buildings and "building" in tags:
                 building_ways.append(element.get("nodes", []))
 
-    if args.max_ways > 0:
-        ways = ways[: args.max_ways]
+    if max_ways > 0:
+        ways = ways[:max_ways]
+    if include_buildings and max_buildings > 0:
+        building_ways = building_ways[:max_buildings]
 
     if not nodes or not ways:
-        print("No road data returned. Try a different bbox or highway filter.", file=sys.stderr)
-        return 1
+        raise ValueError("No road data returned. Try a different center/radius or highway filter.")
 
     lat0, lon0 = bbox.center
     road_points: List[Tuple[float, float, float]] = []
@@ -499,8 +450,8 @@ def main() -> int:
     building_normals: List[Tuple[float, float, float]] = []
     building_counts: List[int] = []
     building_indices: List[int] = []
-    half_width = args.width * args.width_scale / 2.0
-    lane_half_width = args.lane_width / 2.0 if args.lane_width > 0 else 0.0
+    half_width = width * width_scale / 2.0
+    lane_half_width = lane_width / 2.0 if lane_width > 0 else 0.0
 
     for way_nodes in ways:
         polyline: List[Tuple[float, float]] = []
@@ -509,9 +460,9 @@ def main() -> int:
                 continue
             lat, lon = nodes[node_id]
             x, z = latlon_to_local(lat, lon, lat0, lon0)
-            polyline.append((x * args.scale, z * args.scale))
-        if args.simplify > 0:
-            polyline = simplify_polyline(polyline, args.simplify)
+            polyline.append((x * scale, z * scale))
+        if simplify > 0:
+            polyline = simplify_polyline(polyline, simplify)
         if len(polyline) < 2:
             continue
         strip = build_strip(polyline, half_width)
@@ -520,22 +471,20 @@ def main() -> int:
         if lane_half_width > 0:
             lane_strip = build_strip(polyline, lane_half_width)
             if lane_strip:
-                add_strip(lane_points, lane_normals, lane_counts, lane_indices, lane_strip, args.lane_height)
+                add_strip(lane_points, lane_normals, lane_counts, lane_indices, lane_strip, lane_height)
 
-    if args.include_buildings:
-        building_simplify = args.simplify if args.building_simplify is None else args.building_simplify
-        if args.max_buildings > 0:
-            building_ways = building_ways[: args.max_buildings]
+    if include_buildings:
+        building_simplify = simplify if building_simplify is None else building_simplify
         for way_nodes in building_ways:
             if len(way_nodes) < 4 or way_nodes[0] != way_nodes[-1]:
                 continue
-            polyline: List[Tuple[float, float]] = []
+            polyline = []
             for node_id in way_nodes[:-1]:
                 if node_id not in nodes:
                     continue
                 lat, lon = nodes[node_id]
                 x, z = latlon_to_local(lat, lon, lat0, lon0)
-                polyline.append((x * args.scale, z * args.scale))
+                polyline.append((x * scale, z * scale))
             if building_simplify and building_simplify > 0:
                 polyline = simplify_polyline(polyline, building_simplify)
             if len(polyline) < 3:
@@ -552,13 +501,11 @@ def main() -> int:
                 building_indices.extend([base + a, base + b, base + c])
 
     if not road_points and not building_points:
-        print("No usable road or building data found.", file=sys.stderr)
-        return 1
+        raise ValueError("No usable road or building data found.")
 
-    output_path = Path(args.output)
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output.parent.mkdir(parents=True, exist_ok=True)
     write_usda(
-        output_path,
+        output,
         road={"points": road_points, "normals": road_normals, "counts": road_counts, "indices": road_indices},
         lanes={"points": lane_points, "normals": lane_normals, "counts": lane_counts, "indices": lane_indices},
         buildings={
@@ -568,9 +515,11 @@ def main() -> int:
             "indices": building_indices,
         },
     )
-    print(f"Wrote USD: {output_path}")
-    return 0
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())
+    LOG.info("Wrote USD: %s", output)
+    LOG.debug(
+        "Counts: roads=%d lanes=%d buildings=%d",
+        len(road_points),
+        len(lane_points),
+        len(building_points),
+    )
+    return output
