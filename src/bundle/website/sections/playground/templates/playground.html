@@ -2,92 +2,30 @@
 
 {% block title %}Playground · The Bundle{% endblock %}
 
+{% import "widgets/macros.html" as widget_macros with context %}
+
 {% block styles %}
+{{ widget_macros.styles(widget_assets) }}
 <link rel="stylesheet" href="{{ url_for('playground', path='styles.css') }}?v={{ asset_version }}" />
 {% endblock %}
 
 {% block content %}
 <main class="playground">
-    <section class="panel glow-panel hero">
-        <div>
-            <p class="eyebrow">Labs</p>
-            <h1>Playground</h1>
-            <p class="lede">
-                A dedicated space to prototype widgets quickly with both backend and frontend hooks. Bring new concepts
-                to life, experiment with data flows, and iterate without touching production labs.
-            </p>
-            <div class="hero__actions">
-                <a class="button primary" href="#canvas">Open sandbox</a>
-                <a class="button ghost" href="https://github.com/HorusElohim/TheBundle" target="_blank" rel="noreferrer">
-                    View source
-                </a>
-            </div>
-            <ul class="meta">
-                <li>Scoped to <code>website/widgets</code> for reusable UI pieces</li>
-                <li>FastAPI routes ready for experimental APIs</li>
-                <li>Hot-reload friendly for rapid iteration</li>
-            </ul>
+    <header class="playground__intro">
+        <p class="eyebrow">Playground</p>
+        <h1>Widget sandbox</h1>
+        <p class="muted">Prototype widgets with synchronized backend + frontend hooks.</p>
+        <div class="playground__status">
+            <span class="ws-pill ws-pill--ghost" data-role="ws-status" data-ws-path="/ws/ecc">WS: idle</span>
+            <span class="muted">Shared channel across widgets and section scripts.</span>
         </div>
-        <div class="callout">
-            <p class="eyebrow">Working style</p>
-            <h3>Plug and play new ideas.</h3>
-            <p class="muted">Drop UI experiments into the canvas and wire websocket or REST endpoints as needed.</p>
-        </div>
-    </section>
+    </header>
 
-    <section id="canvas" class="panel glow-panel sandbox">
-        <header class="sandbox__header">
-            <div>
-                <p class="eyebrow">Widget canvas</p>
-                <h2>Prototype in one place</h2>
-                <p class="muted">
-                    Use this area to mount new components while you iterate on backend features. Swap widgets without
-                    affecting other labs.
-                </p>
-            </div>
-            <div class="sandbox__actions">
-                <span class="pill">Backend ready</span>
-                <span class="pill pill--ghost">Frontend friendly</span>
-            </div>
-        </header>
-        <div class="sandbox__grid">
-            <article class="canvas">
-                <div class="canvas__header">
-                    <p class="eyebrow">Live widget area</p>
-                    <span class="status">Drop components here</span>
-                </div>
-                <div class="canvas__body">
-                    <p class="muted">
-                        Render a widget component here and use the adjacent notes panel to track ideas, API shapes, or
-                        commands to run. Replace this placeholder with your next experiment.
-                    </p>
-                </div>
-            </article>
-            <article class="notes">
-                <div class="notes__header">
-                    <p class="eyebrow">Notes & hooks</p>
-                    <span class="status status--info">Future ready</span>
-                </div>
-                <ul class="notes__list">
-                    <li>Import helpers from <code>bundle.website.widgets</code> to share UI primitives.</li>
-                    <li>Create temporary APIs under <code>/playground</code> for quick backend checks.</li>
-                    <li>Swap components without impacting the main labs or navigation.</li>
-                </ul>
-            </article>
-        </div>
-    </section>
-
-    <section class="panel glow-panel checklist">
-        <div>
-            <p class="eyebrow">Next steps</p>
-            <h2>Ready to build</h2>
-            <p class="muted">Use this guide to keep experiments organized.</p>
-        </div>
-        <ol class="steps">
-            <li><strong>Build a widget:</strong> add components under <code>website/widgets</code> and import them here.</li>
-            <li><strong>Wire data:</strong> expose FastAPI routes or websockets from <code>playground.py</code>.</li>
-            <li><strong>Refine:</strong> adjust styles in <code>static/styles.css</code> and iterate quickly.</li>
-        </ol>
-    </section>
+    {{ widget_macros.render(widgets) }}
 </main>
+{% endblock %}
+
+{% block scripts %}
+{{ widget_macros.scripts(widget_assets) }}
+<script type="module" src="{{ url_for('playground', path='ws-status.js') }}?v={{ asset_version }}"></script>
 {% endblock %}
