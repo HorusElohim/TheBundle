@@ -1,0 +1,105 @@
+.usd-page .hero {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+.usd-page .input-card {
+    background: var(--panel-alt-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow-soft);
+}
+
+.usd-page .input-card input {
+    width: 100%;
+}
+
+.usd-page .input-card input[type="file"] {
+    display: none;
+}
+
+.usd-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+}
+
+.usd-viewer .viewer-shell {
+    position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    overflow: hidden;
+    background: #000;
+}
+
+.usd-viewer iframe {
+    width: 100%;
+    min-height: 78vh;
+    border: 0;
+    border-radius: 0;
+    background: #000;
+}
+
+.usd-viewer .drop-overlay {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px dashed rgba(255, 255, 255, 0.35);
+    background: rgba(12, 16, 22, 0.86);
+    color: #f4f6fb;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.usd-viewer .drop-overlay h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1.2rem;
+}
+
+.usd-viewer .drop-overlay p {
+    margin: 0;
+    color: rgba(244, 246, 251, 0.7);
+}
+
+.usd-viewer .viewer-shell.drag-active .drop-overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.usd-meta .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem 1.5rem;
+}
+
+.usd-meta dt {
+    font-size: 0.9rem;
+    color: var(--muted-color);
+}
+
+.usd-meta dd {
+    font-size: 1.2rem;
+    margin: 0.1rem 0 0;
+    font-weight: 600;
+}
+
+.error-box {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--warning-border, #f0b429);
+    background: var(--warning-bg, rgba(240, 180, 41, 0.1));
+    color: var(--warning-text, #c07600);
+}
+
+.hidden {
+    display: none;
+}

@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Bundle • USD{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('usd', path='/styles.css') }}?v={{ asset_version }}">
+{% endblock %}
+
+{% block content %}
+<div class="page usd-page">
+    <main class="content">
+        <section class="hero glow-panel">
+            <div class="hero-copy">
+                <p class="eyebrow">USD Scenes</p>
+                <h1>Inspect Universal Scene Description files in the browser.</h1>
+                <p class="lede">
+                    Uses <code>bundle.usd</code> for backend-agnostic scene handling and websockets for live metadata.
+                </p>
+                <ul class="feature-list">
+                    <li>Thin pxr adapter isolated to <code>bundle.usd.backend</code></li>
+                    <li>Scene lifetime managed via <code>bundle.core.Entity</code></li>
+                    <li>Metadata streamed through typed <code>bundle.usd.model</code> events</li>
+                </ul>
+            </div>
+            <div class="input-card">
+                <label for="usd-file">Upload a USD file</label>
+                <p class="muted">Drop a file onto the viewer or choose one here.</p>
+                <input type="file" id="usd-file" accept=".usd,.usda,.usdc,.usdz" />
+                <button id="upload-btn" class="primary">Choose USD file</button>
+                <p id="form-hint" class="muted">Files are uploaded server-side and then loaded into the scene.</p>
+            </div>
+        </section>
+
+        <section class="panel glow-panel usd-grid">
+            <div class="usd-meta">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Metadata</p>
+                        <h2>Scene info</h2>
+                    </div>
+                    <span id="status" class="muted">Waiting for load…</span>
+                </header>
+                <dl class="meta-grid">
+                    <div>
+                        <dt>Prims</dt>
+                        <dd id="prim-count">--</dd>
+                    </div>
+                    <div>
+                        <dt>Layers</dt>
+                        <dd id="layer-count">--</dd>
+                    </div>
+                    <div>
+                        <dt>Meters/unit</dt>
+                        <dd id="meters-per-unit">--</dd>
+                    </div>
+                    <div>
+                        <dt>Up axis</dt>
+                        <dd id="up-axis">--</dd>
+                    </div>
+                </dl>
+                <div id="errors" class="error-box hidden" role="status"></div>
+            </div>
+            <div class="usd-viewer">
+                <header class="panel-header">
+                    <div>
+                        <p class="eyebrow">Viewer</p>
+                        <h2>Embedded USD viewport</h2>
+                    </div>
+                </header>
+                <div id="usd-drop-target" class="viewer-shell">
+                    <iframe id="usd-viewer" src="{{ url_for('usd', path='/usd-viewer/index.html') }}?v={{ asset_version }}" title="USD viewer" allow="cross-origin-isolated"></iframe>
+                    <div id="usd-drop-overlay" class="drop-overlay" role="button" tabindex="0">
+                        <div>
+                            <h3>Drop USD file</h3>
+                            <p>Release to upload and load the scene.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script type="module" src="{{ url_for('usd', path='/app.js') }}?v={{ asset_version }}"></script>
+{% endblock %}
