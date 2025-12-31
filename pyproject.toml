@@ -58,6 +58,7 @@ website = [
     "pytubefix",
     "mutagen",
     "ffmpeg-python",
+    "python-multipart",
 ]
 all = [
     "pytest",
