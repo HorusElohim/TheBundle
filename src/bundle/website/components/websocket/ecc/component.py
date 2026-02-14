@@ -7,4 +7,5 @@ component = register_websocket_component(
     name="WebSocket ECC monitor",
     description="Monitor TX/RX keepalive pulses and timing.",
     router=router,
+    ws_path="/ws/ecc",
 )
