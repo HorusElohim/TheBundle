@@ -2,37 +2,37 @@
 
 This folder contains the FastAPI-powered marketing/utility site for The Bundle. Key files:
 
-- `__init__.py`: `get_app()` mounts `/static`, registers sections, serves favicon/manifest.
-- `templates/base.html`: shared head + global navbar + page shell used by every section.
+- `__init__.py`: `get_app()` mounts `/static`, registers pages, serves favicon/manifest.
+- `templates/base.html`: shared head + global navbar + page shell used by every page.
 - `static/theme.css`: global tokens, nav styling, scrollbar fixes.
-- `sections/home/home.py`, `sections/ble/ble.py`, `sections/youtube/home.py`: section routers.
-- `sections/__init__.py`: `SectionDefinition` registry + static/router mounting.
-- `common/sections.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
+- `pages/home/home.py`, `pages/ble/ble.py`, `pages/youtube/home.py`: page routers.
+- `pages/__init__.py`: `PageDefinition` registry + static/router mounting.
+- `common/pages.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
 
 ## Install & run
 - Install website deps: `pip install -e ".[website]"`
 - Start the server (from repo root): `bundle website start`
-- Navigate to `http://127.0.0.1:8000/` (sections like `/ble`, `/youtube`, `/excalidraw`)
+- Navigate to `http://127.0.0.1:8000/` (pages like `/ble`, `/youtube`, `/excalidraw`)
 
 ## Design system
 - Global layout: `base.html` + `theme.css` give a modern, translucent navbar with a reserved actions slot (for status pills).
-- Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-section CSS sets its own accents/backgrounds.
+- Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-page CSS sets its own accents/backgrounds.
 - Scroll stability: `html` forces a scrollbar to prevent navbar jitter; `scrollbar-gutter: stable` is enabled globally.
 
-## Adding a new section (with example)
-Follow the pattern used by BLE (`sections/ble/ble.py`) and YouTube (`sections/youtube/home.py`).
+## Adding a new page (with example)
+Follow the pattern used by BLE (`pages/ble/ble.py`) and YouTube (`pages/youtube/home.py`).
 
 1) **Create files**
-- `sections/blog/__init__.py` (can be empty).
-- `sections/blog/blog.py` (router + paths).
-- `sections/blog/templates/blog.html` (extends `base.html`).
-- `sections/blog/static/styles.css` and optional `app.js`.
+- `pages/blog/__init__.py` (can be empty).
+- `pages/blog/blog.py` (router + paths).
+- `pages/blog/templates/blog.html` (extends `base.html`).
+- `pages/blog/static/styles.css` and optional `app.js`.
 
-2) **Router module** (`sections/blog/blog.py`)
+2) **Router module** (`pages/blog/blog.py`)
 ```python
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
-from ...common.sections import create_templates, base_context, get_logger, get_template_path, get_static_path
+from ...common.pages import create_templates, base_context, get_logger, get_template_path, get_static_path
 
 NAME = "blog"
 TEMPLATE_PATH = get_template_path(__file__)
@@ -47,7 +47,7 @@ async def blog(request: Request):
     return templates.TemplateResponse(request, "blog.html", base_context(request, {"title": "Bundle Blog"}))
 ```
 
-3) **Template** (`sections/blog/templates/blog.html`)
+3) **Template** (`pages/blog/templates/blog.html`)
 ```jinja2
 {% extends "base.html" %}
 {% block title %}Bundle • Blog{% endblock %}
@@ -64,12 +64,12 @@ async def blog(request: Request):
 ```
 
 4) **CSS/JS**  
-Place styles in `sections/blog/static/styles.css` (define accent colors, layout), and JS in `sections/blog/static/app.js` if needed.
+Place styles in `pages/blog/static/styles.css` (define accent colors, layout), and JS in `pages/blog/static/app.js` if needed.
 
-5) **Register the section** (`sections/__init__.py`)  
+5) **Register the page** (`pages/__init__.py`)  
 Add a registry entry:
 ```python
-SectionDefinition(
+PageDefinition(
     name="Blog",
     slug="blog",
     href="/blog",
@@ -82,14 +82,14 @@ SectionDefinition(
 ```
 
 6) **Home cards and nav**  
-`sections/home/home.py` reads `app.state.sections_registry`; any entry with `show_on_home=True` appears on the landing cards. Navbar links render from `nav_sections` (entries with `show_in_nav=True`).
+`pages/home/home.py` reads `app.state.pages_registry`; any entry with `show_on_home=True` appears on the landing cards. Navbar links render from `nav_pages` (entries with `show_in_nav=True`).
 
 7) **Run and verify**  
 Start the site: `bundle website start` → visit `/blog` → confirm `/blog/styles.css` loads and the nav highlights “Blog.”
 
 ## Excalidraw (self-hosted)
 - Source: `src/bundle/website/vendor/excalidraw` (submodule; branch/tag as configured).
-- Served bundle: `src/bundle/website/sections/excalibur/static/excalidraw-web/` (copied build output).
+- Served bundle: `src/bundle/website/pages/excalibur/static/excalidraw-web/` (copied build output).
 - PWA is disabled by default; enable by setting `VITE_APP_ENABLE_PWA=true` before build.
 
 ### Update / rebuild the bundle
@@ -105,7 +105,7 @@ Start the site: `bundle website start` → visit `/blog` → confirm `/blog/styl
    ```
 3. Replace the served assets:
    ```sh
-   rm -rf src/bundle/website/sections/excalibur/static/excalidraw-web
-   cp -R src/bundle/website/vendor/excalidraw/excalidraw-app/build/* src/bundle/website/sections/excalibur/static/excalidraw-web/
+   rm -rf src/bundle/website/pages/excalibur/static/excalidraw-web
+   cp -R src/bundle/website/vendor/excalidraw/excalidraw-app/build/* src/bundle/website/pages/excalibur/static/excalidraw-web/
    ```
 4. Restart the dev server and hard-reload `/excalidraw` (clearing any cached service worker).
