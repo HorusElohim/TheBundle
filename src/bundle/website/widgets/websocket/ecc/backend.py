@@ -2,8 +2,7 @@ import time
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from ...common.sections import get_logger
-from .. import Widget, WidgetAsset, register
+from ....common.sections import get_logger
 
 LOGGER = get_logger("widgets.ws-ecc")
 router = APIRouter()
@@ -50,19 +49,3 @@ async def ecc_websocket_root(websocket: WebSocket) -> None:
 @router.websocket("/ws")
 async def ecc_websocket_root_legacy(websocket: WebSocket) -> None:
     await _handle_keepalive(websocket)
-
-
-widget = register(
-    Widget(
-        slug="ws-ecc",
-        name="WebSocket ECC monitor",
-        description="Monitor TX/RX keepalive pulses and timing.",
-        template="widgets/websocket/ecc.html",
-        assets=[
-            WidgetAsset(path="widgets/websocket/ecc/ws.css"),
-            WidgetAsset(path="widgets/websocket/ecc/ws.js", module=True),
-        ],
-        router=router,
-        ws_path="/ws/ecc",
-    )
-)

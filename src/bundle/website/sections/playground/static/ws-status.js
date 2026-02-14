@@ -1,4 +1,4 @@
-import { getWebSocketChannel } from "/static/widgets/websocket/headless/ws.js";
+import { getWebSocketChannel } from "/widgets-static/websocket/base/frontend/ws.js";
 
 const status = document.querySelector('[data-role="ws-status"]');
 

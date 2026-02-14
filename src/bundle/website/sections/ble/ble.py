@@ -49,6 +49,12 @@ async def ble_scan_stream(websocket: WebSocket):
                 scan = await MANAGER.scan(timeout=scan_timeout)
                 payload = await scan.as_dict()
                 await websocket.send_json({"type": "scan", "data": payload})
+            except RuntimeError as exc:
+                # Connection already closed by client or ASGI server.
+                if "Unexpected ASGI message 'websocket.send'" in str(exc):
+                    stop_event.set()
+                    break
+                raise
             except asyncio.CancelledError:
                 stop_event.set()
                 break
@@ -57,7 +63,11 @@ async def ble_scan_stream(websocket: WebSocket):
                 break
             except Exception as exc:  # pragma: no cover - defensive logging for BLE hw
                 LOGGER.error("BLE scan failed during websocket stream: %s", exc)
-                await websocket.send_json({"type": "error", "message": "BLE scan unavailable"})
+                try:
+                    await websocket.send_json({"type": "error", "message": "BLE scan unavailable"})
+                except (RuntimeError, WebSocketDisconnect):
+                    stop_event.set()
+                    break
 
             try:
                 await asyncio.wait_for(stop_event.wait(), timeout=refresh_interval)

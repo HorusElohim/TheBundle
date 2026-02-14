@@ -1,5 +1,5 @@
 """WebSocket-driven widgets for the Bundle website playground."""
 
-from . import ecc, heartbeat, toast  # noqa: F401
+from . import base, ecc, heartbeat, toast  # noqa: F401
 
-__all__ = ["ecc", "heartbeat", "toast"]
+__all__ = ["base", "ecc", "heartbeat", "toast"]
