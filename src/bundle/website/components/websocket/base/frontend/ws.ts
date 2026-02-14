@@ -169,16 +169,15 @@ export class PeriodicTask {
     }
 }
 
-const channels = new Map<string, WebSocketChannel>();
-
 export const createPeriodicSender = (send: () => boolean) => new PeriodicTask(send);
 
 export const getWebSocketChannel = (path: string, options: WebSocketChannelOptions = {}): WebSocketChannel => {
     const url = buildWsUrl(path);
-    if (!channels.has(url)) {
-        channels.set(url, new WebSocketChannel(url, options));
-    }
-    return channels.get(url)!;
+    return new WebSocketChannel(url, options);
+};
+
+export const closeAllWebSocketChannels = (): void => {
+    // Deprecated: channels are no longer shared globally.
 };
 
 export const attachWebSocketComponent = (element: HTMLElement | null, options: AttachChannelOptions = {}): WebSocketChannel | null => {

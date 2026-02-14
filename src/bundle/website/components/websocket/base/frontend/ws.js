@@ -131,14 +131,13 @@ export class PeriodicTask {
         return this.pendingRuns;
     }
 }
-const channels = new Map();
 export const createPeriodicSender = (send) => new PeriodicTask(send);
 export const getWebSocketChannel = (path, options = {}) => {
     const url = buildWsUrl(path);
-    if (!channels.has(url)) {
-        channels.set(url, new WebSocketChannel(url, options));
-    }
-    return channels.get(url);
+    return new WebSocketChannel(url, options);
+};
+export const closeAllWebSocketChannels = () => {
+    // Deprecated: channels are no longer shared globally.
 };
 export const attachWebSocketComponent = (element, options = {}) => {
     const path = element?.dataset?.wsPath || options.path;

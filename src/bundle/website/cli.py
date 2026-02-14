@@ -127,7 +127,9 @@ def build(script: str):
 
     try:
         asyncio.run(runner(command, cwd=str(website_root)))
+        log.info("frontend build")
     except process.ProcessError as exc:
+        log.error("frontend build")
         combined = f"{exc.result.stdout}\n{exc.result.stderr}".lower()
         npm_missing_patterns = [
             "'npm' is not recognized",
@@ -150,7 +152,8 @@ def build(script: str):
             ) from exc
 
         raise click.ClickException(f"Frontend build failed with exit code {exc.result.returncode}.") from exc
-    log.info("frontend build completed")
+    
+    
 
 
 if __name__ == "__main__":

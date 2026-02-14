@@ -23,6 +23,7 @@ class EccComponent extends WebSocketComponent {
         this.pending = false;
         this.pendingTimer = null;
         this.idleTimer = null;
+        this.startRequested = false;
         this.lastSentAt = null;
         this.lastUploadBytes = 0;
         this.timelineStartAt = null;
@@ -91,11 +92,18 @@ class EccComponent extends WebSocketComponent {
                 state === "connected" ? "Connected" : state === "connecting" ? "Connecting" : "Disconnected";
         }
         if (this.toggleButton) {
-            this.toggleButton.disabled = !this.connected;
+            this.toggleButton.disabled = state === "connecting";
         }
         if (!this.connected) {
             this.setDirection("idle");
         }
+    }
+
+    normalizeServerTimestampMs(value) {
+        if (!Number.isFinite(value)) {
+            return Date.now();
+        }
+        return value > 1_000_000_000_000_000 ? value / 1_000_000 : value;
     }
 
     pulse(direction) {
@@ -199,6 +207,7 @@ class EccComponent extends WebSocketComponent {
     }
 
     stopLoop() {
+        this.startRequested = false;
         this.periodic.stop();
         this.pending = false;
         clearTimeout(this.pendingTimer);
@@ -207,11 +216,14 @@ class EccComponent extends WebSocketComponent {
     }
 
     startLoop() {
-        if (!this.connected) {
-            return;
+        this.startRequested = true;
+        if (!this.isOpen()) {
+            this.channel?.connect();
         }
-        this.periodic.start(Infinity, this.getTempoMs());
-        this.updateToggleLabel();
+        if (this.connected) {
+            this.periodic.start(Infinity, this.getTempoMs());
+            this.updateToggleLabel();
+        }
     }
 
     toggleLoop() {
@@ -270,6 +282,10 @@ class EccComponent extends WebSocketComponent {
 
         this.on("open", () => {
             this.setConnection("connected");
+            if (this.startRequested) {
+                this.periodic.start(Infinity, this.getTempoMs());
+                this.updateToggleLabel();
+            }
         });
 
         this.on("message", (event) => {
@@ -302,7 +318,7 @@ class EccComponent extends WebSocketComponent {
 
             this.setDirection("rx");
             this.pulse("rx");
-            this.addBeat("rx", payload.received_at || now, downloadBytes);
+            this.addBeat("rx", this.normalizeServerTimestampMs(payload.received_at || now), downloadBytes);
         });
 
         this.on("close", () => {
