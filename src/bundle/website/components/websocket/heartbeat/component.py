@@ -1,11 +1,9 @@
-from ..base.component import register_websocket_component
-from .backend import router
+from ..base import WebSocketBaseComponent, WebSocketComponentParams
 
-component = register_websocket_component(
-    component_file=__file__,
-    slug="ws-heartbeat",
-    name="WebSocket Heartbeat",
-    description="Periodic keepalive loop with a minimal UI.",
-    router=router,
-    ws_path="/ws/heartbeat",
-)
+
+class WebSocketHeartbeatComponent(WebSocketBaseComponent):
+    component_file: str = __file__
+    slug: str = "ws-heartbeat"
+    name: str = "WebSocket Heartbeat"
+    description: str = "Periodic keepalive loop with a minimal UI."
+    params: WebSocketComponentParams = WebSocketComponentParams(endpoint="/ws/heartbeat")

@@ -1,4 +1,3 @@
-from .backend import router
-from .component import component
+from .component import WebSocketHeartbeatComponent
 
-__all__ = ["router", "component"]
+__all__ = ["WebSocketHeartbeatComponent"]

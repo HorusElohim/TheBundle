@@ -88,18 +88,15 @@ class Entity(Data):
     born_time: int = data.Field(default_factory=time.time_ns)
 
     @data.model_validator(mode="after")
-    def _init_(cls, entity):
+    def _init_(self):
         """
         Logs the creation of an entity instance, triggered after full initialization and validation.
-
-        Args:
-            entity: The Entity instance being validated and initialized.
 
         Returns:
             The unchanged Entity instance, ensuring it passes through the validation process without modifications.
         """
-        LOGGER.debug("%s  %s[%s]", logger.Emoji.start, entity.class_name, entity.name)
-        return entity
+        LOGGER.debug("%s  %s[%s]", logger.Emoji.start, self.class_name, self.name)
+        return self
 
     @property
     def class_name(self) -> str:
