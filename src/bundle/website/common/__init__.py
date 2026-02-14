@@ -1,1 +1,1 @@
-from . import downloader, sections, websocket
+from . import downloader, pages, websocket

@@ -1,11 +1,11 @@
 from http import HTTPStatus
 
 
-def test_playground_loads_widgets(client):
+def test_playground_loads_components(client):
     response = client.get("/playground")
     assert response.status_code == HTTPStatus.OK
     body = response.text
-    for marker in ('data-widget="ws-ecc"', 'data-widget="ws-heartbeat"', 'data-widget="ws-toast"'):
+    for marker in ('data-component="ws-ecc"', 'data-component="ws-heartbeat"', 'data-component="ws-toast"'):
         assert marker in body
 
 
@@ -20,7 +20,7 @@ def test_playground_keepalive_websocket(client):
     assert isinstance(payload["received_at"], int)
 
 
-def test_widget_static_assets_are_served(client):
-    response = client.get("/widgets-static/websocket/base/frontend/ws.js")
+def test_component_static_assets_are_served(client):
+    response = client.get("/components-static/websocket/base/frontend/ws.js")
     assert response.status_code == HTTPStatus.OK
     assert "getWebSocketChannel" in response.text

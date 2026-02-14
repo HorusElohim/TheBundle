@@ -1,0 +1,25 @@
+{% macro styles(component_assets) -%}
+{% if component_assets %}
+{% for asset in component_assets.styles %}
+<link rel="stylesheet" href="{{ url_for(asset.route_name, path=asset.path) }}?v={{ asset_version }}" />
+{% endfor %}
+{% endif %}
+{%- endmacro %}
+
+{% macro scripts(component_assets) -%}
+{% if component_assets %}
+{% for asset in component_assets.scripts %}
+<script{% if asset.module %} type="module"{% endif %} src="{{ url_for(asset.route_name, path=asset.path) }}?v={{ asset_version }}"></script>
+{% endfor %}
+{% endif %}
+{%- endmacro %}
+
+{% macro render(components) -%}
+{% if components %}
+{% for component in components %}
+{% if component.template %}
+{% include component.template %}
+{% endif %}
+{% endfor %}
+{% endif %}
+{%- endmacro %}

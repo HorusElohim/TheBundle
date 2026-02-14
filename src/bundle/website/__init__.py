@@ -7,17 +7,17 @@ from fastapi.staticfiles import StaticFiles
 
 from bundle.core.logger import setup_root_logger
 
-from . import common, sections
+from . import common, pages
 
 WEB_LOGGER = setup_root_logger(__name__, level=10)
-STATIC_PATH = common.sections.get_static_path(__file__)
-WIDGETS_PATH = Path(__file__).parent / "widgets"
+STATIC_PATH = common.pages.get_static_path(__file__)
+COMPONENTS_PATH = Path(__file__).parent / "components"
 
 
-class WidgetStaticFiles(StaticFiles):
+class ComponentStaticFiles(StaticFiles):
     """
-    Serve only frontend assets from widget folders.
-    Prevent exposing Python sources when mounting the whole widgets tree.
+    Serve only frontend assets from component folders.
+    Prevent exposing Python sources when mounting the whole components tree.
     """
 
     _ALLOWED_SUFFIXES = {".js", ".mjs", ".css", ".map", ".json", ".png", ".svg", ".woff", ".woff2"}
@@ -38,7 +38,7 @@ def get_app() -> FastAPI:
     app.state.asset_version = str(int(time()))
 
     app.mount("/static", StaticFiles(directory=str(STATIC_PATH)), name="static")
-    app.mount("/widgets-static", WidgetStaticFiles(directory=str(WIDGETS_PATH)), name="widgets_static")
+    app.mount("/components-static", ComponentStaticFiles(directory=str(COMPONENTS_PATH)), name="components_static")
 
     # Serve favicon explicitly
     @app.get("/favicon.ico", include_in_schema=False)
@@ -50,5 +50,5 @@ def get_app() -> FastAPI:
     async def webmanifest():
         return FileResponse("static/site.webmanifest", media_type="application/manifest+json")
 
-    sections.initialize_sections(app)
+    pages.initialize_pages(app)
     return app
