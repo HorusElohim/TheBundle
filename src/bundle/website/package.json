@@ -1,0 +1,14 @@
+﻿{
+  "name": "thebundle-website-frontend",
+  "private": true,
+  "version": "0.1.0",
+  "description": "TypeScript build tooling for Bundle website components and local pages",
+  "scripts": {
+    "build:website-ts": "tsc -p tsconfig.website.build.json",
+    "check:website-ts": "tsc -p tsconfig.website.json --noEmit",
+    "watch:website-ts": "tsc -p tsconfig.website.json --watch --preserveWatchOutput"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}

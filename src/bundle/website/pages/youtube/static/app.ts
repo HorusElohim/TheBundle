@@ -1,25 +1,28 @@
-const DEFAULT_HINT = 'Paste a URL and the studio will queue the job instantly.';
+﻿const DEFAULT_HINT = 'Paste a URL and the studio will queue the job instantly.';
+
 import { wsNotifier } from '/static/js/ws-status.js';
+
 const elements = {
-    urlInput: document.getElementById('youtube-url'),
-    formatRadios: document.querySelectorAll("input[name='format']"),
-    downloadBtn: document.getElementById('download-btn'),
-    statusMessage: document.getElementById('status-message'),
-    formHint: document.getElementById('form-hint'),
-    metadataCard: document.getElementById('metadata-card'),
-    thumbnail: document.getElementById('track-thumbnail'),
-    trackTitle: document.getElementById('track-title'),
-    trackAuthor: document.getElementById('track-author'),
-    progressCard: document.getElementById('progress-card'),
-    progressFill: document.getElementById('progress-fill'),
-    progressPercentage: document.getElementById('progress-percentage'),
-    progressBytes: document.getElementById('progress-bytes'),
-    history: document.getElementById('history'),
-    historyEmpty: document.getElementById('history-empty'),
-    speedLabel: document.getElementById('progress-speed'),
-    phaseLabel: document.getElementById('progress-phase'),
-    cancelButton: document.getElementById('progress-cancel'),
+    urlInput: document.getElementById('youtube-url') as HTMLInputElement,
+    formatRadios: document.querySelectorAll<HTMLInputElement>("input[name='format']"),
+    downloadBtn: document.getElementById('download-btn') as HTMLButtonElement,
+    statusMessage: document.getElementById('status-message') as HTMLElement,
+    formHint: document.getElementById('form-hint') as HTMLElement,
+    metadataCard: document.getElementById('metadata-card') as HTMLElement,
+    thumbnail: document.getElementById('track-thumbnail') as HTMLImageElement,
+    trackTitle: document.getElementById('track-title') as HTMLElement,
+    trackAuthor: document.getElementById('track-author') as HTMLElement,
+    progressCard: document.getElementById('progress-card') as HTMLElement,
+    progressFill: document.getElementById('progress-fill') as HTMLElement,
+    progressPercentage: document.getElementById('progress-percentage') as HTMLElement,
+    progressBytes: document.getElementById('progress-bytes') as HTMLElement,
+    history: document.getElementById('history') as HTMLElement,
+    historyEmpty: document.getElementById('history-empty') as HTMLElement | null,
+    speedLabel: document.getElementById('progress-speed') as HTMLElement,
+    phaseLabel: document.getElementById('progress-phase') as HTMLElement,
+    cancelButton: document.getElementById('progress-cancel') as HTMLButtonElement | null,
 };
+
 const state = {
     ws: null,
     reconnectTimer: null,
@@ -31,11 +34,14 @@ const state = {
     lastUpdateTime: 0,
     lastProgressBytes: 0,
 };
+
 const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/youtube/download_track`;
 const notify = wsNotifier('YouTube');
+
 function setStatusMessage(message) {
     elements.statusMessage.textContent = message;
 }
+
 function setHint(message, tone = 'muted') {
     elements.formHint.textContent = message;
     elements.formHint.classList.remove('error');
@@ -43,10 +49,12 @@ function setHint(message, tone = 'muted') {
         elements.formHint.classList.add('error');
     }
 }
+
 function setBusy(isBusy) {
     elements.downloadBtn.disabled = isBusy;
     elements.downloadBtn.textContent = isBusy ? 'Workingâ€¦' : 'Download';
 }
+
 function finishTransfer(statusMessage = 'Ready for another URL', hintMessage = DEFAULT_HINT) {
     setBusy(false);
     setStatusMessage(statusMessage);
@@ -54,18 +62,21 @@ function finishTransfer(statusMessage = 'Ready for another URL', hintMessage = D
     hideMetadata();
     setHint(hintMessage);
 }
+
 function showMetadata(track) {
     elements.metadataCard.classList.remove('hidden');
     elements.thumbnail.src = track.thumbnail_url || '';
     elements.trackTitle.textContent = track.title || 'Unknown title';
     elements.trackAuthor.textContent = track.author || 'Unknown author';
 }
+
 function hideMetadata() {
     elements.metadataCard.classList.add('hidden');
     elements.trackTitle.textContent = '--';
     elements.trackAuthor.textContent = '--';
     elements.thumbnail.src = '';
 }
+
 function resetProgress() {
     state.downloadedBytes = 0;
     state.totalBytes = 0;
@@ -78,6 +89,7 @@ function resetProgress() {
     state.lastUpdateTime = 0;
     state.lastProgressBytes = 0;
 }
+
 function updateProgress(bytes, total) {
     elements.progressCard.classList.remove('hidden');
     if (!total) {
@@ -89,10 +101,13 @@ function updateProgress(bytes, total) {
     const percentage = Math.min(100, (bytes / total) * 100);
     elements.progressFill.style.width = `${percentage}%`;
     elements.progressPercentage.textContent = `${percentage.toFixed(1)}%`;
-    const formatBytes = (value) => value > 1024 * 1024
-        ? `${(value / (1024 * 1024)).toFixed(1)} MB`
-        : `${(value / 1024).toFixed(1)} KB`;
+
+    const formatBytes = (value) =>
+        value > 1024 * 1024
+            ? `${(value / (1024 * 1024)).toFixed(1)} MB`
+            : `${(value / 1024).toFixed(1)} KB`;
     elements.progressBytes.textContent = `${formatBytes(bytes)} / ${formatBytes(total)}`;
+
     const now = performance.now();
     if (state.lastUpdateTime) {
         const deltaBytes = bytes - state.lastProgressBytes;
@@ -106,6 +121,7 @@ function updateProgress(bytes, total) {
     state.lastUpdateTime = now;
     state.lastProgressBytes = bytes;
 }
+
 function addHistoryItem(track, url, filename, format) {
     elements.historyEmpty?.remove();
     const card = document.createElement('article');
@@ -126,6 +142,7 @@ function addHistoryItem(track, url, filename, format) {
     card.querySelector('.history-download').addEventListener('click', () => triggerDownload(url, filename));
     elements.history.prepend(card);
 }
+
 function triggerDownload(url, filename) {
     const link = document.createElement('a');
     link.href = url;
@@ -135,12 +152,15 @@ function triggerDownload(url, filename) {
     link.click();
     document.body.removeChild(link);
 }
+
 function connectWebSocket() {
     if (state.ws && (state.ws.readyState === WebSocket.OPEN || state.ws.readyState === WebSocket.CONNECTING)) {
         return;
     }
+
     notify.connecting();
     state.ws = new WebSocket(wsUrl);
+
     state.ws.addEventListener('open', () => {
         notify.connected();
         if (state.pendingPayload) {
@@ -148,10 +168,12 @@ function connectWebSocket() {
             state.pendingPayload = null;
         }
     });
+
     state.ws.addEventListener('message', (event) => {
         const data = JSON.parse(event.data);
         handleMessage(data);
     });
+
     state.ws.addEventListener('close', () => {
         notify.disconnected();
         if (elements.downloadBtn.disabled) {
@@ -164,6 +186,7 @@ function connectWebSocket() {
             }, 1500);
         }
     });
+
     state.ws.addEventListener('error', () => {
         notify.error();
         if (elements.downloadBtn.disabled) {
@@ -171,6 +194,7 @@ function connectWebSocket() {
         }
     });
 }
+
 function sendDownloadRequest(payload) {
     state.currentFormat = payload.format;
     state.currentTrack = null;
@@ -178,14 +202,15 @@ function sendDownloadRequest(payload) {
     hideMetadata();
     setBusy(true);
     setHint('Queuing jobâ€¦');
+
     if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         state.ws.send(JSON.stringify(payload));
-    }
-    else {
+    } else {
         state.pendingPayload = payload;
         connectWebSocket();
     }
 }
+
 function handleMessage(message) {
     switch (message.type) {
         case 'metadata':
@@ -227,19 +252,24 @@ function handleMessage(message) {
             console.debug('Unhandled message', message);
     }
 }
+
 elements.downloadBtn.addEventListener('click', () => {
     const youtubeUrl = elements.urlInput.value.trim();
     if (!youtubeUrl) {
         setHint('Paste a valid YouTube link first.', 'error');
         return;
     }
+
     const selectedFormat = Array.from(elements.formatRadios).find((radio) => radio.checked)?.value || 'mp4';
     sendDownloadRequest({ youtube_url: youtubeUrl, format: selectedFormat });
 });
+
 elements.urlInput.addEventListener('input', () => {
     if (elements.urlInput.value.trim()) {
         setHint('Press download to queue the job.');
     }
 });
+
 connectWebSocket();
-//# sourceMappingURL=app.js.map
+
+

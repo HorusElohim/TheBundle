@@ -1,78 +1,92 @@
-import { wsNotifier } from '/static/js/ws-status.js';
-const listEl = document.getElementById('device-list');
-const deviceCountEl = document.getElementById('device-count');
-const avgRssiEl = document.getElementById('avg-rssi');
-const searchInput = document.getElementById('search');
-const intervalInput = document.getElementById('refresh-interval');
-const intervalValueEl = document.getElementById('interval-value');
-const statusEl = document.getElementById('connection-status');
-const streamToggle = document.getElementById('stream-toggle');
-const detailPanel = document.getElementById('device-detail');
-const detailBody = document.getElementById('detail-body');
-const detailClose = document.getElementById('detail-close');
-const detailNameEl = document.getElementById('detail-name');
-const detailAddressEl = document.getElementById('detail-address');
+﻿import { wsNotifier } from '/static/js/ws-status.js';
+
+const listEl = document.getElementById('device-list') as HTMLElement;
+const deviceCountEl = document.getElementById('device-count') as HTMLElement;
+const avgRssiEl = document.getElementById('avg-rssi') as HTMLElement;
+const searchInput = document.getElementById('search') as HTMLInputElement;
+const intervalInput = document.getElementById('refresh-interval') as HTMLInputElement;
+const intervalValueEl = document.getElementById('interval-value') as HTMLElement;
+const statusEl = document.getElementById('connection-status') as HTMLElement;
+const streamToggle = document.getElementById('stream-toggle') as HTMLButtonElement;
+const detailPanel = document.getElementById('device-detail') as HTMLElement;
+const detailBody = document.getElementById('detail-body') as HTMLElement;
+const detailClose = document.getElementById('detail-close') as HTMLElement;
+const detailNameEl = document.getElementById('detail-name') as HTMLElement;
+const detailAddressEl = document.getElementById('detail-address') as HTMLElement;
+
 const state = {
     devices: [],
     selectedAddress: null,
 };
+
 let socket;
 let reconnectTimer;
 let allowReconnect = true;
 let isPaused = false;
 const notify = wsNotifier('BLE');
+
 function setStatus(label, variant = 'neutral') {
     const base = 'status-pill';
     statusEl.className = variant === 'neutral' ? base : `${base} ${variant}`;
     statusEl.textContent = label;
 }
+
 function showMessage(message) {
     listEl.innerHTML = `<p class="muted">${message}</p>`;
     deviceCountEl.textContent = '0';
     avgRssiEl.textContent = '-- dBm';
 }
+
 function updateIntervalLabel() {
     intervalValueEl.textContent = `${intervalInput.value}s`;
 }
+
 function applyFilters() {
     const term = searchInput.value.trim().toLowerCase();
+
     return state.devices
         .filter((device) => {
-        if (!term)
-            return true;
-        return (device.name.toLowerCase().includes(term) ||
-            device.address.toLowerCase().includes(term));
-    })
+            if (!term) return true;
+            return (
+                device.name.toLowerCase().includes(term) ||
+                device.address.toLowerCase().includes(term)
+            );
+        })
         .sort((a, b) => {
-        const aSignal = Number.isFinite(a.signal) ? a.signal : -200;
-        const bSignal = Number.isFinite(b.signal) ? b.signal : -200;
-        return bSignal - aSignal;
-    });
+            const aSignal = Number.isFinite(a.signal) ? a.signal : -200;
+            const bSignal = Number.isFinite(b.signal) ? b.signal : -200;
+            return bSignal - aSignal;
+        });
 }
+
 function formatSignal(value) {
     return value == null || Number.isNaN(value) ? '--' : `${value} dBm`;
 }
+
 function formatTx(value) {
     return value == null || Number.isNaN(value) ? '--' : `${value} dBm`;
 }
+
 function renderList(devices) {
     if (!devices.length) {
         showMessage('No devices found during the last sweep.');
         return;
     }
+
     const rssiAvg = devices.reduce((acc, device) => acc + (device.signal ?? -200), 0) / devices.length;
     deviceCountEl.textContent = devices.length.toString();
     avgRssiEl.textContent = formatSignal(Math.round(rssiAvg));
+
     listEl.innerHTML = devices
         .map((device) => {
-        const services = (device.services || []).slice(0, 3);
-        const serviceMarkup = services.length
-            ? `<div class="badge-group">${services
-                .map((svc) => `<span class="badge subtle">${svc}</span>`)
-                .join('')}</div>`
-            : '';
-        const txDisplay = device.tx_power == null ? '--' : `${device.tx_power} dBm`;
-        return `
+            const services = (device.services || []).slice(0, 3);
+            const serviceMarkup = services.length
+                ? `<div class="badge-group">${services
+                      .map((svc) => `<span class="badge subtle">${svc}</span>`)
+                      .join('')}</div>`
+                : '';
+            const txDisplay = device.tx_power == null ? '--' : `${device.tx_power} dBm`;
+            return `
                 <article class="device-card" data-address="${device.address}">
                     <div>
                         <p class="device-name">${device.name}</p>
@@ -92,9 +106,10 @@ function renderList(devices) {
                         </div>
                     </div>
                 </article>`;
-    })
+        })
         .join('');
 }
+
 function renderDetail(device) {
     if (!device) {
         detailPanel.classList.add('hidden');
@@ -108,8 +123,8 @@ function renderDetail(device) {
     detailAddressEl.textContent = device.address;
     const services = device.services?.length
         ? `<div class="badge-group">${device.services
-            .map((svc) => `<span class="badge subtle">${svc}</span>`)
-            .join('')}</div>`
+              .map((svc) => `<span class="badge subtle">${svc}</span>`)
+              .join('')}</div>`
         : '<p class="device-meta">No advertised services</p>';
     detailBody.innerHTML = `
         <div class="detail-row"><span>Manufacturer</span><strong>${device.manufacturer ?? 'Unknown'}</strong></div>
@@ -121,18 +136,22 @@ function renderDetail(device) {
     detailPanel.classList.remove('hidden');
     detailPanel.classList.add('visible');
 }
+
 function openDetail(device) {
     state.selectedAddress = device.address;
     renderDetail(device);
 }
+
 function closeDetail() {
     state.selectedAddress = null;
     renderDetail(null);
 }
+
 function render() {
     const filtered = applyFilters();
     renderList(filtered);
 }
+
 function handleMessage(event) {
     try {
         const payload = JSON.parse(event.data);
@@ -145,29 +164,30 @@ function handleMessage(event) {
                 const selected = state.devices.find((device) => device.address === state.selectedAddress);
                 if (selected) {
                     renderDetail(selected);
-                }
-                else {
+                } else {
                     closeDetail();
                 }
             }
-        }
-        else if (payload.type === 'error') {
+        } else if (payload.type === 'error') {
             setStatus('Error', 'error');
             showMessage(payload.message || 'Unable to load devices.');
         }
-    }
-    catch (error) {
+    } catch (error) {
         console.error('Malformed payload', error);
     }
 }
+
 function sendIntervalConfig() {
     if (socket?.readyState === WebSocket.OPEN) {
-        socket.send(JSON.stringify({
-            type: 'config',
-            interval: Number(intervalInput.value),
-        }));
+        socket.send(
+            JSON.stringify({
+                type: 'config',
+                interval: Number(intervalInput.value),
+            })
+        );
     }
 }
+
 function scheduleReconnect() {
     clearTimeout(reconnectTimer);
     if (!allowReconnect) {
@@ -175,14 +195,17 @@ function scheduleReconnect() {
     }
     reconnectTimer = setTimeout(connectSocket, 3000);
 }
+
 function connectSocket() {
     clearTimeout(reconnectTimer);
     if (socket && socket.readyState === WebSocket.OPEN) {
         socket.close(1000, 'reconnecting');
     }
+
     setStatus('Connecting...', 'neutral');
     notify.connecting();
     showMessage('Preparing live session...');
+
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     socket = new WebSocket(`${protocol}://${window.location.host}/ble/ws/scan`);
     socket.addEventListener('open', () => {
@@ -208,9 +231,9 @@ function connectSocket() {
         socket.close();
     });
 }
+
 function pauseStream() {
-    if (isPaused)
-        return;
+    if (isPaused) return;
     isPaused = true;
     allowReconnect = false;
     streamToggle.textContent = 'Resume stream';
@@ -219,33 +242,34 @@ function pauseStream() {
         socket.close(1000, 'paused');
     }
 }
+
 function resumeStream() {
-    if (!isPaused)
-        return;
+    if (!isPaused) return;
     isPaused = false;
     allowReconnect = true;
     streamToggle.textContent = 'Pause stream';
     showMessage('Connecting to scanner...');
     connectSocket();
 }
+
 function toggleStream() {
     if (isPaused) {
         resumeStream();
-    }
-    else {
+    } else {
         pauseStream();
     }
 }
+
 function handleCardClick(event) {
-    const target = event.target;
-    const card = target?.closest('.device-card');
-    if (!card)
-        return;
+    const target = event.target as HTMLElement | null;
+    const card = target?.closest('.device-card') as HTMLElement | null;
+    if (!card) return;
     const device = state.devices.find((item) => item.address === card.dataset.address);
     if (device) {
         openDetail(device);
     }
 }
+
 listEl.addEventListener('click', handleCardClick);
 detailClose.addEventListener('click', closeDetail);
 detailPanel.addEventListener('click', (event) => {
@@ -262,7 +286,9 @@ searchInput.addEventListener('input', render);
 intervalInput.addEventListener('input', updateIntervalLabel);
 intervalInput.addEventListener('change', sendIntervalConfig);
 streamToggle.addEventListener('click', toggleStream);
+
 updateIntervalLabel();
 showMessage('Connecting to scanner...');
 connectSocket();
-//# sourceMappingURL=app.js.map
+
+
