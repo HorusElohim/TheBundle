@@ -3,12 +3,15 @@ from .component import (
     WebSocketBaseComponent,
     WebSocketComponentParams,
 )
+from .gpx import GPXComponentParams, GPXWebSocketBaseComponent
 from .message_router import MessageRouter
 from .messages import AckMessage, ErrorMessage, KeepAliveMessage
 
 __all__ = [
     "WebSocketBaseComponent",
     "WebSocketComponentParams",
+    "GPXComponentParams",
+    "GPXWebSocketBaseComponent",
     "KeepAliveMessage",
     "AckMessage",
     "ErrorMessage",

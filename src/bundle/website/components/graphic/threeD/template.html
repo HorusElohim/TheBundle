@@ -1,0 +1,19 @@
+{% set component_slug = component.slug if component is defined else "graphic-3d" %}
+{% set params = component.params if component is defined and component.params else None %}
+<section class="panel graphic-three-d" data-component="{{ component_slug }}" data-render-mode="{{ params.render_mode if params else '3d' }}">
+    <header class="graphic-three-d__header">
+        <p class="eyebrow">Graphics</p>
+        <h2>{{ component.name if component is defined and component.name else "3D Surface" }}</h2>
+    </header>
+    <div class="graphic-three-d__surface">
+        <canvas class="graphic-three-d__canvas" data-role="canvas"></canvas>
+        <div class="graphic-three-d__grid"></div>
+        <div class="graphic-three-d__hud" aria-live="polite">
+            <span>FPS <strong data-role="fps">--</strong></span>
+            <span>Stars <strong data-role="count">--</strong></span>
+        </div>
+    </div>
+    <p class="muted">
+        {{ component.description if component is defined and component.description else "Three.js/WebGL style rendering base." }}
+    </p>
+</section>

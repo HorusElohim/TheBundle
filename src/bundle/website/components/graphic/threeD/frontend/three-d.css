@@ -1,0 +1,56 @@
+.graphic-three-d {
+    display: grid;
+    gap: 12px;
+}
+
+.graphic-three-d__header h2 {
+    margin: 0;
+}
+
+.graphic-three-d__surface {
+    position: relative;
+    min-height: 320px;
+    border-radius: 10px;
+    border: 1px solid var(--border-muted);
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 18% 30%, color-mix(in srgb, #35efff 26%, transparent), transparent 42%),
+        radial-gradient(circle at 84% 20%, color-mix(in srgb, #7ba6ff 24%, transparent), transparent 40%),
+        linear-gradient(180deg, #030b16, #01040b 70%);
+}
+
+.graphic-three-d__canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.graphic-three-d__grid {
+    position: absolute;
+    inset: 35% 0 0;
+    background-image:
+        linear-gradient(color-mix(in srgb, #67beff 23%, transparent) 1px, transparent 1px),
+        linear-gradient(90deg, color-mix(in srgb, #67beff 23%, transparent) 1px, transparent 1px);
+    background-size: 30px 30px;
+    opacity: 0.32;
+    transform: perspective(320px) rotateX(66deg);
+    transform-origin: bottom center;
+    pointer-events: none;
+}
+
+.graphic-three-d__hud {
+    position: absolute;
+    right: 12px;
+    bottom: 10px;
+    display: flex;
+    gap: 10px;
+    font-size: 12px;
+    color: color-mix(in srgb, white 70%, var(--text-muted) 30%);
+    background: color-mix(in srgb, black 40%, transparent);
+    border: 1px solid color-mix(in srgb, white 12%, transparent);
+    border-radius: 999px;
+    padding: 4px 10px;
+    backdrop-filter: blur(4px);
+}
