@@ -1,5 +1,5 @@
 {% set component_slug = component.slug if component is defined else "ws-heartbeat" %}
-{% set component_ws_path = component.ws_path if component is defined and component.ws_path else "/ws/ecc" %}
+{% set component_ws_path = component.ws_path if component is defined and component.ws_path else "/ws/heartbeat" %}
 <section class="panel glow-panel ws-heartbeat" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-state="idle">
     <header class="ws-heartbeat__header">
         <div>
