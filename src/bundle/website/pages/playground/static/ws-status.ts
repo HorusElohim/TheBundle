@@ -1,16 +1,22 @@
-import { getWebSocketChannel } from "/components-static/websocket/base/frontend/ws.js";
+﻿import { getWebSocketChannel } from "/components-static/websocket/base/frontend/ws.js";
+
 const status = document.querySelector('[data-role="ws-status"]');
+
 if (status) {
-    const typedStatus = status;
+    const typedStatus = status as HTMLElement;
     const path = typedStatus.dataset.wsPath || "/ws/ecc";
     const channel = getWebSocketChannel(path);
-    const setStatus = (label) => {
+
+    const setStatus = (label: string) => {
         typedStatus.textContent = `WS: ${label}`;
     };
+
     channel.on("connecting", () => setStatus("connecting"));
     channel.on("open", () => setStatus("connected"));
     channel.on("close", () => setStatus("disconnected"));
     channel.on("error", () => setStatus("error"));
+
     channel.connect();
 }
-//# sourceMappingURL=ws-status.js.map
+
+

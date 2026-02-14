@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.website.json",
+  "compilerOptions": {
+    "noCheck": true,
+    "noEmitOnError": false
+  }
+}

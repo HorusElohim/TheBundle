@@ -1,4 +1,5 @@
-const containerId = "ws-toast-container";
+﻿const containerId = "ws-toast-container";
+
 function ensureContainer() {
     let container = document.getElementById(containerId);
     if (!container) {
@@ -9,6 +10,7 @@ function ensureContainer() {
     }
     return container;
 }
+
 function showToast(message, variant = "neutral") {
     const container = ensureContainer();
     const toast = document.createElement("div");
@@ -21,6 +23,7 @@ function showToast(message, variant = "neutral") {
         setTimeout(() => toast.remove(), 220);
     }, 2000);
 }
+
 export function wsNotifier(label = "Connection") {
     return {
         connecting: () => showToast(`${label}: Connectingâ€¦`, "neutral"),
@@ -29,4 +32,5 @@ export function wsNotifier(label = "Connection") {
         error: () => showToast(`${label}: Error`, "error"),
     };
 }
-//# sourceMappingURL=ws-status.js.map
+
+

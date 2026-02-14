@@ -15,6 +15,12 @@ This folder contains the FastAPI-powered marketing/utility site for The Bundle. 
 - Start the server (from repo root): `bundle website start`
 - Navigate to `http://127.0.0.1:8000/` (pages like `/ble`, `/youtube`, `/excalidraw`)
 
+## Frontend TypeScript build
+- Frontend Node config lives in `src/bundle/website/` (`package.json`, `package-lock.json`, `tsconfig.website*.json`).
+- Install Node.js (includes `npm`) and run `bundle website install` (or `npm install` inside `src/bundle/website`).
+- Build website frontend TS assets manually: `bundle website build`
+- Validate types without emitting JS: `cd src/bundle/website && npm run check:website-ts`
+
 ## Design system
 - Global layout: `base.html` + `theme.css` give a modern, translucent navbar with a reserved actions slot (for status pills).
 - Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-page CSS sets its own accents/backgrounds.

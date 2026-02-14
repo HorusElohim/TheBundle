@@ -1,52 +1,56 @@
-import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
+﻿import { WebSocketComponent, createPeriodicSender, type PeriodicTask } from "../../base/frontend/ws.js";
+
 const THREE_MODULE_URL = "https://unpkg.com/three@0.161.0/build/three.module.js";
+
 class HeartBeatMonitorEarthComponent extends WebSocketComponent {
-    connectionBadge;
-    directionBadge;
-    toggleButton;
-    toggleLabel;
-    tempoInput;
-    tempoValue;
-    canvas;
-    latencyMetric;
-    jitterMetric;
-    throughputMetric;
-    totalSentMetric;
-    totalReceivedMetric;
-    encoder;
-    pending;
-    lastSentAt;
-    lastPayloadBytes;
-    previousLatency;
-    totalSentPackets;
-    totalReceivedPackets;
-    totalSentBytes;
-    totalReceivedBytes;
-    idleTimer;
-    periodic;
-    three;
-    scene;
-    camera;
-    renderer;
-    earthGroup;
-    effects;
-    nodeVectors;
-    animationFrame;
-    resizeObserver;
-    constructor(element) {
+    connectionBadge: HTMLElement | null;
+    directionBadge: HTMLElement | null;
+    toggleButton: HTMLButtonElement | null;
+    toggleLabel: HTMLElement | null;
+    tempoInput: HTMLInputElement | null;
+    tempoValue: HTMLElement | null;
+    canvas: HTMLCanvasElement | null;
+    latencyMetric: HTMLElement | null;
+    jitterMetric: HTMLElement | null;
+    throughputMetric: HTMLElement | null;
+    totalSentMetric: HTMLElement | null;
+    totalReceivedMetric: HTMLElement | null;
+    encoder: TextEncoder;
+    pending: boolean;
+    lastSentAt: number | null;
+    lastPayloadBytes: number;
+    previousLatency: number | null;
+    totalSentPackets: number;
+    totalReceivedPackets: number;
+    totalSentBytes: number;
+    totalReceivedBytes: number;
+    idleTimer: number | null;
+    periodic: PeriodicTask;
+    three: any;
+    scene: any;
+    camera: any;
+    renderer: any;
+    earthGroup: any;
+    effects: any[];
+    nodeVectors: { client: any; server: any } | null;
+    animationFrame: number | null;
+    resizeObserver: ResizeObserver | null;
+
+    constructor(element: HTMLElement) {
         super(element, { reconnectDelayMs: 1500 });
         this.connectionBadge = element.querySelector('[data-role="connection"]');
         this.directionBadge = element.querySelector('[data-role="direction"]');
-        this.toggleButton = element.querySelector('[data-action="toggle"]');
+        this.toggleButton = element.querySelector('[data-action="toggle"]') as HTMLButtonElement | null;
         this.toggleLabel = element.querySelector('[data-role="toggle-label"]');
-        this.tempoInput = element.querySelector('[data-control="tempo"]');
+        this.tempoInput = element.querySelector('[data-control="tempo"]') as HTMLInputElement | null;
         this.tempoValue = element.querySelector('[data-control-value="tempo"]');
-        this.canvas = element.querySelector('[data-role="canvas"]');
+        this.canvas = element.querySelector('[data-role="canvas"]') as HTMLCanvasElement | null;
         this.latencyMetric = element.querySelector('[data-metric="latency"]');
         this.jitterMetric = element.querySelector('[data-metric="jitter"]');
         this.throughputMetric = element.querySelector('[data-metric="throughput"]');
         this.totalSentMetric = element.querySelector('[data-metric="total-sent"]');
         this.totalReceivedMetric = element.querySelector('[data-metric="total-received"]');
+
         this.encoder = new TextEncoder();
         this.pending = false;
         this.lastSentAt = null;
@@ -58,6 +62,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.totalReceivedBytes = 0;
         this.idleTimer = null;
         this.periodic = createPeriodicSender(() => this.sendKeepalive());
+
         this.three = null;
         this.scene = null;
         this.camera = null;
@@ -67,8 +72,10 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.nodeVectors = null;
         this.animationFrame = null;
         this.resizeObserver = null;
+
         this.bind();
     }
+
     setConnection(state, label) {
         this.element.dataset.state = state;
         if (this.connectionBadge) {
@@ -78,17 +85,20 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             this.toggleButton.disabled = state !== "connected";
         }
     }
+
     setDirection(direction, label) {
         this.element.dataset.direction = direction;
         if (this.directionBadge) {
             this.directionBadge.textContent = label;
         }
     }
+
     pulseDirection(direction, label) {
         this.setDirection(direction, label);
         window.clearTimeout(this.idleTimer);
         this.idleTimer = window.setTimeout(() => this.setDirection("idle", "Idle"), 850);
     }
+
     updateTempoLabel() {
         if (!this.tempoValue) {
             return;
@@ -96,14 +106,17 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         const seconds = Number.parseFloat(this.tempoInput?.value || "1");
         this.tempoValue.textContent = `${seconds.toFixed(1)}s`;
     }
+
     getTempoMs() {
         const seconds = Number.parseFloat(this.tempoInput?.value || "1");
         return Math.max(200, Math.round(seconds * 1000));
     }
+
     formatKbps(bytes, elapsedMs) {
         const kbps = (bytes / Math.max(elapsedMs, 1)) * 1000 / 1024;
         return kbps.toFixed(1);
     }
+
     formatBytes(bytes) {
         const units = ["B", "KB", "MB", "GB"];
         let value = Math.max(0, bytes);
@@ -115,16 +128,20 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         const precision = unitIndex === 0 ? 0 : value < 10 ? 2 : 1;
         return `${value.toFixed(precision)} ${units[unitIndex]}`;
     }
+
     emitToast(body, level = "info") {
-        window.dispatchEvent(new CustomEvent("bundle:toast", {
-            detail: {
-                source: "heartbeat-earth",
-                body,
-                level,
-                timestamp: Date.now(),
-            },
-        }));
+        window.dispatchEvent(
+            new CustomEvent("bundle:toast", {
+                detail: {
+                    source: "heartbeat-earth",
+                    body,
+                    level,
+                    timestamp: Date.now(),
+                },
+            })
+        );
     }
+
     updateTotals() {
         if (this.totalSentMetric) {
             this.totalSentMetric.textContent = `${this.formatBytes(this.totalSentBytes)} (${this.totalSentPackets} pkgs)`;
@@ -133,9 +150,11 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             this.totalReceivedMetric.textContent = `${this.formatBytes(this.totalReceivedBytes)} (${this.totalReceivedPackets} pkgs)`;
         }
     }
+
     updateMetrics(latencyMs, downloadBytes) {
         const jitter = this.previousLatency == null ? 0 : Math.abs(latencyMs - this.previousLatency);
         this.previousLatency = latencyMs;
+
         if (this.latencyMetric) {
             this.latencyMetric.textContent = `${Math.round(latencyMs)} ms`;
         }
@@ -149,6 +168,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         }
         this.updateTotals();
     }
+
     sendKeepalive() {
         if (!this.channel || !this.isOpen() || this.pending) {
             return false;
@@ -165,6 +185,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.send(raw);
         this.pulseDirection("tx", "TX");
         this.spawnPulse("tx");
+
         window.setTimeout(() => {
             if (!this.pending) {
                 return;
@@ -175,6 +196,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         }, 3200);
         return true;
     }
+
     stopLoop() {
         this.pending = false;
         this.periodic.stop();
@@ -182,6 +204,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             this.toggleLabel.textContent = "Start Sweep";
         }
     }
+
     startLoop() {
         if (!this.isOpen()) {
             return;
@@ -191,6 +214,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             this.toggleLabel.textContent = "Stop Sweep";
         }
     }
+
     toggleLoop() {
         if (this.periodic.isRunning()) {
             this.stopLoop();
@@ -198,6 +222,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         }
         this.startLoop();
     }
+
     latLonToVector3(lat, lon, radius) {
         const phi = (90 - lat) * (Math.PI / 180);
         const theta = (lon + 180) * (Math.PI / 180);
@@ -206,6 +231,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         const y = radius * Math.cos(phi);
         return new this.three.Vector3(x, y, z);
     }
+
     spawnNode(position, color) {
         const geometry = new this.three.SphereGeometry(0.035, 16, 16);
         const material = new this.three.MeshBasicMaterial({ color });
@@ -213,6 +239,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         marker.position.copy(position);
         this.earthGroup.add(marker);
     }
+
     spawnRing(position, color) {
         const geometry = new this.three.RingGeometry(0.02, 0.05, 30);
         const material = new this.three.MeshBasicMaterial({
@@ -229,6 +256,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.effects.push(ring);
         this.earthGroup.add(ring);
     }
+
     spawnPulse(direction) {
         if (!this.three || !this.earthGroup || !this.nodeVectors) {
             return;
@@ -237,6 +265,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         const start = tx ? this.nodeVectors.client : this.nodeVectors.server;
         const end = tx ? this.nodeVectors.server : this.nodeVectors.client;
         const color = tx ? 0x4ade80 : 0xfb923c;
+
         const midpoint = start
             .clone()
             .add(end)
@@ -251,8 +280,10 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         line.userData = { born: performance.now(), ttl: 1100, kind: "line" };
         this.effects.push(line);
         this.earthGroup.add(line);
+
         this.spawnRing(end.clone().multiplyScalar(1.012), color);
     }
+
     resizeRenderer() {
         if (!this.renderer || !this.camera || !this.canvas) {
             return;
@@ -263,6 +294,7 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.camera.aspect = width / Math.max(height, 1);
         this.camera.updateProjectionMatrix();
     }
+
     async initThree() {
         if (!this.canvas || this.renderer) {
             return;
@@ -270,15 +302,16 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         try {
             const module = await import(THREE_MODULE_URL);
             this.three = module;
-        }
-        catch (error) {
+        } catch (error) {
             this.setConnection("disconnected", "3D Unavailable");
             return;
         }
+
         const THREE = this.three;
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(40, 1, 0.1, 100);
         this.camera.position.set(0, 0, 3.5);
+
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
             antialias: true,
@@ -286,14 +319,17 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         });
         this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
         this.resizeRenderer();
+
         const ambient = new THREE.AmbientLight(0x8fdfff, 0.55);
         const rimLight = new THREE.DirectionalLight(0x66e5ff, 0.65);
         rimLight.position.set(2.2, 1.2, 2);
         const fillLight = new THREE.DirectionalLight(0x3b82f6, 0.5);
         fillLight.position.set(-2, -1.4, -1.4);
         this.scene.add(ambient, rimLight, fillLight);
+
         this.earthGroup = new THREE.Group();
         this.scene.add(this.earthGroup);
+
         const earthGeometry = new THREE.SphereGeometry(1, 64, 64);
         const earthMaterial = new THREE.MeshStandardMaterial({
             color: 0x12345f,
@@ -303,30 +339,42 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         });
         const earth = new THREE.Mesh(earthGeometry, earthMaterial);
         this.earthGroup.add(earth);
-        const wireframe = new THREE.LineSegments(new THREE.WireframeGeometry(new THREE.SphereGeometry(1.02, 28, 28)), new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.18 }));
+
+        const wireframe = new THREE.LineSegments(
+            new THREE.WireframeGeometry(new THREE.SphereGeometry(1.02, 28, 28)),
+            new THREE.LineBasicMaterial({ color: 0x22d3ee, transparent: true, opacity: 0.18 })
+        );
         this.earthGroup.add(wireframe);
-        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(1.08, 40, 40), new THREE.MeshBasicMaterial({
-            color: 0x7dd3fc,
-            transparent: true,
-            opacity: 0.09,
-            side: THREE.BackSide,
-        }));
+
+        const atmosphere = new THREE.Mesh(
+            new THREE.SphereGeometry(1.08, 40, 40),
+            new THREE.MeshBasicMaterial({
+                color: 0x7dd3fc,
+                transparent: true,
+                opacity: 0.09,
+                side: THREE.BackSide,
+            })
+        );
         this.earthGroup.add(atmosphere);
+
         const client = this.latLonToVector3(37.7749, -122.4194, 1.03);
         const server = this.latLonToVector3(64.1466, -21.9426, 1.03);
         this.nodeVectors = { client, server };
         this.spawnNode(client, 0x4ade80);
         this.spawnNode(server, 0xfb923c);
+
         this.resizeObserver = new ResizeObserver(() => this.resizeRenderer());
         this.resizeObserver.observe(this.canvas);
         this.animate();
     }
+
     animate() {
         if (!this.renderer || !this.scene || !this.camera || !this.earthGroup || !this.three) {
             return;
         }
         const now = performance.now();
         this.earthGroup.rotation.y += 0.0024;
+
         const alive = [];
         for (const item of this.effects) {
             const elapsed = now - item.userData.born;
@@ -348,22 +396,27 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             alive.push(item);
         }
         this.effects = alive;
+
         this.renderer.render(this.scene, this.camera);
         this.animationFrame = window.requestAnimationFrame(() => this.animate());
     }
+
     connectChannel() {
         this.channel = this.connect();
         if (!this.channel) {
             return;
         }
+
         this.on("connecting", () => {
             this.setConnection("connecting", "Connecting");
         });
+
         this.on("open", () => {
             this.setConnection("connected", "Connected");
         });
+
         this.on("message", (event) => {
-            const payload = event.detail?.data;
+            const payload = event.detail?.data as { type?: string; sent_at?: number } | undefined;
             if (!payload || payload.type !== "keepalive_ack" || !this.pending) {
                 return;
             }
@@ -381,15 +434,18 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
             this.spawnPulse("rx");
             this.emitToast(`Earth heartbeat ack in ${Math.round(latencyMs)} ms.`, "success");
         });
+
         this.on("close", () => {
             this.stopLoop();
             this.setConnection("disconnected", "Disconnected");
         });
+
         this.on("error", () => {
             this.stopLoop();
             this.setConnection("disconnected", "Error");
         });
     }
+
     bind() {
         if (this.toggleButton) {
             this.toggleButton.addEventListener("click", () => this.toggleLoop());
@@ -408,7 +464,12 @@ class HeartBeatMonitorEarthComponent extends WebSocketComponent {
         this.initThree();
     }
 }
-document.querySelectorAll('[data-component="ws-heartbeat-earth"]').forEach((element) => {
+
+document.querySelectorAll<HTMLElement>('[data-component="ws-heartbeat-earth"]').forEach((element) => {
     new HeartBeatMonitorEarthComponent(element);
 });
-//# sourceMappingURL=ws.js.map
+
+
+
+
+

@@ -1,9 +1,7 @@
 import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
-
 class EccComponent extends WebSocketComponent {
     constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
-        this.element = element;
         this.connectionPill = element.querySelector('[data-role="connection"]');
         this.directionPill = element.querySelector('[data-role="direction"]');
         this.latencyMetric = element.querySelector('[data-metric="latency"]');
@@ -32,26 +30,21 @@ class EccComponent extends WebSocketComponent {
         this.periodic = createPeriodicSender(() => this.sendKeepalive());
         this.bind();
     }
-
     clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
     }
-
     formatMetric(value, suffix) {
         return `${value.toFixed(1)} ${suffix}`;
     }
-
     bytesToKbps(bytes, ms) {
         return (bytes / Math.max(ms, 1)) * 1000 / 1024;
     }
-
     beatHeightForBytes(bytes) {
         const min = 24;
         const max = 120;
         const scaled = min + Math.sqrt(Math.max(bytes, 1)) * 6;
         return this.clamp(scaled, min, max);
     }
-
     updateTimelineLabels() {
         const elapsedMs = this.timelineEndOffset / this.pxPerMs;
         const elapsedSeconds = elapsedMs > 0 ? (elapsedMs / 1000).toFixed(1) : "0.0";
@@ -62,7 +55,6 @@ class EccComponent extends WebSocketComponent {
             this.timelineEndLabel.textContent = `${elapsedSeconds}s`;
         }
     }
-
     updateSliderValues() {
         if (this.tempoInput && this.tempoValue) {
             const tempoSeconds = Number.parseFloat(this.tempoInput.value || "0.1");
@@ -70,20 +62,17 @@ class EccComponent extends WebSocketComponent {
             this.tempoValue.textContent = `${tempoSeconds.toFixed(1)}s (${tempoMs}ms)`;
         }
     }
-
     getTempoMs() {
         const tempoSeconds = Number.parseFloat(this.tempoInput?.value || "0.1");
         const tempoMs = Number.isFinite(tempoSeconds) ? tempoSeconds * 1000 : 100;
         return this.clamp(Math.round(tempoMs), 50, 10000);
     }
-
     setDirection(direction, label) {
         this.element.dataset.direction = direction;
         if (this.directionPill) {
             this.directionPill.textContent = label || (direction === "tx" ? "TX" : direction === "rx" ? "RX" : "Idle");
         }
     }
-
     setConnection(state) {
         this.element.dataset.connection = state;
         this.connected = state === "connected";
@@ -98,7 +87,6 @@ class EccComponent extends WebSocketComponent {
             this.setDirection("idle");
         }
     }
-
     pulse(direction) {
         this.element.dataset.direction = direction;
         clearTimeout(this.idleTimer);
@@ -106,14 +94,12 @@ class EccComponent extends WebSocketComponent {
             this.setDirection("idle");
         }, 900);
     }
-
     isNearTimelineEnd() {
         if (!this.timelineScroll) {
             return true;
         }
         return this.timelineScroll.scrollLeft + this.timelineScroll.clientWidth >= this.timelineScroll.scrollWidth - 40;
     }
-
     shiftTimeline(shiftPx) {
         if (!this.timeline) {
             return;
@@ -124,14 +110,14 @@ class EccComponent extends WebSocketComponent {
             beat.style.left = `${currentLeft + shiftPx}px`;
         });
     }
-
     addBeat(direction, timestamp, sizeBytes) {
         if (!this.timeline) {
             return;
         }
         if (this.timelineStartAt === null) {
             this.timelineStartAt = timestamp;
-        } else if (timestamp < this.timelineStartAt) {
+        }
+        else if (timestamp < this.timelineStartAt) {
             const shiftMs = this.timelineStartAt - timestamp;
             const shiftPx = Math.round(shiftMs * this.pxPerMs);
             if (shiftPx > 0) {
@@ -154,14 +140,9 @@ class EccComponent extends WebSocketComponent {
         }
         this.timeline.appendChild(beat);
         beat.classList.add("is-fresh");
-        beat.addEventListener(
-            "animationend",
-            () => {
-                beat.classList.remove("is-fresh");
-            },
-            { once: true }
-        );
-
+        beat.addEventListener("animationend", () => {
+            beat.classList.remove("is-fresh");
+        }, { once: true });
         if (this.timelineScroll) {
             const minWidth = Math.max(this.timelineEndOffset + 120, this.timelineScroll.clientWidth);
             this.timeline.style.width = `${minWidth}px`;
@@ -169,36 +150,29 @@ class EccComponent extends WebSocketComponent {
                 this.timelineScroll.scrollLeft = this.timelineScroll.scrollWidth;
             }
         }
-
         this.updateTimelineLabels();
     }
-
     sendKeepalive() {
         if (!this.channel || !this.isOpen() || this.pending) {
             return false;
         }
         this.pending = true;
-
         const sentAt = Date.now();
         this.lastSentAt = sentAt;
         const payload = { type: "keepalive", sent_at: sentAt };
         const payloadText = JSON.stringify(payload);
         this.lastUploadBytes = this.encoder.encode(payloadText).length;
-
         this.send(payloadText);
         this.setDirection("tx", "TX");
         this.pulse("tx");
         this.addBeat("tx", sentAt);
-
         clearTimeout(this.pendingTimer);
         this.pendingTimer = window.setTimeout(() => {
             this.pending = false;
             this.setDirection("idle", "Timeout");
         }, this.ackTimeoutMs);
-
         return true;
     }
-
     stopLoop() {
         this.periodic.stop();
         this.pending = false;
@@ -206,7 +180,6 @@ class EccComponent extends WebSocketComponent {
         this.updateToggleLabel();
         this.setDirection("idle");
     }
-
     startLoop() {
         if (!this.connected) {
             return;
@@ -214,7 +187,6 @@ class EccComponent extends WebSocketComponent {
         this.periodic.start(Infinity, this.getTempoMs());
         this.updateToggleLabel();
     }
-
     toggleLoop() {
         if (this.periodic.isRunning()) {
             this.stopLoop();
@@ -222,19 +194,16 @@ class EccComponent extends WebSocketComponent {
         }
         this.startLoop();
     }
-
     updateToggleLabel() {
         if (!this.toggleLabel) {
             return;
         }
         this.toggleLabel.textContent = this.periodic.isRunning() ? "Stop" : "Start";
     }
-
     bind() {
         if (this.toggleButton) {
             this.toggleButton.addEventListener("click", () => this.toggleLoop());
         }
-
         if (this.tempoInput) {
             this.tempoInput.addEventListener("input", () => {
                 this.updateSliderValues();
@@ -243,36 +212,26 @@ class EccComponent extends WebSocketComponent {
                 }
             });
         }
-
         if (this.timelineScroll) {
-            this.timelineScroll.addEventListener(
-                "scroll",
-                () => {
-                    this.autoScroll = this.isNearTimelineEnd();
-                },
-                { passive: true }
-            );
+            this.timelineScroll.addEventListener("scroll", () => {
+                this.autoScroll = this.isNearTimelineEnd();
+            }, { passive: true });
         }
-
         this.updateSliderValues();
         this.updateToggleLabel();
         this.connectChannel();
     }
-
     connectChannel() {
         this.channel = this.connect();
         if (!this.channel) {
             return;
         }
-
         this.on("connecting", () => {
             this.setConnection("connecting");
         });
-
         this.on("open", () => {
             this.setConnection("connected");
         });
-
         this.on("message", (event) => {
             const payload = event.detail?.data;
             if (!payload || payload?.type !== "keepalive_ack") {
@@ -284,13 +243,11 @@ class EccComponent extends WebSocketComponent {
             }
             this.pending = false;
             clearTimeout(this.pendingTimer);
-
             const now = Date.now();
             const latencyMs = now - sentAt;
             const downloadBytes = this.encoder.encode(event.detail?.raw || "").length;
             const uploadKbps = this.bytesToKbps(this.lastUploadBytes, latencyMs);
             const downloadKbps = this.bytesToKbps(downloadBytes, latencyMs);
-
             if (this.latencyMetric) {
                 this.latencyMetric.textContent = `${Math.round(latencyMs)} ms`;
             }
@@ -300,25 +257,21 @@ class EccComponent extends WebSocketComponent {
             if (this.downloadMetric) {
                 this.downloadMetric.textContent = this.formatMetric(downloadKbps, "kb/s");
             }
-
             this.setDirection("rx");
             this.pulse("rx");
             this.addBeat("rx", payload.received_at || now, downloadBytes);
         });
-
         this.on("close", () => {
             this.stopLoop();
             this.setConnection("disconnected");
         });
-
         this.on("error", () => {
             this.stopLoop();
             this.setConnection("disconnected");
         });
     }
 }
-
 document.querySelectorAll('[data-component="ws-ecc"]').forEach((element) => {
     new EccComponent(element);
 });
-
+//# sourceMappingURL=ws.js.map
