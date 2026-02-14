@@ -7,7 +7,7 @@ from .component import (
     attach_routes,
     context,
 )
-from . import websocket
+from . import graphic, websocket
 
 __all__ = [
     "Component",
@@ -15,5 +15,6 @@ __all__ = [
     "ComponentAssets",
     "attach_routes",
     "context",
+    "graphic",
     "websocket",
 ]

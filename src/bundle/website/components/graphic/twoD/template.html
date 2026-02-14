@@ -1,0 +1,18 @@
+{% set component_slug = component.slug if component is defined else "graphic-2d" %}
+{% set params = component.params if component is defined and component.params else None %}
+<section class="panel graphic-two-d" data-component="{{ component_slug }}" data-render-mode="{{ params.render_mode if params else '2d' }}">
+    <header class="graphic-two-d__header">
+        <p class="eyebrow">Graphics</p>
+        <h2>{{ component.name if component is defined and component.name else "2D Surface" }}</h2>
+    </header>
+    <div class="graphic-two-d__surface">
+        <canvas class="graphic-two-d__canvas" data-role="canvas"></canvas>
+        <div class="graphic-two-d__hud" aria-live="polite">
+            <span>FPS <strong data-role="fps">--</strong></span>
+            <span>Particles <strong data-role="count">--</strong></span>
+        </div>
+    </div>
+    <p class="muted">
+        {{ component.description if component is defined and component.description else "Canvas/SVG style rendering base." }}
+    </p>
+</section>

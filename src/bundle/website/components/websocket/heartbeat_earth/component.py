@@ -1,9 +1,9 @@
-from ..base import WebSocketBaseComponent, WebSocketComponentParams
+from ..base import GPXComponentParams, GPXWebSocketBaseComponent
 
 
-class WebSocketHeartBeatMonitorEarthComponent(WebSocketBaseComponent):
+class WebSocketHeartBeatMonitorEarthComponent(GPXWebSocketBaseComponent):
     component_file: str = __file__
     slug: str = "ws-heartbeat-earth"
     name: str = "HeartBeatMonitorEarth"
     description: str = "Futuristic Earth monitor for websocket heartbeat pulses."
-    params: WebSocketComponentParams = WebSocketComponentParams(endpoint="/ws/heartbeat-earth")
+    params: GPXComponentParams = GPXComponentParams(endpoint="/ws/heartbeat-earth", graph_id="heartbeat-earth")
