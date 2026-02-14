@@ -1,8 +1,10 @@
 import { WebSocketComponent } from "../../base/frontend/ws.js";
 
-type ToastBridgeEvent = {
-    source?: string;
-    body?: string;
+type WebSocketFeedEvent = {
+    url?: string;
+    event?: string;
+    payload?: unknown;
+    timestamp?: number;
 };
 
 class ToastComponent extends WebSocketComponent {
@@ -14,35 +16,12 @@ class ToastComponent extends WebSocketComponent {
         super(element, { reconnectDelayMs: 1500 });
         this.status = element.querySelector('[data-role="status"]');
         this.list = element.querySelector('[data-role="toast-list"]');
-        this.maxItems = 6;
+        this.maxItems = 24;
         this.bind();
     }
 
     private bind(): void {
-        this.bindWebSocket();
-        this.bindHeartbeatBridge();
-    }
-
-    private bindWebSocket(): void {
-        this.channel = this.connect();
-        if (!this.channel) {
-            return;
-        }
-        this.on("connecting", () => this.setStatus("Connecting"));
-        this.on("open", () => this.setStatus("Connected"));
-        this.on("message", (event) => this.pushToast(event.detail?.data ?? "message"));
-        this.on("close", () => this.setStatus("Disconnected"));
-        this.on("error", () => this.setStatus("Error"));
-    }
-
-    private bindHeartbeatBridge(): void {
-        window.addEventListener("bundle:toast", (event: Event) => {
-            const payload = (event as CustomEvent<ToastBridgeEvent>).detail;
-            if (!payload || payload.source !== "heartbeat-earth") {
-                return;
-            }
-            this.pushToast(payload.body || "Heartbeat event");
-        });
+        this.setStatus("WS Feed Disabled");
     }
 
     private setStatus(label: string): void {
@@ -66,11 +45,14 @@ class ToastComponent extends WebSocketComponent {
 
         const title = document.createElement("div");
         title.className = "ws-toast__item-title";
-        title.textContent = "Message";
+        const feed = payload as WebSocketFeedEvent;
+        const eventType = (feed?.event || "event").toUpperCase();
+        const url = (feed?.url || "").replace(/^wss?:\/\/[^/]+/, "");
+        title.textContent = `${eventType} ${url || ""}`.trim();
 
         const body = document.createElement("div");
         body.className = "ws-toast__item-body";
-        body.textContent = this.formatPayload(payload);
+        body.textContent = this.formatPayload(feed?.payload ?? payload);
 
         item.append(title, body);
         return item;

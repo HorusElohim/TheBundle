@@ -15,9 +15,12 @@
   "include": [
     "static/types/modules.d.ts",
     "components/websocket/base/frontend/ws.ts",
+    "components/websocket/common/frontend/heartbeat_orbit.ts",
+    "components/websocket/common/frontend/heartbeat_payload_worker.ts",
     "components/websocket/ecc/frontend/ws.ts",
     "components/websocket/heartbeat/frontend/ws.ts",
     "components/websocket/heartbeat_earth/frontend/ws.ts",
+    "components/websocket/heartbeat_earth_moon/frontend/ws.ts",
     "components/websocket/toast/frontend/ws.ts",
     "pages/playground/static/ws-status.ts",
     "pages/ble/static/app.ts",

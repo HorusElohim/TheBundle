@@ -1,0 +1,210 @@
+.ws-heartbeat-earth-moon {
+    --moon-bg-a: #050915;
+    --moon-bg-b: #01030a;
+    --moon-border: rgba(148, 163, 184, 0.28);
+    --moon-tx: #ef4444;
+    --moon-rx: #4ade80;
+    display: grid;
+    gap: 16px;
+    padding: 22px;
+    font-family: "Rajdhani", "Segoe UI", sans-serif;
+    background:
+        radial-gradient(130% 170% at 100% 0%, rgba(59, 130, 246, 0.2), transparent 62%),
+        radial-gradient(130% 150% at 0% 100%, rgba(244, 63, 94, 0.12), transparent 60%);
+}
+
+[data-theme='light'] .ws-heartbeat-earth-moon {
+    --moon-bg-a: #e6ebff;
+    --moon-bg-b: #f8faff;
+    --moon-grid: rgba(100, 116, 139, 0.18);
+    --moon-border: rgba(30, 41, 59, 0.16);
+}
+
+.ws-heartbeat-earth-moon__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.ws-heartbeat-earth-moon__title {
+    display: grid;
+    gap: 6px;
+}
+
+.ws-heartbeat-earth-moon__eyebrow {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 12px;
+    color: #93c5fd;
+}
+
+.ws-heartbeat-earth-moon__title h2 {
+    margin: 0;
+    font-size: 24px;
+    font-family: "Orbitron", "Rajdhani", "Segoe UI", sans-serif;
+}
+
+.ws-heartbeat-earth-moon__legend {
+    margin: 0;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ws-heartbeat-earth-moon__badges {
+    display: flex;
+    gap: 8px;
+}
+
+.ws-heartbeat-earth-moon__badge {
+    border: 1px solid var(--moon-border);
+    border-radius: 999px;
+    padding: 6px 11px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.2px;
+    background: rgba(2, 6, 23, 0.35);
+}
+
+[data-theme='light'] .ws-heartbeat-earth-moon__badge {
+    background: rgba(255, 255, 255, 0.8);
+}
+
+.ws-heartbeat-earth-moon__badge--ghost {
+    background: transparent;
+}
+
+.ws-heartbeat-earth-moon[data-state='connected'] .ws-heartbeat-earth-moon__badge[data-role='connection'] {
+    color: #86efac;
+    border-color: rgba(134, 239, 172, 0.45);
+}
+
+.ws-heartbeat-earth-moon[data-state='disconnected'] .ws-heartbeat-earth-moon__badge[data-role='connection'] {
+    color: #f87171;
+    border-color: rgba(248, 113, 113, 0.45);
+}
+
+.ws-heartbeat-earth-moon[data-direction='tx'] .ws-heartbeat-earth-moon__badge[data-role='direction'] {
+    color: var(--moon-tx);
+    border-color: rgba(239, 68, 68, 0.45);
+}
+
+.ws-heartbeat-earth-moon[data-direction='rx'] .ws-heartbeat-earth-moon__badge[data-role='direction'] {
+    color: var(--moon-rx);
+    border-color: rgba(74, 222, 128, 0.5);
+}
+
+.ws-heartbeat-earth-moon__viewport {
+    position: relative;
+    height: 420px;
+    border: 1px solid var(--moon-border);
+    border-radius: 18px;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--moon-bg-a), var(--moon-bg-b));
+    box-shadow: inset 0 0 80px rgba(15, 23, 42, 0.8);
+}
+
+.ws-heartbeat-earth-moon__canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.ws-heartbeat-earth-moon__overlay {
+    position: absolute;
+    right: 14px;
+    bottom: 14px;
+    pointer-events: none;
+}
+
+.ws-heartbeat-earth-moon__hud {
+    min-width: 220px;
+    border: 1px solid var(--moon-border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    background: rgba(2, 6, 23, 0.58);
+    backdrop-filter: blur(10px);
+    display: grid;
+    gap: 6px;
+}
+
+[data-theme='light'] .ws-heartbeat-earth-moon__hud {
+    background: rgba(255, 255, 255, 0.75);
+}
+
+.ws-heartbeat-earth-moon__metric-row {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 16px;
+}
+
+.ws-heartbeat-earth-moon__metric-row span {
+    font-size: 11px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+}
+
+.ws-heartbeat-earth-moon__metric-row strong {
+    font-size: 14px;
+}
+
+.ws-heartbeat-earth-moon__controls {
+    display: grid;
+    grid-template-columns: auto auto minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+}
+
+.ws-heartbeat-earth-moon__button {
+    border: 1px solid var(--moon-border);
+    border-radius: 999px;
+    padding: 10px 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.22), rgba(244, 63, 94, 0.22));
+    cursor: pointer;
+}
+
+.ws-heartbeat-earth-moon__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+}
+
+.ws-heartbeat-earth-moon__tempo {
+    display: grid;
+    gap: 2px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.7px;
+    color: var(--text-muted);
+    min-width: 110px;
+}
+
+.ws-heartbeat-earth-moon__range {
+    width: 100%;
+    accent-color: #f472b6;
+}
+
+@media (max-width: 760px) {
+    .ws-heartbeat-earth-moon__viewport {
+        height: 330px;
+    }
+
+    .ws-heartbeat-earth-moon__overlay {
+        left: 14px;
+        right: 14px;
+    }
+
+    .ws-heartbeat-earth-moon__hud {
+        min-width: 0;
+    }
+
+    .ws-heartbeat-earth-moon__controls {
+        grid-template-columns: 1fr;
+    }
+}
