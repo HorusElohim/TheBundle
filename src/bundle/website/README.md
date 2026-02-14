@@ -8,6 +8,7 @@ This folder contains the FastAPI-powered marketing/utility site for The Bundle. 
 - `pages/home/home.py`, `pages/ble/ble.py`, `pages/youtube/home.py`: page routers.
 - `pages/__init__.py`: `PageDefinition` registry + static/router mounting.
 - `common/pages.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
+- `components/`: reusable page-attached components (templates, assets, backend behavior).
 
 ## Install & run
 - Install website deps: `pip install -e ".[website]"`
@@ -18,6 +19,25 @@ This folder contains the FastAPI-powered marketing/utility site for The Bundle. 
 - Global layout: `base.html` + `theme.css` give a modern, translucent navbar with a reserved actions slot (for status pills).
 - Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-page CSS sets its own accents/backgrounds.
 - Scroll stability: `html` forces a scrollbar to prevent navbar jitter; `scrollbar-gutter: stable` is enabled globally.
+
+## Component architecture
+
+The website uses page-scoped components for composability and scale.
+
+- Components live under `src/bundle/website/components/`.
+- Pages explicitly instantiate components and attach routes.
+- Static assets are discovered from each component folder (`frontend/`).
+- Templates are rendered via page context/macros from component definitions.
+
+Websocket components follow a shared base architecture:
+
+- `WebSocketBaseComponent` defines common defaults and routing behavior.
+- `base/backend.py` provides composable runtime blocks (`run_websocket`, `every`, `drain_text`, `receive_json`, `MessageRouter`).
+- `base/messages.py` defines typed `Data` messages (`KeepAliveMessage`, `AckMessage`, `ErrorMessage`).
+
+This keeps code minimal: route wiring is inherited, and only protocol-specific behavior is overridden.
+
+For details and examples, see `src/bundle/website/components/README.md`.
 
 ## Adding a new page (with example)
 Follow the pattern used by BLE (`pages/ble/ble.py`) and YouTube (`pages/youtube/home.py`).

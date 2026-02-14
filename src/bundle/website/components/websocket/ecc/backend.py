@@ -1,9 +1,0 @@
-from fastapi import APIRouter, WebSocket
-
-from ..base import keepalive_loop
-
-router = APIRouter()
-
-@router.websocket("/ws/ecc")
-async def ecc_websocket(websocket: WebSocket) -> None:
-    await keepalive_loop(websocket)

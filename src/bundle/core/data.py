@@ -38,6 +38,7 @@ from pydantic import (
 )
 from pydantic.warnings import PydanticDeprecatedSince20
 
+from . import logger
 from . import tracer
 
 warnings.filterwarnings("ignore", category=PydanticDeprecatedSince20)
@@ -134,7 +135,7 @@ class Data(BaseModel):
     __test_name: str = PrivateAttr(default="base")
 
     @classmethod
-    @tracer.Async.decorator.call_raise
+    @tracer.Async.decorator.call_raise(log_level=logger.Level.VERBOSE)
     async def from_dict(cls: Type[D], data: dict) -> D:
         """
         Create an instance of the model from a dictionary.
@@ -150,7 +151,7 @@ class Data(BaseModel):
         """
         return cls(**data)
 
-    @tracer.Async.decorator.call_raise
+    @tracer.Async.decorator.call_raise(log_level=logger.Level.VERBOSE)
     async def as_dict(self) -> dict:
         """
         Create an instance of the model from a JSON file.

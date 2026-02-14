@@ -24,12 +24,12 @@ class TrackData(data.Data):
     filename: str = data.Field(default_factory=str)
 
     @data.model_validator(mode="after")
-    def post_init(cls, instance):
-        instance.author = sanitize_string(instance.author)
-        instance.title = sanitize_string(instance.title)
-        instance.filename = f"{instance.author}-{instance.title}"
-        instance.identifier = get_identifier(instance.filename)
-        return instance
+    def post_init(self):
+        self.author = sanitize_string(self.author)
+        self.title = sanitize_string(self.title)
+        self.filename = f"{self.author}-{self.title}"
+        self.identifier = get_identifier(self.filename)
+        return self
 
 
 class YoutubeTrackData(TrackData):
