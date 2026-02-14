@@ -1,9 +1,7 @@
 import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
-
 class HeartbeatComponent extends WebSocketComponent {
     constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
-        this.element = element;
         this.status = element.querySelector('[data-role="status"]');
         this.tempoInput = element.querySelector('[data-control="tempo"]');
         this.tempoValue = element.querySelector('[data-control-value="tempo"]');
@@ -11,7 +9,6 @@ class HeartbeatComponent extends WebSocketComponent {
         this.periodic = createPeriodicSender(() => this.sendHeartbeat());
         this.bind();
     }
-
     setState(state, label) {
         this.element.dataset.state = state;
         if (this.status) {
@@ -21,12 +18,10 @@ class HeartbeatComponent extends WebSocketComponent {
             this.toggleButton.textContent = state === "active" ? "Stop" : "Start";
         }
     }
-
     getTempoMs() {
         const tempoSeconds = Number.parseFloat(this.tempoInput?.value || "1.0");
         return Math.max(100, Math.round(tempoSeconds * 1000));
     }
-
     updateTempoLabel() {
         if (!this.tempoValue) {
             return;
@@ -34,7 +29,6 @@ class HeartbeatComponent extends WebSocketComponent {
         const tempoSeconds = Number.parseFloat(this.tempoInput?.value || "1.0");
         this.tempoValue.textContent = `${tempoSeconds.toFixed(1)}s`;
     }
-
     sendHeartbeat() {
         if (!this.channel || !this.isOpen()) {
             return false;
@@ -44,7 +38,6 @@ class HeartbeatComponent extends WebSocketComponent {
         this.send(payload);
         return true;
     }
-
     toggle() {
         if (this.periodic.isRunning()) {
             this.periodic.stop();
@@ -55,7 +48,6 @@ class HeartbeatComponent extends WebSocketComponent {
         this.periodic.start(Infinity, cadenceMs);
         this.setState("active", "Active");
     }
-
     bind() {
         if (this.toggleButton) {
             this.toggleButton.addEventListener("click", () => this.toggle());
@@ -71,13 +63,11 @@ class HeartbeatComponent extends WebSocketComponent {
         this.updateTempoLabel();
         this.connectChannel();
     }
-
     connectChannel() {
         this.channel = this.connect();
         if (!this.channel) {
             return;
         }
-
         this.on("connecting", () => this.setState("connecting", "Connecting"));
         this.on("open", () => this.setState("idle", "Idle"));
         this.on("close", () => {
@@ -90,8 +80,7 @@ class HeartbeatComponent extends WebSocketComponent {
         });
     }
 }
-
 document.querySelectorAll('[data-component="ws-heartbeat"]').forEach((element) => {
     new HeartbeatComponent(element);
 });
-
+//# sourceMappingURL=ws.js.map
