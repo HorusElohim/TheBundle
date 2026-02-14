@@ -12,7 +12,7 @@ def test_component_registry_composes_websocket_defaults():
     heartbeat = components.get_component("ws-heartbeat")
     assert heartbeat is not None
     assert heartbeat.extends == "ws-websocket-base"
-    assert heartbeat.ws_path == "/ws/ecc"
+    assert heartbeat.ws_path == "/ws/heartbeat"
     assert any(asset.path.endswith("heartbeat/frontend/ws.js") for asset in heartbeat.assets)
     assert all(asset.route_name == "components_static" for asset in heartbeat.assets)
 

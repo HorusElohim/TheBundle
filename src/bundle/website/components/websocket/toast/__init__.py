@@ -1,3 +1,4 @@
+from .backend import router
 from .component import component
 
-__all__ = ["component"]
+__all__ = ["router", "component"]
