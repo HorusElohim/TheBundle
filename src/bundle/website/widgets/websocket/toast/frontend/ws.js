@@ -1,4 +1,4 @@
-import { WebSocketWidget } from "../headless/ws.js";
+﻿import { WebSocketWidget } from "../../base/frontend/ws.js";
 
 class ToastWidget extends WebSocketWidget {
     constructor(element) {
@@ -60,3 +60,4 @@ class ToastWidget extends WebSocketWidget {
 document.querySelectorAll('[data-widget="ws-toast"]').forEach((element) => {
     new ToastWidget(element);
 });
+

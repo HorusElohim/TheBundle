@@ -18,6 +18,7 @@ def get_logger(page_name: str):
 
 
 BASE_TEMPLATE_PATH = Path(__file__).parent.parent / "templates"
+WIDGET_TEMPLATE_PATH = Path(__file__).parent.parent / "widgets"
 
 
 def create_templates(*template_roots: Iterable[Path] | Path) -> Jinja2Templates:
@@ -32,6 +33,7 @@ def create_templates(*template_roots: Iterable[Path] | Path) -> Jinja2Templates:
         else:
             paths.extend(Path(p) for p in root)
     paths.append(BASE_TEMPLATE_PATH)
+    paths.append(WIDGET_TEMPLATE_PATH)
     search_paths = [str(path) for path in paths]
     return Jinja2Templates(directory=search_paths)
 

@@ -1,4 +1,4 @@
-import { WebSocketWidget, createPeriodicSender } from "../headless/ws.js";
+﻿import { WebSocketWidget, createPeriodicSender } from "../../base/frontend/ws.js";
 
 class HeartbeatWidget extends WebSocketWidget {
     constructor(element) {
@@ -94,3 +94,4 @@ class HeartbeatWidget extends WebSocketWidget {
 document.querySelectorAll('[data-widget="ws-heartbeat"]').forEach((element) => {
     new HeartbeatWidget(element);
 });
+
