@@ -11,7 +11,7 @@ def test_playground_loads_components(client):
 
 def test_playground_keepalive_websocket(client):
     sent_at = 123
-    with client.websocket_connect("/ws/ecc") as websocket:
+    with client.websocket_connect("/ws/ecc-1") as websocket:
         websocket.send_json({"type": "keepalive", "sent_at": sent_at})
         payload = websocket.receive_json()
 

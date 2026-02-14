@@ -73,12 +73,12 @@ class TestComplexData(core.data.Data):
         return value
 
     @core.data.model_validator(mode="after")
-    def check_dynamic_default_based_on_int_field(cls, instance: TestComplexData):
-        if instance.int_field and instance.int_field > 10:
-            instance.dynamic_default_field = "HighValue"
+    def check_dynamic_default_based_on_int_field(self):
+        if self.int_field and self.int_field > 10:
+            self.dynamic_default_field = "HighValue"
         else:
-            instance.dynamic_default_field = "LowValue"
-        return instance
+            self.dynamic_default_field = "LowValue"
+        return self
 
 
 RecursiveModel.model_rebuild()

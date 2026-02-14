@@ -1,5 +1,5 @@
 {% set component_slug = component.slug if component is defined else "ws-ecc" %}
-{% set component_ws_path = component.ws_path if component is defined and component.ws_path else "/ws/ecc" %}
+{% set component_ws_path = component.params.ws_path if component is defined and component.params and component.params.ws_path else "/ws/ecc" %}
 <section class="panel glow-panel ws-ecc" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-connection="connecting" data-direction="idle">
     <header class="ws-ecc__header">
         <div class="ws-ecc__title">
