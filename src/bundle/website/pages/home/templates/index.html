@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}The Bundle{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('home', path='styles.css') }}?v={{ asset_version }}" />
+{% endblock %}
+
+{% block content %}
+<main class="home">
+    <section class="panel glow-panel hero">
+        <div class="hero__copy">
+            <p class="eyebrow">Open-source runtime toolkit</p>
+            <h1>Build, observe, and ship faster with The Bundle.</h1>
+            <p class="lede">
+                A single stack for transport, telemetry, tracing, and browser automation so you can ship reliable tooling
+                with observability from day one.
+            </p>
+            <div class="hero__actions">
+                <a class="button primary" href="#install">Install the Bundle</a>
+                <a class="button ghost" href="https://github.com/HorusElohim/TheBundle" target="_blank" rel="noreferrer">
+                    View on GitHub
+                </a>
+            </div>
+            <ul class="hero__meta">
+                <li>Python 3.10–3.12 • macOS, Linux, Windows</li>
+                <li>Core primitives for logging, tracing, sockets, and process orchestration</li>
+                <li>Labs for BLE, YouTube, and Excalidraw powered by the same core</li>
+            </ul>
+        </div>
+        <div class="hero__panel">
+            <div class="callout">
+                <p class="eyebrow">CLI</p>
+                <h3>bundle website start</h3>
+                <p class="muted">Launch the experience locally with a single command.</p>
+            </div>
+            <div class="stats">
+                <div>
+                    <span class="stat__value">FastAPI</span>
+                    <span class="stat__label">modern web core</span>
+                </div>
+                <div>
+                    <span class="stat__value">PyPI</span>
+                    <span class="stat__label">pip installable</span>
+                </div>
+                <div>
+                    <span class="stat__value">Tracing-first</span>
+                    <span class="stat__label">telemetry everywhere</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="install" class="panel glow-panel install">
+        <div class="section__head">
+            <p class="eyebrow">Get started in minutes</p>
+            <h2>Install the Bundle</h2>
+            <p class="muted">Install once and run anywhere with no extra build steps.</p>
+        </div>
+        <div class="install__steps">
+            <article>
+                <p class="step">Step 1</p>
+                <h3>Grab the package</h3>
+                <p class="muted">Install the CLI, runtime, and labs from PyPI.</p>
+                <div class="code-block"><code>pip install thebundle</code></div>
+            </article>
+            <article>
+                <p class="step">Step 2</p>
+                <h3>Launch locally</h3>
+                <p class="muted">Start the FastAPI-powered site and browse labs from the navbar.</p>
+                <div class="code-block"><code>bundle website start</code></div>
+            </article>
+            <article>
+                <p class="step">Step 3</p>
+                <h3>Explore the primitives</h3>
+                <p class="muted">Inspect logging, telemetry, sockets, tracing, and browser utilities in one place.</p>
+                <div class="code-block"><code>bundle --help</code></div>
+            </article>
+        </div>
+    </section>
+
+    <section class="panel glow-panel feature-grid">
+        <div class="section__head">
+            <p class="eyebrow">Why Bundle</p>
+            <h2>Essential building blocks for modern tooling.</h2>
+            <p class="muted">Shared transports, observability, and process management for reliable experiments and services.</p>
+        </div>
+        <div class="grid">
+            <article>
+                <h3>Observability built in</h3>
+                <p class="muted">Tracing, logging, and metrics are unified across labs and services.</p>
+            </article>
+            <article>
+                <h3>Transport aware</h3>
+                <p class="muted">ZeroMQ and process orchestration keep distributed experiments simple.</p>
+            </article>
+            <article>
+                <h3>Browser capable</h3>
+                <p class="muted">Ship automation with Playwright-ready helpers and Excalidraw tooling.</p>
+            </article>
+        </div>
+    </section>
+
+    <section id="labs" class="panel glow-panel labs">
+        <div class="section__head">
+            <p class="eyebrow">Labs are one click away</p>
+            <h2>Jump into a lab when you need it.</h2>
+            <p class="muted">Labs are always available from the global navigation.</p>
+        </div>
+        {% if pages %}
+        <div class="lab-grid">
+            {% for page in pages %}
+            <article class="lab-card">
+                <div>
+                    <p class="eyebrow">Lab</p>
+                    <h3>{{ page.name }}</h3>
+                    <p class="muted">{{ page.description }}</p>
+                </div>
+                <a class="button ghost small" href="{{ page.href }}">Open lab</a>
+            </article>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </section>
+</main>
+{% endblock %}

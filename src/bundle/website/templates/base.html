@@ -23,10 +23,10 @@
             </a>
             <div class="nav-links">
                 {% set current_path = request.url.path %}
-                {% for section in nav_sections or [] %}
-                    {% set is_active = (section.href == '/' and current_path == '/') or (section.href != '/' and current_path.startswith(section.href)) %}
-                    <a href="{{ section.href }}" class="{% if is_active %}active{% endif %}">
-                        {{ section.name }}
+                {% for page in nav_pages or [] %}
+                    {% set is_active = (page.href == '/' and current_path == '/') or (page.href != '/' and current_path.startswith(page.href)) %}
+                    <a href="{{ page.href }}" class="{% if is_active %}active{% endif %}">
+                        {{ page.name }}
                     </a>
                 {% endfor %}
             </div>
