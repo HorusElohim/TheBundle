@@ -39,6 +39,14 @@ class ToastComponent extends WebSocketComponent {
 
     bind() {
         this.connectChannel();
+        const onExternalToast = (event) => {
+            const payload = event.detail;
+            if (!payload || payload.source !== "heartbeat-earth") {
+                return;
+            }
+            this.pushToast(payload.body || "Heartbeat event");
+        };
+        window.addEventListener("bundle:toast", onExternalToast);
     }
 
     connectChannel() {
