@@ -7,32 +7,11 @@ class ToastComponent extends WebSocketComponent {
         super(element, { reconnectDelayMs: 1500 });
         this.status = element.querySelector('[data-role="status"]');
         this.list = element.querySelector('[data-role="toast-list"]');
-        this.maxItems = 6;
+        this.maxItems = 24;
         this.bind();
     }
     bind() {
-        this.bindWebSocket();
-        this.bindHeartbeatBridge();
-    }
-    bindWebSocket() {
-        this.channel = this.connect();
-        if (!this.channel) {
-            return;
-        }
-        this.on("connecting", () => this.setStatus("Connecting"));
-        this.on("open", () => this.setStatus("Connected"));
-        this.on("message", (event) => this.pushToast(event.detail?.data ?? "message"));
-        this.on("close", () => this.setStatus("Disconnected"));
-        this.on("error", () => this.setStatus("Error"));
-    }
-    bindHeartbeatBridge() {
-        window.addEventListener("bundle:toast", (event) => {
-            const payload = event.detail;
-            if (!payload || payload.source !== "heartbeat-earth") {
-                return;
-            }
-            this.pushToast(payload.body || "Heartbeat event");
-        });
+        this.setStatus("WS Feed Disabled");
     }
     setStatus(label) {
         if (this.status) {
@@ -52,10 +31,13 @@ class ToastComponent extends WebSocketComponent {
         item.className = "ws-toast__item";
         const title = document.createElement("div");
         title.className = "ws-toast__item-title";
-        title.textContent = "Message";
+        const feed = payload;
+        const eventType = (feed?.event || "event").toUpperCase();
+        const url = (feed?.url || "").replace(/^wss?:\/\/[^/]+/, "");
+        title.textContent = `${eventType} ${url || ""}`.trim();
         const body = document.createElement("div");
         body.className = "ws-toast__item-body";
-        body.textContent = this.formatPayload(payload);
+        body.textContent = this.formatPayload(feed?.payload ?? payload);
         item.append(title, body);
         return item;
     }

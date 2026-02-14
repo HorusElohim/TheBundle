@@ -39,27 +39,7 @@
             {% block content %}{% endblock %}
         </main>
     </div>
-    <script>
-        (() => {
-            const key = 'bundle-theme';
-            const root = document.documentElement;
-            const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
-            const saved = localStorage.getItem(key);
-            const theme = saved || (prefersLight ? 'light' : 'dark');
-            const apply = (t) => root.setAttribute('data-theme', t);
-            apply(theme);
-            const btn = document.getElementById('theme-toggle');
-            if (btn) {
-                btn.textContent = theme === 'light' ? 'Dark mode' : 'Light mode';
-                btn.addEventListener('click', () => {
-                    const next = root.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-                    apply(next);
-                    localStorage.setItem(key, next);
-                    btn.textContent = next === 'light' ? 'Dark mode' : 'Light mode';
-                });
-            }
-        })();
-    </script>
+    <script type="module" src="{{ url_for('static', path='js/theme-toggle.js') }}?v={{ asset_version }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>
