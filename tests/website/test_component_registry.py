@@ -1,8 +1,15 @@
 from fastapi import APIRouter
 
 from bundle.website import components
+from bundle.website.components.graphic import (
+    GraphicBaseComponent,
+    GraphicThreeDComponent,
+    GraphicThreeDComponentParams,
+    GraphicTwoDComponent,
+)
+from bundle.website.components.websocket import heartbeat_earth
 from bundle.website.components.websocket import ecc, heartbeat, toast
-from bundle.website.components.websocket.base import WebSocketComponentParams
+from bundle.website.components.websocket.base import GPXWebSocketBaseComponent, WebSocketComponentParams
 
 
 def test_websocket_component_defaults():
@@ -49,3 +56,23 @@ def test_attach_routes_supports_multiple_ecc_instances():
     paths = {route.path for route in router.routes}
     assert "/ws/ecc-1" in paths
     assert "/ws/ecc-2" in paths
+
+
+def test_graphic_component_exports_are_available():
+    assert components.graphic.GraphicBaseComponent is GraphicBaseComponent
+    assert components.graphic.GraphicTwoDComponent is GraphicTwoDComponent
+    assert components.graphic.GraphicThreeDComponent is GraphicThreeDComponent
+
+
+def test_graphic_3d_default_params():
+    component = GraphicThreeDComponent(slug="graphic-3d")
+    assert isinstance(component.params, GraphicThreeDComponentParams)
+    assert component.params.render_mode == "3d"
+    assert component.params.camera_mode == "orbit"
+
+
+def test_gpx_websocket_base_inherits_graphic_3d_defaults():
+    component = heartbeat_earth.WebSocketHeartBeatMonitorEarthComponent()
+    assert isinstance(component, GPXWebSocketBaseComponent)
+    assert component.params.render_mode == "3d"
+    assert component.params.graph_id == "heartbeat-earth"

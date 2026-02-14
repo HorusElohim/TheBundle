@@ -20,6 +20,12 @@ components/websocket/toast/
   frontend/ws.js
 ```
 
+Graphics foundations now live in `components/graphic/`:
+
+- `components/graphic/base`: shared graphics component behavior.
+- `components/graphic/twoD`: base for canvas/SVG style components.
+- `components/graphic/threeD`: base for Three.js/WebGL style components.
+
 ## Registration model
 
 Components are not globally activated by default. A page activates them explicitly.
@@ -55,6 +61,17 @@ This keeps routing page-scoped and avoids accidental global websocket endpoints.
 
 This yields small composable blocks instead of custom monolithic loops.
 
+## Graphics + websocket composition
+
+`components.websocket.base.GPXWebSocketBaseComponent` composes websocket and
+graphics concerns:
+
+- websocket route/lifecycle comes from `WebSocketBaseComponent`
+- 3D graphics defaults come from `graphic.threeD.GraphicThreeDComponent`
+
+Three.js heartbeat components (`heartbeat_earth`, `heartbeat_earth_moon`) use
+this composed base.
+
 ## Typed websocket messages
 
 `components.websocket.base.messages` contains typed `Data` models:
@@ -73,4 +90,3 @@ All websocket payloads use `Data` serialization/deserialization helpers:
 - `WebSocketBaseComponent` defines the default websocket behavior (`keepalive_loop`).
 - Components that need custom runtime (for example toast server-push messages)
   override only `handle_websocket`, while keeping route wiring inherited.
-

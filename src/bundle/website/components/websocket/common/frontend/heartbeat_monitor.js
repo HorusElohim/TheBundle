@@ -1,7 +1,6 @@
-import { WebSocketComponent, createPeriodicSender, type PeriodicTask } from "../../base/frontend/ws.js";
-
-const THREE_MODULE_URL = "https://esm.sh/three@0.161.0";
-const RGBE_LOADER_MODULE_URL = "https://esm.sh/three@0.161.0/examples/jsm/loaders/RGBELoader.js";
+import { createPeriodicSender } from "../../base/frontend/ws.js";
+import { GpxWebSocketComponent } from "../../../graphic/common/frontend/gpx.js";
+import { createArcCurve, createSphereMesh, latLonToVector3, loadHdrTexture, loadTexture, loadThreeModule, } from "../../../graphic/common/frontend/threejs/index.js";
 const PAYLOAD_WORKER_URL = "/components-static/websocket/common/frontend/heartbeat_payload_worker.js";
 const EARTH_MOON_ASSET_BASE = "/components-static/websocket/heartbeat_earth_moon/frontend/assets";
 const EARTH_MOON_ASSETS = {
@@ -11,7 +10,6 @@ const EARTH_MOON_ASSETS = {
     moonMap: `${EARTH_MOON_ASSET_BASE}/moon_1024.jpg`,
     skyHdr: `${EARTH_MOON_ASSET_BASE}/HDR_silver_and_gold_nebulae.hdr`,
 };
-
 const EARTH_RADIUS_KM = 6371;
 const MOON_RADIUS_KM = 1737.4;
 const EARTH_TO_MOON_DISTANCE_KM = 384400;
@@ -20,125 +18,79 @@ const SCENE_KM_PER_UNIT = EARTH_RADIUS_KM / EARTH_SCENE_RADIUS;
 const MOON_SCENE_RADIUS = MOON_RADIUS_KM / SCENE_KM_PER_UNIT;
 const COMPRESSED_DISTANCE_UNITS = (EARTH_TO_MOON_DISTANCE_KM / SCENE_KM_PER_UNIT) * 0.15;
 const MAX_EMIT_PAYLOAD_BYTES = 64 * 1024 * 1024;
-
-type NodeIcon = "dot" | "heart" | "moon";
-type PlanetStyle = "earth" | "moon" | "earth_moon";
-
-type OrbitNode = {
-    lat: number;
-    lon: number;
-    color: number;
-    icon?: NodeIcon;
-    label?: string;
-};
-
-export type HeartbeatOrbitConfig = {
-    selector: string;
-    toastSource: string;
-    toastLabel: string;
-    timeoutMessage: string;
-    colors: {
-        tx: number;
-        rx: number;
-    };
-    labels?: {
-        tx: string;
-        rx: string;
-    };
-    planet: {
-        style: PlanetStyle;
-        rotationY: number;
-        radius?: number;
-    };
-    nodes: {
-        client: OrbitNode;
-        server: OrbitNode;
-    };
-};
-
-class HeartbeatOrbitComponent extends WebSocketComponent {
-    connectionBadge: HTMLElement | null;
-    directionBadge: HTMLElement | null;
-    toggleButton: HTMLButtonElement | null;
-    toggleLabel: HTMLElement | null;
-    tempoInput: HTMLInputElement | null;
-    tempoValue: HTMLElement | null;
-    payloadInput: HTMLInputElement | null;
-    payloadValue: HTMLElement | null;
-    canvas: HTMLCanvasElement | null;
-    latencyMetric: HTMLElement | null;
-    jitterMetric: HTMLElement | null;
-    throughputMetric: HTMLElement | null;
-    txRateMetric: HTMLElement | null;
-    rxRateMetric: HTMLElement | null;
-    totalSentMetric: HTMLElement | null;
-    totalReceivedMetric: HTMLElement | null;
-    encoder: TextEncoder;
-    pending: boolean;
-    lastSentAt: number | null;
-    lastPayloadBytes: number;
-    previousLatency: number | null;
-    previousServerReceivedAt: number | null;
-    previousServerTxBytes: number | null;
-    previousServerRxBytes: number | null;
-    totalSentPackets: number;
-    totalReceivedPackets: number;
-    totalSentBytes: number;
-    totalReceivedBytes: number;
-    idleTimer: number | null;
-    timeoutTimer: number | null;
-    startRequested: boolean;
-    payloadCache: string;
-    payloadCacheSize: number;
-    payloadWorker: Worker | null;
-    payloadBuildPending: boolean;
-    payloadRequestId: number;
-    payloadRequestSentAt: number | null;
-    payloadBuildTimer: number | null;
-    periodic: PeriodicTask;
-    three: any;
-    scene: any;
-    camera: any;
-    renderer: any;
-    worldGroup: any;
-    earthMesh: any;
-    moonMesh: any;
-    connectionArc: any;
-    connectionArcRx: any;
-    effects: any[];
-    nodeVectors: { client: any; server: any } | null;
-    earthMoonAnchors:
-        | {
-              clientTop: any;
-              clientBottom: any;
-              serverTop: any;
-              serverBottom: any;
-          }
-        | null;
-    earthMoonCenters: { earth: any; moon: any } | null;
-    earthMoonRadii: { earth: number; moon: number } | null;
-    animationFrame: number | null;
-    resizeObserver: ResizeObserver | null;
-    cameraRadius: number;
-    cameraAzimuth: number;
-    cameraPolar: number;
-    cameraDragging: boolean;
-    lastPointerX: number;
-    lastPointerY: number;
-    config: HeartbeatOrbitConfig;
-
-    constructor(element: HTMLElement, config: HeartbeatOrbitConfig) {
-        super(element, { reconnectDelayMs: 1500 });
+export class HeartbeatMonitorComponent extends GpxWebSocketComponent {
+    connectionBadge;
+    directionBadge;
+    toggleButton;
+    toggleLabel;
+    tempoInput;
+    tempoValue;
+    payloadInput;
+    payloadValue;
+    latencyMetric;
+    jitterMetric;
+    throughputMetric;
+    txRateMetric;
+    rxRateMetric;
+    totalSentMetric;
+    totalReceivedMetric;
+    encoder;
+    pending;
+    lastSentAt;
+    lastPayloadBytes;
+    previousLatency;
+    previousServerReceivedAt;
+    previousServerTxBytes;
+    previousServerRxBytes;
+    totalSentPackets;
+    totalReceivedPackets;
+    totalSentBytes;
+    totalReceivedBytes;
+    idleTimer;
+    timeoutTimer;
+    startRequested;
+    payloadCache;
+    payloadCacheSize;
+    payloadWorker;
+    payloadBuildPending;
+    payloadRequestId;
+    payloadRequestSentAt;
+    payloadBuildTimer;
+    periodic;
+    three;
+    scene;
+    camera;
+    renderer;
+    worldGroup;
+    earthMesh;
+    moonMesh;
+    connectionArc;
+    connectionArcRx;
+    effects;
+    nodeVectors;
+    earthMoonAnchors;
+    earthMoonCenters;
+    earthMoonRadii;
+    animationFrame;
+    resizeObserver;
+    cameraRadius;
+    cameraAzimuth;
+    cameraPolar;
+    cameraDragging;
+    lastPointerX;
+    lastPointerY;
+    config;
+    constructor(element, config) {
+        super(element);
         this.config = config;
         this.connectionBadge = element.querySelector('[data-role="connection"]');
         this.directionBadge = element.querySelector('[data-role="direction"]');
-        this.toggleButton = element.querySelector('[data-action="toggle"]') as HTMLButtonElement | null;
+        this.toggleButton = element.querySelector('[data-action="toggle"]');
         this.toggleLabel = element.querySelector('[data-role="toggle-label"]');
-        this.tempoInput = element.querySelector('[data-control="tempo"]') as HTMLInputElement | null;
+        this.tempoInput = element.querySelector('[data-control="tempo"]');
         this.tempoValue = element.querySelector('[data-control-value="tempo"]');
-        this.payloadInput = element.querySelector('[data-control="payload"]') as HTMLInputElement | null;
+        this.payloadInput = element.querySelector('[data-control="payload"]');
         this.payloadValue = element.querySelector('[data-control-value="payload"]');
-        this.canvas = element.querySelector('[data-role="canvas"]') as HTMLCanvasElement | null;
         this.latencyMetric = element.querySelector('[data-metric="latency"]');
         this.jitterMetric = element.querySelector('[data-metric="jitter"]');
         this.throughputMetric = element.querySelector('[data-metric="throughput"]');
@@ -146,7 +98,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.rxRateMetric = element.querySelector('[data-metric="rx-rate"]');
         this.totalSentMetric = element.querySelector('[data-metric="total-sent"]');
         this.totalReceivedMetric = element.querySelector('[data-metric="total-received"]');
-
         this.encoder = new TextEncoder();
         this.pending = false;
         this.lastSentAt = null;
@@ -170,7 +121,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.payloadRequestSentAt = null;
         this.payloadBuildTimer = null;
         this.periodic = createPeriodicSender(() => this.sendKeepalive());
-
         this.three = null;
         this.scene = null;
         this.camera = null;
@@ -193,11 +143,9 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.cameraDragging = false;
         this.lastPointerX = 0;
         this.lastPointerY = 0;
-
         this.bind();
     }
-
-    setConnection(state: string, label: string) {
+    setConnection(state, label) {
         this.element.dataset.state = state;
         if (this.connectionBadge) {
             this.connectionBadge.textContent = label;
@@ -205,22 +153,48 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         if (this.toggleButton) {
             this.toggleButton.disabled = state === "connecting";
         }
+        this.setServerVisibility(state === "connected");
     }
-
-    setDirection(direction: string, label: string) {
+    setServerVisibility(visible) {
+        if (this.config.planet.style !== "earth_moon") {
+            return;
+        }
+        if (this.moonMesh) {
+            this.moonMesh.visible = visible;
+        }
+        if (this.connectionArc) {
+            this.connectionArc.visible = visible;
+        }
+        if (this.connectionArcRx) {
+            this.connectionArcRx.visible = visible;
+        }
+        if (!visible && this.effects.length > 0) {
+            const keep = [];
+            for (const item of this.effects) {
+                const kind = item?.userData?.kind;
+                if (kind === "beam-egg" || kind === "line" || kind === "arrow" || kind === "ring") {
+                    item.parent?.remove(item);
+                    item.geometry?.dispose?.();
+                    item.material?.dispose?.();
+                    continue;
+                }
+                keep.push(item);
+            }
+            this.effects = keep;
+        }
+    }
+    setDirection(direction, label) {
         this.element.dataset.direction = direction;
         if (this.directionBadge) {
             this.directionBadge.textContent = label;
         }
     }
-
-    pulseDirection(direction: string, label: string) {
+    pulseDirection(direction, label) {
         this.setDirection(direction, label);
         window.clearTimeout(this.idleTimer ?? undefined);
         this.idleTimer = window.setTimeout(() => this.setDirection("idle", "Idle"), 850);
     }
-
-    getControlValue(input: HTMLInputElement | null, fallback: number) {
+    getControlValue(input, fallback) {
         if (!input) {
             return fallback;
         }
@@ -232,23 +206,20 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         const maxPos = Number.parseFloat(input.max || "100");
         const minValue = Number.parseFloat(input.dataset.minValue || "0");
         const maxValue = Number.parseFloat(input.dataset.maxValue || "0");
-        if (
-            !Number.isFinite(raw) ||
+        if (!Number.isFinite(raw) ||
             !Number.isFinite(minPos) ||
             !Number.isFinite(maxPos) ||
             !Number.isFinite(minValue) ||
             !Number.isFinite(maxValue) ||
             minValue <= 0 ||
             maxValue <= minValue ||
-            maxPos <= minPos
-        ) {
+            maxPos <= minPos) {
             return fallback;
         }
         const clamped = Math.min(maxPos, Math.max(minPos, raw));
         const t = (clamped - minPos) / (maxPos - minPos);
         return minValue * Math.pow(maxValue / minValue, t);
     }
-
     updateTempoLabel() {
         if (!this.tempoValue) {
             return;
@@ -260,11 +231,9 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         this.tempoValue.textContent = `${seconds.toFixed(seconds < 10 ? 2 : 1)}s`;
     }
-
     getPayloadTargetBytes() {
         return Math.max(1024, Math.round(this.getControlValue(this.payloadInput, 1024)));
     }
-
     updatePayloadLabel() {
         if (!this.payloadValue || !this.payloadInput) {
             return;
@@ -276,13 +245,11 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         this.payloadValue.textContent = `${this.formatBytes(selected)} (send ${this.formatBytes(MAX_EMIT_PAYLOAD_BYTES)})`;
     }
-
     getTempoMs() {
         const seconds = this.getControlValue(this.tempoInput, 1);
         return Math.max(10, Math.round(seconds * 1000));
     }
-
-    formatRate(bytes: number, elapsedMs: number) {
+    formatRate(bytes, elapsedMs) {
         const bytesPerSecond = (bytes / Math.max(elapsedMs, 1)) * 1000;
         if (bytesPerSecond < 1024) {
             return `${bytesPerSecond.toFixed(0)} B/s`;
@@ -295,8 +262,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         return `${(bytesPerSecond / (1024 * 1024 * 1024)).toFixed(2)} GB/s`;
     }
-
-    setRateMetrics(txBytesPerSecond: number, rxBytesPerSecond: number) {
+    setRateMetrics(txBytesPerSecond, rxBytesPerSecond) {
         const tx = this.formatRate(txBytesPerSecond, 1000);
         const rx = this.formatRate(rxBytesPerSecond, 1000);
         if (this.txRateMetric) {
@@ -309,16 +275,14 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.throughputMetric.textContent = `${tx} / ${rx}`;
         }
     }
-
-    serverTimestampToMs(value: number) {
+    serverTimestampToMs(value) {
         // Backward compatible: treat very large values as nanoseconds epoch.
         if (value > 1_000_000_000_000_000) {
             return value / 1_000_000;
         }
         return value;
     }
-
-    formatBytes(bytes: number) {
+    formatBytes(bytes) {
         const units = ["B", "KB", "MB", "GB"];
         let value = Math.max(0, bytes);
         let unitIndex = 0;
@@ -329,7 +293,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         const precision = unitIndex === 0 ? 0 : value < 10 ? 2 : 1;
         return `${value.toFixed(precision)} ${units[unitIndex]}`;
     }
-
     updateTotals() {
         if (this.totalSentMetric) {
             this.totalSentMetric.textContent = `${this.formatBytes(this.totalSentBytes)} (${this.totalSentPackets} pkgs)`;
@@ -338,11 +301,9 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.totalReceivedMetric.textContent = `${this.formatBytes(this.totalReceivedBytes)} (${this.totalReceivedPackets} pkgs)`;
         }
     }
-
-    updateMetrics(latencyMs: number, downloadBytes: number, updateRates = true) {
+    updateMetrics(latencyMs, downloadBytes, updateRates = true) {
         const jitter = this.previousLatency == null ? 0 : Math.abs(latencyMs - this.previousLatency);
         this.previousLatency = latencyMs;
-
         if (this.latencyMetric) {
             this.latencyMetric.textContent = `${Math.round(latencyMs)} ms`;
         }
@@ -354,7 +315,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         this.updateTotals();
     }
-
     sendKeepalive() {
         if (!this.channel || !this.isOpen() || this.pending || this.payloadBuildPending) {
             return false;
@@ -388,8 +348,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         const raw = JSON.stringify(payload);
         return this.sendKeepaliveRaw(raw, sentAt);
     }
-
-    buildKeepalivePayload(sentAt: number, payloadTargetBytes: number) {
+    buildKeepalivePayload(sentAt, payloadTargetBytes) {
         const base = { type: "keepalive", sent_at: sentAt, payload: "" };
         if (payloadTargetBytes <= 0) {
             return { type: "keepalive", sent_at: sentAt };
@@ -408,8 +367,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         return { type: "keepalive", sent_at: sentAt, payload: this.payloadCache.slice(0, contentBytes) };
     }
-
-    sendKeepaliveRaw(raw: string, sentAt: number) {
+    sendKeepaliveRaw(raw, sentAt) {
         if (!this.send(raw)) {
             return false;
         }
@@ -421,7 +379,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.updateTotals();
         this.pulseDirection("tx", this.config.labels?.tx ?? "TX");
         this.spawnPulse("tx");
-
         window.clearTimeout(this.timeoutTimer ?? undefined);
         this.timeoutTimer = window.setTimeout(() => {
             if (!this.pending) {
@@ -432,19 +389,19 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }, 3200);
         return true;
     }
-
     initPayloadWorker() {
         if (typeof Worker === "undefined") {
             return;
         }
         try {
             this.payloadWorker = new Worker(PAYLOAD_WORKER_URL, { type: "module" });
-        } catch {
+        }
+        catch {
             this.payloadWorker = null;
             return;
         }
         this.payloadWorker.addEventListener("message", (event) => {
-            const detail = event.data as { id?: number; raw?: string } | undefined;
+            const detail = event.data;
             if (!detail || typeof detail.id !== "number" || typeof detail.raw !== "string") {
                 return;
             }
@@ -470,7 +427,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.payloadRequestSentAt = null;
         });
     }
-
     stopLoop() {
         window.clearTimeout(this.payloadBuildTimer ?? undefined);
         this.payloadBuildTimer = null;
@@ -484,7 +440,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.toggleLabel.textContent = "Start Sweep";
         }
     }
-
     stopAll() {
         this.startRequested = false;
         this.stopLoop();
@@ -492,7 +447,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.setDirection("idle", "Idle");
         this.setConnection("disconnected", "Stopped");
     }
-
     startLoop() {
         this.startRequested = true;
         this.channel?.connect();
@@ -503,7 +457,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             }
         }
     }
-
     toggleLoop() {
         if (this.periodic.isRunning()) {
             this.stopAll();
@@ -511,17 +464,10 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         this.startLoop();
     }
-
-    latLonToVector3(lat: number, lon: number, radius: number) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = (lon + 180) * (Math.PI / 180);
-        const x = -(radius * Math.sin(phi) * Math.cos(theta));
-        const z = radius * Math.sin(phi) * Math.sin(theta);
-        const y = radius * Math.cos(phi);
-        return new this.three.Vector3(x, y, z);
+    latLonToVector3(lat, lon, radius) {
+        return latLonToVector3(this.three, lat, lon, radius);
     }
-
-    createIconSprite(icon: NodeIcon, colorHex: string) {
+    createIconSprite(icon, colorHex) {
         const canvas = document.createElement("canvas");
         canvas.width = 128;
         canvas.height = 128;
@@ -536,17 +482,18 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         ctx.fillStyle = colorHex;
         if (icon === "heart") {
             ctx.fillText("\u2665", 64, 64);
-        } else if (icon === "moon") {
+        }
+        else if (icon === "moon") {
             ctx.fillText("\u263E", 64, 64);
-        } else {
+        }
+        else {
             ctx.fillText("\u25CF", 64, 64);
         }
         const texture = new this.three.CanvasTexture(canvas);
         texture.needsUpdate = true;
         return texture;
     }
-
-    createAuraTexture(colorHex: string) {
+    createAuraTexture(colorHex) {
         const canvas = document.createElement("canvas");
         canvas.width = 256;
         canvas.height = 256;
@@ -564,21 +511,18 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         texture.needsUpdate = true;
         return texture;
     }
-
-    spawnNode(position: any, node: OrbitNode) {
+    spawnNode(position, node) {
         const icon = node.icon ?? "dot";
         if (this.config.planet.style === "earth_moon" && icon === "moon") {
             return;
         }
         if (icon === "dot") {
-            const geometry = new this.three.SphereGeometry(0.035, 16, 16);
             const material = new this.three.MeshBasicMaterial({ color: node.color });
-            const marker = new this.three.Mesh(geometry, material);
+            const marker = createSphereMesh(this.three, 0.035, 16, 16, material);
             marker.position.copy(position);
             this.worldGroup.add(marker);
             return;
         }
-
         const colorHex = `#${node.color.toString(16).padStart(6, "0")}`;
         const texture = this.createIconSprite(icon, colorHex);
         if (!texture) {
@@ -593,12 +537,12 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         const sprite = new this.three.Sprite(material);
         if (this.config.planet.style === "earth_moon") {
             sprite.position.copy(position);
-        } else {
+        }
+        else {
             sprite.position.copy(position.clone().multiplyScalar(1.03));
         }
         sprite.scale.set(0.28, 0.28, 0.28);
         this.worldGroup.add(sprite);
-
         if (icon === "heart") {
             const auraTexture = this.createAuraTexture(colorHex);
             if (auraTexture) {
@@ -618,8 +562,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             }
         }
     }
-
-    spawnRing(position: any, color: number, normal?: any) {
+    spawnRing(position, color, normal) {
         const geometry = new this.three.RingGeometry(0.02, 0.05, 30);
         const material = new this.three.MeshBasicMaterial({
             color,
@@ -635,8 +578,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.effects.push(ring);
         this.worldGroup.add(ring);
     }
-
-    createPulseCurve(start: any, end: any, direction: "tx" | "rx") {
+    createPulseCurve(start, end, direction) {
         if (this.config.planet.style === "earth_moon" && this.earthMoonCenters) {
             const earthCenter = this.earthMoonCenters.earth;
             const moonCenter = this.earthMoonCenters.moon;
@@ -644,31 +586,23 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             const startMoonDistance = start.distanceTo(moonCenter);
             const endEarthDistance = end.distanceTo(earthCenter);
             const endMoonDistance = end.distanceTo(moonCenter);
-
             const startCenter = startEarthDistance <= startMoonDistance ? earthCenter : moonCenter;
             const endCenter = endEarthDistance <= endMoonDistance ? earthCenter : moonCenter;
-
             const startNormal = start.clone().sub(startCenter).normalize();
             const endNormal = end.clone().sub(endCenter).normalize();
             const separation = start.distanceTo(end);
             const handle = separation * 0.28;
-
             const c1 = start.clone().add(startNormal.multiplyScalar(handle));
             const c2 = end.clone().add(endNormal.multiplyScalar(handle));
             return new this.three.CubicBezierCurve3(start.clone(), c1, c2, end.clone());
         }
-
-        const midpoint = start
-            .clone()
-            .add(end)
-            .multiplyScalar(0.5)
-            .normalize()
-            .multiplyScalar(1.48);
-        return new this.three.QuadraticBezierCurve3(start.clone(), midpoint, end.clone());
+        return createArcCurve(this.three, start, end, { lift: 0.48 });
     }
-
-    spawnPulse(direction: "tx" | "rx") {
+    spawnPulse(direction) {
         if (!this.three || !this.worldGroup || !this.nodeVectors) {
+            return;
+        }
+        if (this.config.planet.style === "earth_moon" && this.moonMesh && !this.moonMesh.visible) {
             return;
         }
         const tx = direction === "tx";
@@ -678,32 +612,28 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             if (tx) {
                 start = this.earthMoonAnchors.clientTop;
                 end = this.earthMoonAnchors.serverTop;
-            } else {
+            }
+            else {
                 start = this.earthMoonAnchors.serverBottom;
                 end = this.earthMoonAnchors.clientBottom;
             }
         }
         const color = tx ? this.config.colors.tx : this.config.colors.rx;
-
         const curve = this.createPulseCurve(start, end, direction);
         if (this.config.planet.style === "earth_moon") {
-            const beam = new this.three.Mesh(
-                new this.three.SphereGeometry(0.12, 20, 20),
-                new this.three.MeshBasicMaterial({
-                    color,
-                    transparent: true,
-                    opacity: 0.72,
-                    blending: this.three.AdditiveBlending,
-                    depthWrite: false,
-                })
-            );
+            const beam = new this.three.Mesh(new this.three.SphereGeometry(0.12, 20, 20), new this.three.MeshBasicMaterial({
+                color,
+                transparent: true,
+                opacity: 0.72,
+                blending: this.three.AdditiveBlending,
+                depthWrite: false,
+            }));
             beam.scale.set(0.72, 1.28, 0.72);
             beam.userData = { born: performance.now(), ttl: 820, kind: "beam-egg", curve };
             this.effects.push(beam);
             this.worldGroup.add(beam);
             return;
         }
-
         const points = curve.getPoints(64);
         const geometry = new this.three.BufferGeometry().setFromPoints(points);
         const material = new this.three.LineBasicMaterial({ color, transparent: true, opacity: 0.96 });
@@ -711,20 +641,14 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         line.userData = { born: performance.now(), ttl: 1000, kind: "line" };
         this.effects.push(line);
         this.worldGroup.add(line);
-
-        const arrowRadius = this.config.planet.style === "earth_moon" ? 0.075 : 0.03;
-        const arrowLength = this.config.planet.style === "earth_moon" ? 0.26 : 0.12;
-        const arrow = new this.three.Mesh(
-            new this.three.ConeGeometry(arrowRadius, arrowLength, 12),
-            new this.three.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 })
-        );
+        const arrowRadius = 0.03;
+        const arrowLength = 0.12;
+        const arrow = new this.three.Mesh(new this.three.ConeGeometry(arrowRadius, arrowLength, 12), new this.three.MeshBasicMaterial({ color, transparent: true, opacity: 0.95 }));
         arrow.userData = { born: performance.now(), ttl: 1000, kind: "arrow", curve };
         this.effects.push(arrow);
         this.worldGroup.add(arrow);
-
         this.spawnRing(end.clone(), color);
     }
-
     ensureConnectionArc() {
         if (!this.three || !this.worldGroup || !this.nodeVectors || !this.earthMoonAnchors || this.config.planet.style !== "earth_moon") {
             return;
@@ -754,7 +678,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.worldGroup.add(this.connectionArcRx);
         }
     }
-
     resizeRenderer() {
         if (!this.renderer || !this.camera || !this.canvas) {
             return;
@@ -765,7 +688,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.camera.aspect = width / Math.max(height, 1);
         this.camera.updateProjectionMatrix();
     }
-
     updateCameraPosition() {
         if (!this.camera) {
             return;
@@ -777,7 +699,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.camera.position.set(x, y, z);
         this.camera.lookAt(0, 0, 0);
     }
-
     bindCameraControls() {
         if (!this.canvas) {
             return;
@@ -801,7 +722,7 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.cameraPolar = Math.min(Math.PI - 0.12, Math.max(0.12, this.cameraPolar + dy * 0.01));
             this.updateCameraPosition();
         });
-        const stopDrag = (pointerId?: number) => {
+        const stopDrag = (pointerId) => {
             this.cameraDragging = false;
             if (pointerId != null) {
                 this.canvas?.releasePointerCapture(pointerId);
@@ -818,16 +739,13 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.updateCameraPosition();
         });
     }
-
-    sampleNoise(x: number, y: number, seed: number) {
-        const v =
-            Math.sin((x + seed) * 3.1) * Math.cos((y - seed) * 2.7) +
+    sampleNoise(x, y, seed) {
+        const v = Math.sin((x + seed) * 3.1) * Math.cos((y - seed) * 2.7) +
             0.6 * Math.sin((x + y + seed * 0.7) * 5.2) +
             0.3 * Math.cos((x * 1.7 - y * 1.3 + seed) * 9.1);
         return v;
     }
-
-    createEarthTexture(THREE: any) {
+    createEarthTexture(THREE) {
         const canvas = document.createElement("canvas");
         canvas.width = 1024;
         canvas.height = 512;
@@ -835,14 +753,12 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         if (!ctx) {
             return null;
         }
-
         const ocean = ctx.createLinearGradient(0, 0, 0, canvas.height);
         ocean.addColorStop(0, "#0a2f6e");
         ocean.addColorStop(0.5, "#0d4ca6");
         ocean.addColorStop(1, "#0a3a82");
         ctx.fillStyle = ocean;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const data = image.data;
         for (let py = 0; py < canvas.height; py += 1) {
@@ -855,11 +771,13 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
                     data[i] = 48;
                     data[i + 1] = 120 + Math.floor((n - 0.35) * 110);
                     data[i + 2] = 48;
-                } else if (n > 0.29) {
+                }
+                else if (n > 0.29) {
                     data[i] = 188;
                     data[i + 1] = 165;
                     data[i + 2] = 102;
-                } else {
+                }
+                else {
                     const ripple = Math.floor((n + 1.5) * 18);
                     data[i] = Math.min(255, data[i] + ripple);
                     data[i + 1] = Math.min(255, data[i + 1] + ripple);
@@ -868,7 +786,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             }
         }
         ctx.putImageData(image, 0, 0);
-
         ctx.fillStyle = "rgba(255, 255, 255, 0.14)";
         for (let i = 0; i < 120; i += 1) {
             const x = Math.random() * canvas.width;
@@ -878,15 +795,13 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             ctx.ellipse(x, y, r * 1.5, r, Math.random() * Math.PI, 0, Math.PI * 2);
             ctx.fill();
         }
-
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
         texture.needsUpdate = true;
         return texture;
     }
-
-    createMoonTexture(THREE: any) {
+    createMoonTexture(THREE) {
         const canvas = document.createElement("canvas");
         canvas.width = 1024;
         canvas.height = 512;
@@ -896,7 +811,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         }
         ctx.fillStyle = "#a5adb8";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-
         for (let i = 0; i < 420; i += 1) {
             const x = Math.random() * canvas.width;
             const y = Math.random() * canvas.height;
@@ -909,115 +823,72 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             ctx.lineWidth = Math.max(1, r * 0.12);
             ctx.stroke();
         }
-
         const texture = new THREE.CanvasTexture(canvas);
         texture.wrapS = THREE.ClampToEdgeWrapping;
         texture.wrapT = THREE.ClampToEdgeWrapping;
         texture.needsUpdate = true;
         return texture;
     }
-
-    loadTexture(THREE: any, url: string, configure?: (texture: any) => void) {
-        return new Promise<any>((resolve) => {
-            const loader = new THREE.TextureLoader();
-            loader.load(
-                url,
-                (texture: any) => {
-                    configure?.(texture);
-                    resolve(texture);
-                },
-                undefined,
-                () => resolve(null)
-            );
-        });
-    }
-
-    async loadHdrTexture(url: string) {
-        try {
-            const { RGBELoader } = await import(RGBE_LOADER_MODULE_URL);
-            return await new Promise<any>((resolve) => {
-                new RGBELoader().load(url, (texture: any) => resolve(texture), undefined, () => resolve(null));
-            });
-        } catch {
-            return null;
-        }
-    }
-
-    async loadEarthMoonAssets(THREE: any) {
+    async loadEarthMoonAssets(THREE) {
         const [earthMap, earthNormal, earthSpecular, moonMap, skyHdr] = await Promise.all([
-            this.loadTexture(THREE, EARTH_MOON_ASSETS.earthMap, (texture) => {
+            loadTexture(THREE, EARTH_MOON_ASSETS.earthMap, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 texture.anisotropy = 8;
             }),
-            this.loadTexture(THREE, EARTH_MOON_ASSETS.earthNormal, (texture) => {
+            loadTexture(THREE, EARTH_MOON_ASSETS.earthNormal, (texture) => {
                 texture.anisotropy = 8;
             }),
-            this.loadTexture(THREE, EARTH_MOON_ASSETS.earthSpecular, (texture) => {
+            loadTexture(THREE, EARTH_MOON_ASSETS.earthSpecular, (texture) => {
                 texture.anisotropy = 8;
             }),
-            this.loadTexture(THREE, EARTH_MOON_ASSETS.moonMap, (texture) => {
+            loadTexture(THREE, EARTH_MOON_ASSETS.moonMap, (texture) => {
                 texture.colorSpace = THREE.SRGBColorSpace;
                 texture.anisotropy = 8;
             }),
-            this.loadHdrTexture(EARTH_MOON_ASSETS.skyHdr),
+            loadHdrTexture(EARTH_MOON_ASSETS.skyHdr),
         ]);
-
         return { earthMap, earthNormal, earthSpecular, moonMap, skyHdr };
     }
-
-    addPlanet(THREE: any, assets?: any) {
+    addPlanet(THREE, assets) {
         const radius = this.config.planet.radius ?? 1;
         if (this.config.planet.style === "earth_moon") {
             const earthRadius = EARTH_SCENE_RADIUS;
             const moonRadius = MOON_SCENE_RADIUS;
             const earthPosition = new THREE.Vector3(-COMPRESSED_DISTANCE_UNITS * 0.5, 0, 0);
             const moonPosition = new THREE.Vector3(COMPRESSED_DISTANCE_UNITS * 0.5, 0, 0);
-
-            const earth = new THREE.Mesh(
-                new THREE.SphereGeometry(earthRadius, 64, 64),
-                new THREE.MeshPhongMaterial({
-                    color: 0xffffff,
-                    emissive: 0x030812,
-                    shininess: 28,
-                    specular: 0x2f4f7f,
-                    map: assets?.earthMap ?? this.createEarthTexture(THREE),
-                    normalMap: assets?.earthNormal ?? null,
-                    specularMap: assets?.earthSpecular ?? null,
-                })
-            );
+            const earth = new THREE.Mesh(new THREE.SphereGeometry(earthRadius, 64, 64), new THREE.MeshPhongMaterial({
+                color: 0xffffff,
+                emissive: 0x030812,
+                shininess: 28,
+                specular: 0x2f4f7f,
+                map: assets?.earthMap ?? this.createEarthTexture(THREE),
+                normalMap: assets?.earthNormal ?? null,
+                specularMap: assets?.earthSpecular ?? null,
+            }));
             earth.scale.set(1, 0.9966, 1);
             earth.position.copy(earthPosition);
             this.worldGroup.add(earth);
             this.earthMesh = earth;
-
-            const atmosphere = new THREE.Mesh(
-                new THREE.SphereGeometry(earthRadius * 1.08, 44, 44),
-                new THREE.MeshBasicMaterial({
-                    color: 0x38bdf8,
-                    transparent: true,
-                    opacity: 0.09,
-                    side: THREE.BackSide,
-                })
-            );
+            const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(earthRadius * 1.08, 44, 44), new THREE.MeshBasicMaterial({
+                color: 0x38bdf8,
+                transparent: true,
+                opacity: 0.09,
+                side: THREE.BackSide,
+            }));
             atmosphere.position.copy(earthPosition);
             this.worldGroup.add(atmosphere);
-
-            const moon = new THREE.Mesh(
-                new THREE.SphereGeometry(moonRadius, 40, 40),
-                new THREE.MeshStandardMaterial({
-                    color: 0xf1f5f9,
-                    emissive: 0x05080f,
-                    metalness: 0.02,
-                    roughness: 0.95,
-                    map: assets?.moonMap ?? this.createMoonTexture(THREE),
-                    bumpMap: assets?.moonMap ?? null,
-                    bumpScale: moonRadius * 0.04,
-                })
-            );
+            const moon = new THREE.Mesh(new THREE.SphereGeometry(moonRadius, 40, 40), new THREE.MeshStandardMaterial({
+                color: 0xf1f5f9,
+                emissive: 0x05080f,
+                metalness: 0.02,
+                roughness: 0.95,
+                map: assets?.moonMap ?? this.createMoonTexture(THREE),
+                bumpMap: assets?.moonMap ?? null,
+                bumpScale: moonRadius * 0.04,
+            }));
             moon.position.copy(moonPosition);
             this.worldGroup.add(moon);
             this.moonMesh = moon;
-
             this.earthMoonCenters = { earth: earthPosition, moon: moonPosition };
             this.earthMoonRadii = { earth: earthRadius, moon: moonRadius };
             const clientTop = earthPosition.clone().add(new THREE.Vector3(0, earthRadius * earth.scale.y, 0));
@@ -1027,25 +898,17 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.earthMoonAnchors = { clientTop, clientBottom, serverTop, serverBottom };
             return;
         }
-
         if (this.config.planet.style === "moon") {
-            const moon = new THREE.Mesh(
-                new THREE.SphereGeometry(radius, 56, 56),
-                new THREE.MeshStandardMaterial({
-                    color: 0xb8c0cc,
-                    emissive: 0x111827,
-                    metalness: 0.12,
-                    roughness: 0.92,
-                    map: this.createMoonTexture(THREE),
-                })
-            );
+            const moon = new THREE.Mesh(new THREE.SphereGeometry(radius, 56, 56), new THREE.MeshStandardMaterial({
+                color: 0xb8c0cc,
+                emissive: 0x111827,
+                metalness: 0.12,
+                roughness: 0.92,
+                map: this.createMoonTexture(THREE),
+            }));
             this.worldGroup.add(moon);
-
             for (let i = 0; i < 20; i += 1) {
-                const crater = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.035 + Math.random() * 0.02, 10, 10),
-                    new THREE.MeshStandardMaterial({ color: 0x8e97a6, roughness: 0.95, metalness: 0.05 })
-                );
+                const crater = new THREE.Mesh(new THREE.SphereGeometry(0.035 + Math.random() * 0.02, 10, 10), new THREE.MeshStandardMaterial({ color: 0x8e97a6, roughness: 0.95, metalness: 0.05 }));
                 const lat = -70 + Math.random() * 140;
                 const lon = -180 + Math.random() * 360;
                 const p = this.latLonToVector3(lat, lon, radius * 1.002);
@@ -1056,43 +919,33 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             }
             return;
         }
-
-        const earth = new THREE.Mesh(
-            new THREE.SphereGeometry(radius, 64, 64),
-            new THREE.MeshStandardMaterial({
-                color: 0x12345f,
-                emissive: 0x0a1b34,
-                metalness: 0.28,
-                roughness: 0.56,
-                map: this.createEarthTexture(THREE),
-            })
-        );
+        const earth = new THREE.Mesh(new THREE.SphereGeometry(radius, 64, 64), new THREE.MeshStandardMaterial({
+            color: 0x12345f,
+            emissive: 0x0a1b34,
+            metalness: 0.28,
+            roughness: 0.56,
+            map: this.createEarthTexture(THREE),
+        }));
         this.worldGroup.add(earth);
-
-        const atmosphere = new THREE.Mesh(
-            new THREE.SphereGeometry(radius * 1.08, 40, 40),
-            new THREE.MeshBasicMaterial({
-                color: 0x7dd3fc,
-                transparent: true,
-                opacity: 0.09,
-                side: THREE.BackSide,
-            })
-        );
+        const atmosphere = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.08, 40, 40), new THREE.MeshBasicMaterial({
+            color: 0x7dd3fc,
+            transparent: true,
+            opacity: 0.09,
+            side: THREE.BackSide,
+        }));
         this.worldGroup.add(atmosphere);
     }
-
     async initThree() {
         if (!this.canvas || this.renderer) {
             return;
         }
         try {
-            const module = await import(THREE_MODULE_URL);
-            this.three = module;
-        } catch {
+            this.three = await loadThreeModule();
+        }
+        catch {
             this.setConnection("disconnected", "3D Unavailable");
             return;
         }
-
         const THREE = this.three;
         const isEarthMoon = this.config.planet.style === "earth_moon";
         const earthMoonAssets = isEarthMoon ? await this.loadEarthMoonAssets(THREE) : null;
@@ -1102,7 +955,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.cameraRadius = 9.2;
         }
         this.updateCameraPosition();
-
         this.renderer = new THREE.WebGLRenderer({
             canvas: this.canvas,
             antialias: true,
@@ -1125,7 +977,6 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             earthMoonAssets.skyHdr.dispose?.();
             pmremGenerator.dispose();
         }
-
         if (this.config.planet.style === "moon") {
             const ambient = new THREE.AmbientLight(0xe2e8f0, 0.45);
             const rimLight = new THREE.DirectionalLight(0xf8fafc, 0.82);
@@ -1133,14 +984,16 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             const fillLight = new THREE.DirectionalLight(0x94a3b8, 0.4);
             fillLight.position.set(-2, -1.4, -1.4);
             this.scene.add(ambient, rimLight, fillLight);
-        } else if (this.config.planet.style === "earth_moon") {
+        }
+        else if (this.config.planet.style === "earth_moon") {
             const ambient = new THREE.AmbientLight(0xcbd5e1, 0.34);
             const sunLight = new THREE.DirectionalLight(0xf8fafc, 1.35);
             sunLight.position.set(8, 2.8, 1.2);
             const rimLight = new THREE.DirectionalLight(0xbfdbfe, 0.55);
             rimLight.position.set(-4, -1.6, -2.8);
             this.scene.add(ambient, sunLight, rimLight);
-        } else {
+        }
+        else {
             const ambient = new THREE.AmbientLight(0x8fdfff, 0.55);
             const rimLight = new THREE.DirectionalLight(0x66e5ff, 0.65);
             rimLight.position.set(2.2, 1.2, 2);
@@ -1148,11 +1001,9 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             fillLight.position.set(-2, -1.4, -1.4);
             this.scene.add(ambient, rimLight, fillLight);
         }
-
         this.worldGroup = new THREE.Group();
         this.scene.add(this.worldGroup);
         this.addPlanet(THREE, earthMoonAssets);
-
         const radius = (this.config.planet.radius ?? 1) * 1.03;
         let client = this.latLonToVector3(this.config.nodes.client.lat, this.config.nodes.client.lon, radius);
         let server = this.latLonToVector3(this.config.nodes.server.lat, this.config.nodes.server.lon, radius);
@@ -1164,19 +1015,17 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.spawnNode(client, this.config.nodes.client);
         this.spawnNode(server, this.config.nodes.server);
         this.ensureConnectionArc();
-
+        this.setServerVisibility(this.isOpen());
         this.resizeObserver = new ResizeObserver(() => this.resizeRenderer());
         this.resizeObserver.observe(this.canvas);
         this.bindCameraControls();
         this.animate();
     }
-
     animate() {
         if (!this.renderer || !this.scene || !this.camera || !this.worldGroup || !this.three) {
             return;
         }
         const now = performance.now();
-
         const alive = [];
         for (const item of this.effects) {
             const elapsed = now - item.userData.born;
@@ -1232,21 +1081,17 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             alive.push(item);
         }
         this.effects = alive;
-
         this.renderer.render(this.scene, this.camera);
         this.animationFrame = window.requestAnimationFrame(() => this.animate());
     }
-
     connectChannel() {
         this.channel = this.connect();
         if (!this.channel) {
             return;
         }
-
         this.on("connecting", () => {
             this.setConnection("connecting", "Connecting");
         });
-
         this.on("open", () => {
             this.setConnection("connected", "Connected");
             if (this.startRequested) {
@@ -1256,21 +1101,8 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
                 }
             }
         });
-
         this.on("message", (event) => {
-            const payload = event.detail?.data as
-                | {
-                      type?: string;
-                      sent_at?: number;
-                      received_at?: number;
-                      server_rx_packets?: number;
-                      server_tx_packets?: number;
-                      server_rx_bytes?: number;
-                      server_tx_bytes?: number;
-                      request_frame_bytes?: number;
-                      ack_frame_bytes?: number;
-                  }
-                | undefined;
+            const payload = event.detail?.data;
             if (!payload || payload.type !== "keepalive_ack" || !this.pending) {
                 return;
             }
@@ -1282,50 +1114,43 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             const latencyMs = Math.max(1, now - payload.sent_at);
             const rawText = typeof event.detail?.raw === "string" ? event.detail.raw : "";
             const downloadBytes = this.encoder.encode(rawText).length;
-            const hasServerTotals =
-                typeof payload.server_rx_packets === "number" &&
+            const hasServerTotals = typeof payload.server_rx_packets === "number" &&
                 typeof payload.server_tx_packets === "number" &&
                 typeof payload.server_rx_bytes === "number" &&
                 typeof payload.server_tx_bytes === "number" &&
                 typeof payload.received_at === "number";
-
             if (hasServerTotals) {
                 this.totalSentPackets = Math.max(0, payload.server_rx_packets ?? 0);
                 this.totalSentBytes = Math.max(0, payload.server_rx_bytes ?? 0);
                 this.totalReceivedPackets = Math.max(0, payload.server_tx_packets ?? 0);
                 this.totalReceivedBytes = Math.max(0, payload.server_tx_bytes ?? 0);
-
                 const prevAt = this.previousServerReceivedAt;
                 const prevTxBytes = this.previousServerTxBytes;
                 const prevRxBytes = this.previousServerRxBytes;
                 const currentAt = this.serverTimestampToMs(payload.received_at ?? now);
                 const currentTxBytes = payload.server_tx_bytes ?? 0;
                 const currentRxBytes = payload.server_rx_bytes ?? 0;
-
-                if (
-                    prevAt != null &&
+                if (prevAt != null &&
                     prevTxBytes != null &&
                     prevRxBytes != null &&
                     currentAt > prevAt &&
                     currentTxBytes >= prevTxBytes &&
-                    currentRxBytes >= prevRxBytes
-                ) {
+                    currentRxBytes >= prevRxBytes) {
                     const elapsedMs = currentAt - prevAt;
                     const rxBytesPerSecond = ((currentTxBytes - prevTxBytes) / elapsedMs) * 1000;
                     const txBytesPerSecond = ((currentRxBytes - prevRxBytes) / elapsedMs) * 1000;
                     this.setRateMetrics(txBytesPerSecond, rxBytesPerSecond);
-                } else {
-                    this.setRateMetrics(
-                        ((payload.request_frame_bytes ?? this.lastPayloadBytes) / Math.max(latencyMs, 1)) * 1000,
-                        ((payload.ack_frame_bytes ?? downloadBytes) / Math.max(latencyMs, 1)) * 1000
-                    );
+                }
+                else {
+                    this.setRateMetrics(((payload.request_frame_bytes ?? this.lastPayloadBytes) / Math.max(latencyMs, 1)) * 1000, ((payload.ack_frame_bytes ?? downloadBytes) / Math.max(latencyMs, 1)) * 1000);
                 }
                 this.previousServerReceivedAt = currentAt;
                 this.previousServerTxBytes = currentTxBytes;
                 this.previousServerRxBytes = currentRxBytes;
                 this.updateMetrics(latencyMs, downloadBytes, false);
                 this.updateTotals();
-            } else {
+            }
+            else {
                 this.totalReceivedPackets += 1;
                 this.totalReceivedBytes += downloadBytes;
                 this.updateMetrics(latencyMs, downloadBytes);
@@ -1333,18 +1158,15 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
             this.pulseDirection("rx", this.config.labels?.rx ?? "RX");
             this.spawnPulse("rx");
         });
-
         this.on("close", () => {
             this.stopLoop();
             this.setConnection("disconnected", "Disconnected");
         });
-
         this.on("error", () => {
             this.stopLoop();
             this.setConnection("disconnected", "Error");
         });
     }
-
     bind() {
         if (this.toggleButton) {
             this.toggleButton.addEventListener("click", () => this.toggleLoop());
@@ -1368,9 +1190,9 @@ class HeartbeatOrbitComponent extends WebSocketComponent {
         this.initThree();
     }
 }
-
-export function attachHeartbeatOrbitMonitors(config: HeartbeatOrbitConfig) {
-    document.querySelectorAll<HTMLElement>(config.selector).forEach((element) => {
-        new HeartbeatOrbitComponent(element, config);
+export function attachHeartbeatMonitors(config) {
+    document.querySelectorAll(config.selector).forEach((element) => {
+        new HeartbeatMonitorComponent(element, config);
     });
 }
+//# sourceMappingURL=heartbeat_monitor.js.map
