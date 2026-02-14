@@ -1,4 +1,4 @@
-import { WebSocketWidget, createPeriodicSender } from "../headless/ws.js";
+﻿import { WebSocketWidget, createPeriodicSender } from "../../base/frontend/ws.js";
 
 class EccWidget extends WebSocketWidget {
     constructor(element) {
@@ -321,3 +321,4 @@ class EccWidget extends WebSocketWidget {
 document.querySelectorAll('[data-widget="ws-ecc"]').forEach((element) => {
     new EccWidget(element);
 });
+
