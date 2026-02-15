@@ -67,12 +67,17 @@ all = [
     "snakeviz",
     "build",
     "twine",
+    "bleak>=0.22.1",
+    "pyyaml",
     "pytubefix",
     "mutagen",
     "ffmpeg-python",
     "fastapi",
     "uvicorn[standard]",
     "websockets",
+    "jinja2",
+    "httpx",
+    "python-multipart",
 ]
 
 [project.scripts]
