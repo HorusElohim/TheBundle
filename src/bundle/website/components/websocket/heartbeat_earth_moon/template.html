@@ -1,43 +1,43 @@
 {% set component_slug = component.slug if component is defined else "ws-heartbeat-earth-moon" %}
 {% set component_ws_path = component.params.ws_path if component is defined and component.params and component.params.ws_path else "/ws/heartbeat-earth-moon" %}
-<section class="panel glow-panel ws-heartbeat-earth-moon" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-state="idle">
-    <header class="ws-heartbeat-earth-moon__header">
-        <div class="ws-heartbeat-earth-moon__title">
-            <p class="ws-heartbeat-earth-moon__eyebrow">Lunar WebSocket</p>
+<section class="panel glow-panel ws-panel ws-heartbeat-earth-moon" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-state="idle">
+    <header class="ws-panel__header ws-heartbeat-earth-moon__header">
+        <div class="ws-panel__title ws-heartbeat-earth-moon__title">
+            <p class="ws-panel__eyebrow ws-heartbeat-earth-moon__eyebrow">Lunar WebSocket</p>
             <h2>HeartBeatMonitorEarthMoon</h2>
-            <p class="ws-heartbeat-earth-moon__legend">Client <strong>Heart</strong> &bull; Server <strong>Moon</strong></p>
+            <p class="ws-panel__legend ws-heartbeat-earth-moon__legend">Client <strong>Heart</strong> &bull; Server <strong>Moon</strong></p>
         </div>
-        <div class="ws-heartbeat-earth-moon__badges">
-            <span class="ws-heartbeat-earth-moon__badge" data-role="connection">Connecting</span>
-            <span class="ws-heartbeat-earth-moon__badge ws-heartbeat-earth-moon__badge--ghost" data-role="direction">Idle</span>
+        <div class="ws-panel__badges ws-heartbeat-earth-moon__badges">
+            <span class="ws-panel__badge ws-heartbeat-earth-moon__badge" data-role="connection">Connecting</span>
+            <span class="ws-panel__badge ws-panel__badge--ghost ws-heartbeat-earth-moon__badge ws-heartbeat-earth-moon__badge--ghost" data-role="direction">Idle</span>
         </div>
     </header>
 
-    <div class="ws-heartbeat-earth-moon__viewport">
-        <canvas class="ws-heartbeat-earth-moon__canvas" data-role="canvas"></canvas>
-        <div class="ws-heartbeat-earth-moon__overlay">
-            <div class="ws-heartbeat-earth-moon__hud">
-                <div class="ws-heartbeat-earth-moon__metric-row">
+    <div class="ws-panel__viewport ws-heartbeat-earth-moon__viewport">
+        <canvas class="ws-panel__canvas ws-heartbeat-earth-moon__canvas" data-role="canvas"></canvas>
+        <div class="ws-panel__overlay ws-heartbeat-earth-moon__overlay">
+            <div class="ws-panel__hud ws-heartbeat-earth-moon__hud">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>Latency</span>
                     <strong data-metric="latency">-- ms</strong>
                 </div>
-                <div class="ws-heartbeat-earth-moon__metric-row">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>Jitter</span>
                     <strong data-metric="jitter">-- ms</strong>
                 </div>
-                <div class="ws-heartbeat-earth-moon__metric-row">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>TX</span>
                     <strong data-metric="tx-rate">TX: --</strong>
                 </div>
-                <div class="ws-heartbeat-earth-moon__metric-row">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>RX</span>
                     <strong data-metric="rx-rate">RX: --</strong>
                 </div>
-                <div class="ws-heartbeat-earth-moon__metric-row">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>Total Sent</span>
                     <strong data-metric="total-sent">0 B (0 pkgs)</strong>
                 </div>
-                <div class="ws-heartbeat-earth-moon__metric-row">
+                <div class="ws-panel__metric-row ws-heartbeat-earth-moon__metric-row">
                     <span>Total Received</span>
                     <strong data-metric="total-received">0 B (0 pkgs)</strong>
                 </div>
@@ -45,16 +45,16 @@
         </div>
     </div>
 
-    <div class="ws-heartbeat-earth-moon__controls">
-        <button class="ws-heartbeat-earth-moon__button" type="button" data-action="toggle" disabled>
+    <div class="ws-panel__controls ws-heartbeat-earth-moon__controls">
+        <button class="ws-panel__button ws-heartbeat-earth-moon__button" type="button" data-action="toggle" disabled>
             <span data-role="toggle-label">Start Sweep</span>
         </button>
-        <label class="ws-heartbeat-earth-moon__tempo">
+        <label class="ws-panel__tempo ws-heartbeat-earth-moon__tempo">
             <span>Cadence</span>
             <span data-control-value="tempo">1.00s</span>
         </label>
         <input
-            class="ws-heartbeat-earth-moon__range"
+            class="ws-panel__range ws-heartbeat-earth-moon__range"
             type="range"
             min="0"
             max="100"
@@ -65,12 +65,12 @@
             data-min-value="0.05"
             data-max-value="10"
         />
-        <label class="ws-heartbeat-earth-moon__tempo">
+        <label class="ws-panel__tempo ws-heartbeat-earth-moon__tempo">
             <span>Payload Size</span>
             <span data-control-value="payload">1 KB</span>
         </label>
         <input
-            class="ws-heartbeat-earth-moon__range"
+            class="ws-panel__range ws-heartbeat-earth-moon__range"
             type="range"
             min="0"
             max="100"

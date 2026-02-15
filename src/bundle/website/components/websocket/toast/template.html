@@ -1,13 +1,13 @@
 {% set component_slug = component.slug if component is defined else "ws-toast" %}
 {% set component_ws_path = component.params.ws_path if component is defined and component.params and component.params.ws_path else "/ws/toast" %}
-<section class="panel glow-panel ws-toast-component" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}">
-    <header class="ws-toast__header">
-        <div>
-            <p class="ws-toast__eyebrow">WebSocket</p>
+<section class="panel glow-panel ws-panel ws-toast-component" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}">
+    <header class="ws-panel__header ws-toast__header">
+        <div class="ws-panel__title">
+            <p class="ws-panel__eyebrow ws-toast__eyebrow">WebSocket</p>
             <h2>Toast feed</h2>
             <p class="muted">Surface incoming messages as lightweight toasts.</p>
         </div>
-        <span class="ws-toast__status" data-role="status">Idle</span>
+        <span class="ws-panel__status ws-toast__status" data-role="status">Idle</span>
     </header>
     <div class="ws-toast__list" data-role="toast-list"></div>
 </section>

@@ -1,48 +1,17 @@
 .ws-heartbeat {
-    --ws-heartbeat-border: var(--surface-border);
-    --ws-heartbeat-bg: var(--surface);
-    --ws-heartbeat-muted: var(--text-muted);
-    --ws-heartbeat-accent: #38bdf8;
-    display: grid;
-    gap: 16px;
-    padding: 22px;
+    --ws-panel-accent: #38bdf8;
+    --ws-panel-border: var(--surface-border);
+    --ws-panel-muted: var(--text-muted);
+    --ws-panel-button-bg: rgba(255, 255, 255, 0.04);
+    --ws-panel-range: var(--ws-panel-accent);
 }
 
 [data-theme='light'] .ws-heartbeat {
-    --ws-heartbeat-accent: #0ea5e9;
-}
-
-.ws-heartbeat__header {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: flex-start;
+    --ws-panel-accent: #0ea5e9;
 }
 
 .ws-heartbeat__eyebrow {
-    margin: 0 0 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 12px;
-    color: var(--ws-heartbeat-accent);
-}
-
-.ws-heartbeat__header h2 {
-    margin: 0;
-    font-size: 22px;
-}
-
-.ws-heartbeat__status {
-    border: 1px solid var(--ws-heartbeat-border);
-    border-radius: 999px;
-    padding: 6px 12px;
-    font-size: 12px;
-    font-weight: 600;
-}
-
-.ws-heartbeat[data-state='active'] .ws-heartbeat__status {
-    border-color: rgba(56, 189, 248, 0.6);
-    color: var(--ws-heartbeat-accent);
+    margin-bottom: 6px;
 }
 
 .ws-heartbeat__controls {
@@ -50,27 +19,7 @@
     gap: 8px;
 }
 
-.ws-heartbeat__tempo {
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.8px;
-    color: var(--ws-heartbeat-muted);
-}
-
-.ws-heartbeat__range {
-    width: 100%;
-    accent-color: var(--ws-heartbeat-accent);
-}
-
 .ws-heartbeat__button {
     justify-self: start;
-    border: 1px solid var(--ws-heartbeat-border);
-    border-radius: 999px;
-    padding: 10px 16px;
-    background: rgba(255, 255, 255, 0.04);
-    color: var(--text-primary);
     font-weight: 600;
-    cursor: pointer;
 }
