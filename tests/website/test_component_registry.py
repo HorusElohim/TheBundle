@@ -7,8 +7,7 @@ from bundle.website.components.graphic import (
     GraphicThreeDComponentParams,
     GraphicTwoDComponent,
 )
-from bundle.website.components.websocket import heartbeat_earth
-from bundle.website.components.websocket import ecc, heartbeat, toast
+from bundle.website.components.websocket import heartbeat, heartbeat_cardio, heartbeat_earth, ecc, toast
 from bundle.website.components.websocket.base import GPXWebSocketBaseComponent, WebSocketComponentParams
 
 
@@ -76,3 +75,11 @@ def test_gpx_websocket_base_inherits_graphic_3d_defaults():
     assert isinstance(component, GPXWebSocketBaseComponent)
     assert component.params.render_mode == "3d"
     assert component.params.graph_id == "heartbeat-earth"
+
+
+def test_heartbeat_cardio_component_defaults():
+    component = heartbeat_cardio.WebSocketHeartBeatCardioComponent()
+    assert isinstance(component, GPXWebSocketBaseComponent)
+    assert component.slug == "ws-heartbeat-cardio"
+    assert component.params.endpoint == "/ws/heartbeat-cardio"
+    assert component.params.graph_id == "heartbeat-cardio"

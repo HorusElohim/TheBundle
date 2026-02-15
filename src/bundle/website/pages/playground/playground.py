@@ -5,7 +5,7 @@ from fastapi.responses import HTMLResponse
 
 from ... import components
 from ...common.pages import base_context, create_templates, get_logger, get_static_path, get_template_path
-from ...components.websocket import ecc, heartbeat, heartbeat_earth, heartbeat_earth_moon, toast
+from ...components.websocket import ecc, heartbeat, heartbeat_cardio, heartbeat_earth, heartbeat_earth_moon, toast
 from ...components.websocket.base import WebSocketComponentParams
 
 NAME = "playground"
@@ -33,6 +33,7 @@ COMPONENTS = (
     ecc.WebSocketECCComponent(params=WebSocketComponentParams(endpoint="/ws/ecc-1")),
     ecc.WebSocketECCComponent(params=WebSocketComponentParams(endpoint="/ws/ecc-2")),
     heartbeat.WebSocketHeartbeatComponent(),
+    heartbeat_cardio.WebSocketHeartBeatCardioComponent(),
     heartbeat_earth.WebSocketHeartBeatMonitorEarthComponent(),
     heartbeat_earth_moon.WebSocketHeartBeatMonitorEarthMoonComponent(),
     toast.WebSocketToastComponent(),
