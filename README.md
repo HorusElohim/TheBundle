@@ -15,6 +15,20 @@
 pip install thebundle
 ```
 
+## Bootstrap Wizard
+
+From a fresh machine, use the wizard to install Docker (plus WSL2/NVIDIA setup where applicable), Git, Python, create a venv, and install `thebundle[all]`.
+
+Linux/macOS:
+```sh
+sh -c "$(curl -fsSL https://raw.githubusercontent.com/HorusElohim/TheBundle/main/wizards/run.sh)"
+```
+
+Windows (PowerShell):
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.com/HorusElohim/TheBundle/main/wizards/platforms/windows.ps1 | iex"
+```
+
 
 ### Continuous Integration: Platforms & Python Versions
 
