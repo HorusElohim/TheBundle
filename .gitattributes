@@ -1,1 +1,2 @@
+*.hdr filter=lfs diff=lfs merge=lfs -text
 src/bundle/website/components/websocket/heartbeat_earth_moon/frontend/assets/HDR_silver_and_gold_nebulae.hdr filter=lfs diff=lfs merge=lfs -text
