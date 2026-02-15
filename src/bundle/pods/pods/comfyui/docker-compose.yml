@@ -1,0 +1,33 @@
+﻿services:
+  comfyui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: nvidia
+      args:
+        COMFYUI_VERSION: ${COMFYUI_VERSION:-master}
+    image: nextgen/comfyui:local
+    container_name: nextgen-comfyui
+    restart: unless-stopped
+    ports:
+      - "8188:8188"
+    gpus: all
+    shm_size: "16gb"
+    environment:
+      - HF_HOME=/opt/content/cache/huggingface
+      - HF_TOKEN=${HF_TOKEN:-}
+      - XDG_CACHE_HOME=/opt/content/cache
+      - VRAM=${VRAM:-high}
+      - INSTALL_CUSTOM_NODES=${INSTALL_CUSTOM_NODES:-1}
+      - CUSTOM_NODES_UPDATE=${CUSTOM_NODES_UPDATE:-0}
+      - CUSTOM_NODES_INSTALL_DEPS=${CUSTOM_NODES_INSTALL_DEPS:-1}
+    volumes:
+      - ./data/models:/opt/content/models
+      - ./data/input:/opt/content/input
+      - ./data/output:/opt/content/output
+      - ./data/custom_nodes:/opt/content/custom_nodes
+      - ./data/user:/opt/content/user
+      - ./data/cache:/opt/content/cache
+      - ./data/user_db:/opt/ComfyUI/user
+    tmpfs:
+      - /tmp/comfyui:mode=775,uid=65534,gid=65534

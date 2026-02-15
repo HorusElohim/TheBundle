@@ -196,3 +196,10 @@ yarn-error.log*
 src/bundle/website/components/websocket/**/frontend/*.js.map
 src/bundle/website/pages/*/static/*.js.map
 src/bundle/website/static/js/*.js.map
+
+# Pod runtime data (local/dev artifacts)
+src/bundle/pods/pods/comfyui/data/
+
+# PPISP local workspace datasets/artifacts
+src/bundle/pods/pods/ppisp/.env
+src/bundle/pods/pods/ppisp/workspace/data/
