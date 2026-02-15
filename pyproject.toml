@@ -34,6 +34,9 @@ dependencies = [
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+"bundle.pods" = ["pods/**/*", "pods/**/.gitkeep"]
+
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"
 
