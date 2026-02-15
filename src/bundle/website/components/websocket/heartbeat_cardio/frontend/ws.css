@@ -1,0 +1,163 @@
+.ws-heartbeat-cardio {
+    --ws-cardio-accent: #00e6ff;
+    --ws-cardio-accent-2: #22c55e;
+    --ws-cardio-warn: #f97316;
+    display: grid;
+    gap: 14px;
+    border: 1px solid color-mix(in srgb, var(--ws-cardio-accent) 35%, var(--surface-border));
+    background:
+        radial-gradient(circle at 10% 10%, color-mix(in srgb, var(--ws-cardio-accent) 26%, transparent), transparent 40%),
+        radial-gradient(circle at 92% 18%, color-mix(in srgb, var(--ws-cardio-accent-2) 18%, transparent), transparent 44%),
+        color-mix(in srgb, #040d19 90%, var(--surface) 10%);
+}
+
+.ws-heartbeat-cardio__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ws-heartbeat-cardio__title {
+    display: grid;
+    gap: 4px;
+}
+
+.ws-heartbeat-cardio__title h2 {
+    margin: 0;
+}
+
+.ws-heartbeat-cardio__eyebrow {
+    margin: 0;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ws-cardio-accent);
+}
+
+.ws-heartbeat-cardio__legend {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.ws-heartbeat-cardio__badges {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.ws-heartbeat-cardio__badge {
+    border: 1px solid color-mix(in srgb, var(--ws-cardio-accent) 35%, var(--surface-border));
+    border-radius: 999px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    background: color-mix(in srgb, #03101f 82%, transparent);
+}
+
+.ws-heartbeat-cardio__badge--ghost {
+    border-color: color-mix(in srgb, var(--text-muted) 35%, transparent);
+}
+
+.ws-heartbeat-cardio[data-state='connected'] .ws-heartbeat-cardio__badge[data-role='connection'] {
+    color: var(--ws-cardio-accent-2);
+    border-color: color-mix(in srgb, var(--ws-cardio-accent-2) 45%, transparent);
+}
+
+.ws-heartbeat-cardio[data-state='error'] .ws-heartbeat-cardio__badge[data-role='connection'] {
+    color: var(--ws-cardio-warn);
+    border-color: color-mix(in srgb, var(--ws-cardio-warn) 45%, transparent);
+}
+
+.ws-heartbeat-cardio[data-direction='tx'] .ws-heartbeat-cardio__badge[data-role='direction'] {
+    color: var(--ws-cardio-accent);
+}
+
+.ws-heartbeat-cardio[data-direction='rx'] .ws-heartbeat-cardio__badge[data-role='direction'] {
+    color: var(--ws-cardio-warn);
+}
+
+.ws-heartbeat-cardio__viewport {
+    position: relative;
+    min-height: 280px;
+    border-radius: 12px;
+    border: 1px solid color-mix(in srgb, var(--ws-cardio-accent) 20%, var(--surface-border));
+    overflow: hidden;
+    background: linear-gradient(180deg, #031528, #01070f 75%);
+}
+
+.ws-heartbeat-cardio__canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.ws-heartbeat-cardio__hud {
+    position: absolute;
+    right: 10px;
+    top: 10px;
+    display: grid;
+    gap: 6px;
+    width: min(220px, 56%);
+    padding: 10px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, white 12%, transparent);
+    background: color-mix(in srgb, black 40%, transparent);
+    backdrop-filter: blur(3px);
+}
+
+.ws-heartbeat-cardio__metric-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ws-heartbeat-cardio__metric-row strong {
+    color: color-mix(in srgb, var(--ws-cardio-accent) 64%, white);
+}
+
+.ws-heartbeat-cardio__controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.ws-heartbeat-cardio__button {
+    padding: 8px 14px;
+    border-radius: 10px;
+    border: 1px solid color-mix(in srgb, var(--ws-cardio-accent) 40%, var(--surface-border));
+    background: color-mix(in srgb, #021423 88%, transparent);
+    color: color-mix(in srgb, var(--ws-cardio-accent) 70%, white);
+    cursor: pointer;
+}
+
+.ws-heartbeat-cardio__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.ws-heartbeat-cardio__tempo {
+    min-width: 110px;
+    display: grid;
+    gap: 2px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.ws-heartbeat-cardio__range {
+    flex: 1 1 180px;
+    accent-color: var(--ws-cardio-accent);
+}
+
+@media (max-width: 760px) {
+    .ws-heartbeat-cardio__hud {
+        position: static;
+        width: 100%;
+        margin: 10px;
+        margin-bottom: 0;
+    }
+}
