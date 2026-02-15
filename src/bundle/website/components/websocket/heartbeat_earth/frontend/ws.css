@@ -2,205 +2,61 @@
     --earth-bg-a: #071222;
     --earth-bg-b: #02060d;
     --earth-grid: rgba(110, 231, 255, 0.12);
-    --earth-border: rgba(148, 163, 184, 0.25);
     --earth-tx: #4ade80;
     --earth-rx: #fb923c;
-    --earth-idle: #8b9bb4;
-    display: grid;
-    gap: 16px;
-    padding: 22px;
-    font-family: "Rajdhani", "Segoe UI", sans-serif;
-    background:
+    --ws-panel-accent: #22d3ee;
+    --ws-panel-border: rgba(148, 163, 184, 0.25);
+    --ws-panel-shell:
         radial-gradient(120% 160% at 100% 0%, rgba(34, 211, 238, 0.15), transparent 60%),
         radial-gradient(120% 150% at 0% 100%, rgba(59, 130, 246, 0.18), transparent 60%);
+    --ws-panel-viewport-bg:
+        linear-gradient(180deg, var(--earth-bg-a), var(--earth-bg-b)),
+        linear-gradient(to right, var(--earth-grid) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--earth-grid) 1px, transparent 1px);
+    --ws-panel-button-bg: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(59, 130, 246, 0.16));
+    --ws-panel-range: #22d3ee;
+    --ws-panel-direction-tx: var(--earth-tx);
+    --ws-panel-direction-rx: var(--earth-rx);
+    font-family: "Rajdhani", "Segoe UI", sans-serif;
 }
 
 [data-theme='light'] .ws-heartbeat-earth {
     --earth-bg-a: #dff4ff;
     --earth-bg-b: #f8fcff;
     --earth-grid: rgba(8, 145, 178, 0.2);
-    --earth-border: rgba(30, 41, 59, 0.16);
-    --earth-idle: #475569;
-}
-
-.ws-heartbeat-earth__header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 14px;
-    flex-wrap: wrap;
-}
-
-.ws-heartbeat-earth__title {
-    display: grid;
-    gap: 6px;
-}
-
-.ws-heartbeat-earth__eyebrow {
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-size: 12px;
-    color: #22d3ee;
+    --ws-panel-border: rgba(30, 41, 59, 0.16);
 }
 
 .ws-heartbeat-earth__title h2 {
-    margin: 0;
-    font-size: 24px;
     font-family: "Orbitron", "Rajdhani", "Segoe UI", sans-serif;
 }
 
-.ws-heartbeat-earth__badges {
-    display: flex;
-    gap: 8px;
-}
-
-.ws-heartbeat-earth__badge {
-    border: 1px solid var(--earth-border);
-    border-radius: 999px;
-    padding: 6px 11px;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    background: rgba(2, 6, 23, 0.35);
-}
-
-[data-theme='light'] .ws-heartbeat-earth__badge {
-    background: rgba(255, 255, 255, 0.8);
-}
-
-.ws-heartbeat-earth__badge--ghost {
-    background: transparent;
-}
-
-.ws-heartbeat-earth[data-state='connected'] .ws-heartbeat-earth__badge[data-role='connection'] {
-    color: var(--earth-tx);
-    border-color: rgba(74, 222, 128, 0.45);
-}
-
-.ws-heartbeat-earth[data-state='disconnected'] .ws-heartbeat-earth__badge[data-role='connection'] {
-    color: #f87171;
-    border-color: rgba(248, 113, 113, 0.45);
-}
-
-.ws-heartbeat-earth[data-direction='tx'] .ws-heartbeat-earth__badge[data-role='direction'] {
-    color: var(--earth-tx);
-    border-color: rgba(74, 222, 128, 0.45);
-}
-
-.ws-heartbeat-earth[data-direction='rx'] .ws-heartbeat-earth__badge[data-role='direction'] {
-    color: var(--earth-rx);
-    border-color: rgba(251, 146, 60, 0.45);
-}
-
 .ws-heartbeat-earth__viewport {
-    position: relative;
     height: 360px;
-    border: 1px solid var(--earth-border);
     border-radius: 18px;
-    overflow: hidden;
-    background:
-        linear-gradient(180deg, var(--earth-bg-a), var(--earth-bg-b)),
-        linear-gradient(to right, var(--earth-grid) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--earth-grid) 1px, transparent 1px);
     background-size: auto, 30px 30px, 30px 30px;
 }
 
-.ws-heartbeat-earth__canvas {
-    width: 100%;
-    height: 100%;
-    display: block;
-}
-
-.ws-heartbeat-earth__overlay {
-    position: absolute;
-    right: 14px;
-    bottom: 14px;
-    pointer-events: none;
-}
-
 .ws-heartbeat-earth__hud {
-    min-width: 220px;
-    border: 1px solid var(--earth-border);
-    border-radius: 12px;
-    padding: 10px 12px;
     background: rgba(2, 6, 23, 0.45);
-    backdrop-filter: blur(6px);
-    display: grid;
-    gap: 6px;
 }
 
 [data-theme='light'] .ws-heartbeat-earth__hud {
     background: rgba(255, 255, 255, 0.75);
 }
 
-.ws-heartbeat-earth__metric-row {
-    display: grid;
-    grid-template-columns: auto auto;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: 16px;
-}
-
-.ws-heartbeat-earth__metric-row span {
-    font-size: 11px;
-    letter-spacing: 0.8px;
-    text-transform: uppercase;
-    color: var(--text-muted);
-}
-
-.ws-heartbeat-earth__metric-row strong {
-    font-size: 14px;
-}
-
 .ws-heartbeat-earth__controls {
-    display: grid;
     grid-template-columns: auto auto minmax(0, 1fr);
-    align-items: center;
-    gap: 12px;
+    display: grid;
 }
 
 .ws-heartbeat-earth__button {
-    border: 1px solid var(--earth-border);
-    border-radius: 999px;
-    padding: 10px 16px;
-    font-weight: 700;
-    color: var(--text-primary);
-    background: linear-gradient(135deg, rgba(34, 211, 238, 0.25), rgba(59, 130, 246, 0.16));
-    cursor: pointer;
-}
-
-.ws-heartbeat-earth__button:disabled {
-    cursor: not-allowed;
-    opacity: 0.55;
-}
-
-.ws-heartbeat-earth__tempo {
-    display: grid;
-    gap: 2px;
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.7px;
-    color: var(--text-muted);
-}
-
-.ws-heartbeat-earth__range {
-    width: 100%;
-    accent-color: #22d3ee;
+    white-space: nowrap;
 }
 
 @media (max-width: 760px) {
     .ws-heartbeat-earth__viewport {
         height: 310px;
-    }
-
-    .ws-heartbeat-earth__overlay {
-        left: 14px;
-        right: 14px;
-    }
-
-    .ws-heartbeat-earth__hud {
-        min-width: 0;
     }
 
     .ws-heartbeat-earth__controls {

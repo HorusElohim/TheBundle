@@ -1,6 +1,7 @@
 .graphic-two-d {
     display: grid;
     gap: 12px;
+    padding: 18px;
 }
 
 .graphic-two-d__header h2 {
@@ -38,4 +39,8 @@
     border-radius: 999px;
     padding: 4px 10px;
     backdrop-filter: blur(4px);
+}
+
+.graphic-two-d .muted {
+    margin: 0;
 }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
 from fastapi import WebSocket
 
@@ -39,6 +40,7 @@ class WebSocketComponentParams(data.Data):
 class WebSocketBaseComponent(Component):
     """Base websocket component with automatic template/assets hydration."""
 
+    shared_frontend_assets: ClassVar[tuple[str, ...]] = ("websocket/base/frontend/ws-base.css",)
     component_file: str | Path | None = data.Field(default=None, exclude=True, repr=False)
     params: WebSocketComponentParams | None = None
 
@@ -67,16 +69,36 @@ class WebSocketBaseComponent(Component):
         return file_path.resolve().relative_to(COMPONENTS_ROOT).as_posix()
 
     @classmethod
+    def _resolve_component_asset(cls, asset_path: str) -> str | None:
+        candidate = (COMPONENTS_ROOT / asset_path).resolve()
+        try:
+            return cls._component_relpath(candidate)
+        except ValueError:
+            return None
+
+    @classmethod
+    def shared_asset_paths(cls) -> list[str]:
+        paths: list[str] = []
+        for asset_name in cls.shared_frontend_assets:
+            resolved = cls._resolve_component_asset(asset_name)
+            if resolved is None:
+                continue
+            if (COMPONENTS_ROOT / resolved).exists():
+                paths.append(resolved)
+        return paths
+
+    @classmethod
     def component_assets_for(cls, component_file: str | Path, *, route_name: str = "components_static") -> list[ComponentAsset]:
         component_dir = Path(component_file).resolve().parent
         frontend_dir = component_dir / "frontend"
-        discovered_paths: list[str] = []
+        discovered_paths: list[str] = cls.shared_asset_paths()
         if frontend_dir.exists():
             for asset_path in sorted(frontend_dir.iterdir()):
                 if not asset_path.is_file() or asset_path.suffix.lower() not in {".css", ".js", ".mjs"}:
                     continue
                 discovered_paths.append(cls._component_relpath(asset_path))
-        return cls.websocket_assets(*discovered_paths, route_name=route_name)
+        unique_paths = list(dict.fromkeys(discovered_paths))
+        return cls.websocket_assets(*unique_paths, route_name=route_name)
 
     @classmethod
     def component_template_for(cls, component_file: str | Path) -> str | None:

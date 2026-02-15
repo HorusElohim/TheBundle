@@ -76,6 +76,7 @@ class EccComponent extends WebSocketComponent {
     }
     setConnection(state) {
         this.element.dataset.connection = state;
+        this.element.dataset.state = state;
         this.connected = state === "connected";
         if (this.connectionPill) {
             this.connectionPill.textContent =
