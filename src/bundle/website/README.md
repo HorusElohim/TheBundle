@@ -1,137 +1,186 @@
 # Bundle Website
 
-This folder contains the FastAPI-powered marketing/utility site for The Bundle. Key files:
+This package contains the FastAPI website for The Bundle.
 
-- `__init__.py`: `get_app()` mounts `/static`, registers pages, serves favicon/manifest.
-- `templates/base.html`: shared head + global navbar + page shell used by every page.
-- `static/theme.css`: global tokens, nav styling, scrollbar fixes.
-- `pages/home/home.py`, `pages/ble/ble.py`, `pages/youtube/home.py`: page routers.
-- `pages/__init__.py`: `PageDefinition` registry + static/router mounting.
-- `common/pages.py`: helpers `get_template_path`, `get_static_path`, `create_templates`, `base_context`.
-- `components/`: reusable page-attached components (templates, assets, backend behavior).
+## High-level architecture
 
-## Install & run
-- Install website deps: `pip install -e ".[website]"`
-- Start the server (from repo root): `bundle website start`
-- Navigate to `http://127.0.0.1:8000/` (pages like `/ble`, `/youtube`, `/excalidraw`)
+- App entrypoint: `src/bundle/website/__init__.py`
+- Page registry and mounting: `src/bundle/website/pages/__init__.py`
+- Shared page/template helpers: `src/bundle/website/common/pages.py`
+- Shared layout + global theme: `src/bundle/website/templates/base.html`, `src/bundle/website/static/theme.css`
+- Reusable page-scoped components: `src/bundle/website/components/`
 
-## Frontend TypeScript build
-- Frontend Node config lives in `src/bundle/website/` (`package.json`, `package-lock.json`, `tsconfig.website*.json`).
-- Install Node.js (includes `npm`) and run `bundle website install` (or `npm install` inside `src/bundle/website`).
-- Build website frontend TS assets manually: `bundle website build`
-- Validate types without emitting JS: `cd src/bundle/website && npm run check:website-ts`
+The app mounts:
 
-## Design system
-- Global layout: `base.html` + `theme.css` give a modern, translucent navbar with a reserved actions slot (for status pills).
-- Shared tokens: font stack, radius, nav colors live in `static/theme.css`; per-page CSS sets its own accents/backgrounds.
-- Scroll stability: `html` forces a scrollbar to prevent navbar jitter; `scrollbar-gutter: stable` is enabled globally.
+- `/static` -> `src/bundle/website/static`
+- `/components-static` -> `src/bundle/website/components` (frontend assets only, guarded by `ComponentStaticFiles`)
 
-## Component architecture
+## Install and run
 
-The website uses page-scoped components for composability and scale.
+- Install website extras: `pip install -e ".[website]"`
+- Start server: `bundle website start`
+- Open: `http://127.0.0.1:8000/`
 
-- Components live under `src/bundle/website/components/`.
-- Pages explicitly instantiate components and attach routes.
-- Static assets are discovered from each component folder (`frontend/`).
-- Templates are rendered via page context/macros from component definitions.
+## Frontend build commands
 
-Websocket components follow a shared base architecture:
+- Install frontend tooling/deps: `bundle website install`
+- Build frontend assets: `bundle website build`
+- Type-check website TS only: `cd src/bundle/website && npm run check:website-ts`
 
-- `WebSocketBaseComponent` defines common defaults and routing behavior.
-- `base/backend.py` provides composable runtime blocks (`run_websocket`, `every`, `drain_text`, `receive_json`, `MessageRouter`).
-- `base/messages.py` defines typed `Data` messages (`KeepAliveMessage`, `AckMessage`, `ErrorMessage`).
+## Pages
 
-This keeps code minimal: route wiring is inherited, and only protocol-specific behavior is overridden.
+Pages are registered in `src/bundle/website/pages/__init__.py` using `PageDefinition`.
 
-For details and examples, see `src/bundle/website/components/README.md`.
+Each page module typically defines:
 
-## Adding a new page (with example)
-Follow the pattern used by BLE (`pages/ble/ble.py`) and YouTube (`pages/youtube/home.py`).
+- `router`
+- `TEMPLATE_PATH`
+- `STATIC_PATH`
+- one or more route handlers returning `TemplateResponse`
 
-1) **Create files**
-- `pages/blog/__init__.py` (can be empty).
-- `pages/blog/blog.py` (router + paths).
-- `pages/blog/templates/blog.html` (extends `base.html`).
-- `pages/blog/static/styles.css` and optional `app.js`.
+`initialize_pages(app)` mounts every page router and page static folder and publishes nav data on `app.state`.
 
-2) **Router module** (`pages/blog/blog.py`)
-```python
-from fastapi import APIRouter, Request
-from fastapi.responses import HTMLResponse
-from ...common.pages import create_templates, base_context, get_logger, get_template_path, get_static_path
+## Component system
 
-NAME = "blog"
-TEMPLATE_PATH = get_template_path(__file__)
-STATIC_PATH = get_static_path(__file__)
-LOGGER = get_logger(NAME)
+Components are page-scoped and explicit:
 
-router = APIRouter()
-templates = create_templates(TEMPLATE_PATH)
+- Create component instances in the page module.
+- Attach websocket/API routes with `components.attach_routes(router, *COMPONENTS)`.
+- Pass render/assets context with `components.context(*COMPONENTS)`.
+- Render in template via `templates/components/macros.html`.
 
-@router.get("/blog", response_class=HTMLResponse)
-async def blog(request: Request):
-    return templates.TemplateResponse(request, "blog.html", base_context(request, {"title": "Bundle Blog"}))
+The macros provide:
+
+- `styles(component_assets)` -> emits component CSS links
+- `scripts(component_assets)` -> emits component JS links
+- `render(components)` -> includes each component template
+
+## How to create a new component
+
+This is the current recommended flow.
+
+### 1. Create component folder
+
+Use one folder per component:
+
+```text
+src/bundle/website/components/<domain>/<name>/
+  component.py
+  template.html
+  frontend/
+    ws.css (or component.css)
+    ws.js  (or component.js)
 ```
 
-3) **Template** (`pages/blog/templates/blog.html`)
+### 2. Choose a base class
+
+- Websocket component: inherit `WebSocketBaseComponent`
+  - file: `src/bundle/website/components/websocket/base/component.py`
+- Graphics component: inherit `GraphicBaseComponent` / typed 2D/3D variants
+  - file: `src/bundle/website/components/graphic/base/component.py`
+
+The base classes auto-hydrate:
+
+- `template` from local `template.html`
+- `assets` from local `frontend/` (`.css`, `.js`, `.mjs`)
+
+### 3. Implement `component.py`
+
+Minimal websocket example:
+
+```python
+from ..base import WebSocketBaseComponent, WebSocketComponentParams
+
+
+class WebSocketExampleComponent(WebSocketBaseComponent):
+    component_file: str = __file__
+    slug: str = "ws-example"
+    name: str = "WebSocket Example"
+    description: str = "Example websocket component."
+    params: WebSocketComponentParams = WebSocketComponentParams(endpoint="/ws/example")
+```
+
+Override `handle_websocket(self, websocket)` only when you need custom runtime behavior.
+
+### 4. Build `template.html`
+
+Use `component.slug`/`component.params.ws_path` pattern and stable `data-*` selectors for JS hooks.
+
+Websocket UI should use shared panel structure classes:
+
+- root: `ws-panel <component-class>`
+- blocks: `ws-panel__header`, `ws-panel__badges`, `ws-panel__viewport`, `ws-panel__controls`, etc.
+
+### 5. Add frontend assets
+
+Put CSS/JS in the component `frontend/` folder.
+
+For websocket components:
+
+- shared base stylesheet is loaded automatically via `WebSocketBaseComponent.shared_frontend_assets`
+- current shared stylesheet: `websocket/base/frontend/ws-base.css`
+- local component CSS should mostly set variables and minimal overrides
+
+### 6. Attach component to a page
+
+In page module (for example `pages/playground/playground.py`):
+
+```python
+COMPONENTS = (
+    websocket.example.WebSocketExampleComponent(),
+)
+
+components.attach_routes(router, *COMPONENTS)
+```
+
+In the page handler:
+
+```python
+context = base_context(request, components.context(*COMPONENTS))
+return templates.TemplateResponse(request, "playground.html", context)
+```
+
+In the page template:
+
 ```jinja2
-{% extends "base.html" %}
-{% block title %}Bundle • Blog{% endblock %}
-{% block styles %}<link rel="stylesheet" href="{{ url_for('blog', path='styles.css') }}">{% endblock %}
-{% block content %}
-<div class="page">
-  <main class="content">
-    <h1>Bundle Blog</h1>
-    <p class="muted">Coming soon.</p>
-  </main>
-</div>
+{% import "components/macros.html" as component_macros with context %}
+
+{% block styles %}
+{{ component_macros.styles(component_assets) }}
 {% endblock %}
-{% block scripts %}<script type="module" src="{{ url_for('blog', path='app.js') }}"></script>{% endblock %}
+
+{% block content %}
+{{ component_macros.render(components) }}
+{% endblock %}
+
+{% block scripts %}
+{{ component_macros.scripts(component_assets) }}
+{% endblock %}
 ```
 
-4) **CSS/JS**  
-Place styles in `pages/blog/static/styles.css` (define accent colors, layout), and JS in `pages/blog/static/app.js` if needed.
+## Websocket internals
 
-5) **Register the page** (`pages/__init__.py`)  
-Add a registry entry:
-```python
-PageDefinition(
-    name="Blog",
-    slug="blog",
-    href="/blog",
-    description="Updates from the Bundle team.",
-    router=blog.router,
-    static_path=blog.STATIC_PATH,
-    show_in_nav=True,
-    show_on_home=True,
-),
-```
+`src/bundle/website/components/websocket/base` provides:
 
-6) **Home cards and nav**  
-`pages/home/home.py` reads `app.state.pages_registry`; any entry with `show_on_home=True` appears on the landing cards. Navbar links render from `nav_pages` (entries with `show_in_nav=True`).
+- route/runtime helpers: `create_router`, `run_websocket`, `every`, `drain_text`, `receive_json`, `keepalive_loop`
+- typed message models: `KeepAliveMessage`, `AckMessage`, `ErrorMessage`
+- message dispatch helper: `MessageRouter`
 
-7) **Run and verify**  
-Start the site: `bundle website start` → visit `/blog` → confirm `/blog/styles.css` loads and the nav highlights “Blog.”
+Use these blocks instead of custom ad-hoc websocket loops when possible.
 
-## Excalidraw (self-hosted)
-- Source: `src/bundle/website/vendor/excalidraw` (submodule; branch/tag as configured).
-- Served bundle: `src/bundle/website/pages/excalibur/static/excalidraw-web/` (copied build output).
-- PWA is disabled by default; enable by setting `VITE_APP_ENABLE_PWA=true` before build.
+## Security and static serving notes
 
-### Update / rebuild the bundle
-1. Update the submodule (or fork checkout) to the desired ref:
-   ```sh
-   git submodule update --init --recursive
-   cd src/bundle/website/vendor/excalidraw
-   git fetch && git checkout <ref>
-   ```
-2. Build with Node 18–22 (ignore engines with `YARN_IGNORE_ENGINES=1` if needed):
-   ```sh
-   YARN_IGNORE_ENGINES=1 corepack yarn --cwd src/bundle/website/vendor/excalidraw/excalidraw-app build:app
-   ```
-3. Replace the served assets:
-   ```sh
-   rm -rf src/bundle/website/pages/excalibur/static/excalidraw-web
-   cp -R src/bundle/website/vendor/excalidraw/excalidraw-app/build/* src/bundle/website/pages/excalibur/static/excalidraw-web/
-   ```
-4. Restart the dev server and hard-reload `/excalidraw` (clearing any cached service worker).
+- Component static mount only serves frontend assets under `/frontend/` and allowed suffixes.
+- Python source files under `components/` are not exposed by `/components-static`.
+
+## Excalidraw vendor workflow
+
+- Vendor source: `src/bundle/website/vendor/excalidraw`
+- Served build: `src/bundle/website/pages/excalibur/static/excalidraw-web`
+
+Typical update flow:
+
+1. `git submodule update --init --recursive`
+2. checkout desired vendor ref
+3. build vendor app
+4. copy built assets into `pages/excalibur/static/excalidraw-web`

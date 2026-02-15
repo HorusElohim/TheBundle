@@ -46,6 +46,11 @@ This keeps routing page-scoped and avoids accidental global websocket endpoints.
 
 `components.websocket.base` provides shared building blocks:
 
+- Frontend inheritance:
+  - `WebSocketBaseComponent.shared_frontend_assets` declares shared assets using component-root paths.
+  - `components/websocket/base/frontend/ws-base.css` is loaded for all websocket components.
+  - Templates use shared `ws-panel` structure classes and keep component classes for local theming.
+  - Local websocket `ws.css` files should focus on variables and necessary overrides only.
 - `create_router(endpoint, handler)`:
   creates one websocket route and delegates to a handler.
 - `run_websocket(websocket, *task_factories)`:
