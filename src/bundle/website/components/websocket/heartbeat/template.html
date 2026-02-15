@@ -1,20 +1,20 @@
 {% set component_slug = component.slug if component is defined else "ws-heartbeat" %}
 {% set component_ws_path = component.params.ws_path if component is defined and component.params and component.params.ws_path else "/ws/heartbeat" %}
-<section class="panel glow-panel ws-heartbeat" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-state="idle">
-    <header class="ws-heartbeat__header">
-        <div>
-            <p class="ws-heartbeat__eyebrow">WebSocket</p>
+<section class="panel glow-panel ws-panel ws-heartbeat" data-component="{{ component_slug }}" data-ws-path="{{ component_ws_path }}" data-state="idle">
+    <header class="ws-panel__header ws-heartbeat__header">
+        <div class="ws-panel__title">
+            <p class="ws-panel__eyebrow ws-heartbeat__eyebrow">WebSocket</p>
             <h2>Heartbeat</h2>
             <p class="muted">Lightweight periodic ping loop.</p>
         </div>
-        <span class="ws-heartbeat__status" data-role="status">Idle</span>
+        <span class="ws-panel__status ws-heartbeat__status" data-role="status">Idle</span>
     </header>
-    <div class="ws-heartbeat__controls">
-        <label class="ws-heartbeat__tempo">
+    <div class="ws-panel__controls ws-heartbeat__controls">
+        <label class="ws-panel__tempo ws-heartbeat__tempo">
             <span>Tempo</span>
             <span data-control-value="tempo">1.0s</span>
         </label>
-        <input class="ws-heartbeat__range" type="range" min="0.1" max="5" step="0.1" value="1.0" data-control="tempo" />
-        <button class="ws-heartbeat__button" type="button" data-action="toggle">Start</button>
+        <input class="ws-panel__range ws-heartbeat__range" type="range" min="0.1" max="5" step="0.1" value="1.0" data-control="tempo" />
+        <button class="ws-panel__button ws-heartbeat__button" type="button" data-action="toggle">Start</button>
     </div>
 </section>
