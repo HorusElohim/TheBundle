@@ -26,8 +26,7 @@ class DownloaderWebSocket(Downloader):
 
     async def end(self):
         """Finalizes the download process."""
-        print("Download completed.")
-        # Optionally, send a completion message via WebSocket
+        # Send end-of-stream event to the UI progress channel.
         if self.websocket:
             await DownloaderEndMessage().send(self.websocket)
 

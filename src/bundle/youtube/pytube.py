@@ -12,7 +12,7 @@ from bundle.core import logger, tracer
 
 from . import POTO_TOKEN_PATH
 from .browser import PotoTokenBrowser, PotoTokenEntity
-from .track import YoutubeTrackData
+from .track import YoutubeResolveOptions, YoutubeStreamOption, YoutubeTrackData
 
 log = logger.get_logger(__name__)
 
@@ -46,7 +46,66 @@ def load_poto_token():
 
 
 @tracer.Async.decorator.call_raise
-async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
+async def _stream_filesize(stream) -> int:
+    size = getattr(stream, "filesize", None) or getattr(stream, "filesize_approx", None)
+    if asyncio.iscoroutine(size):
+        size = await size
+    return int(size or 0)
+
+
+async def _stream_option(stream, kind: str) -> YoutubeStreamOption:
+    filesize = await _stream_filesize(stream)
+    return YoutubeStreamOption(
+        itag=int(stream.itag),
+        kind=kind,
+        resolution=getattr(stream, "resolution", "") or "",
+        abr=getattr(stream, "abr", "") or "",
+        fps=int(getattr(stream, "fps", 0) or 0),
+        mime_type=getattr(stream, "mime_type", "") or "",
+        progressive=bool(getattr(stream, "progressive", False)),
+        filesize=filesize,
+    )
+
+
+def _pick_stream_by_itag(yt: YouTube, itag: int | None):
+    if not itag:
+        return None
+    return yt.streams.get_by_itag(int(itag))
+
+
+async def _collect_streams(yt: YouTube) -> tuple[list[YoutubeStreamOption], list[YoutubeStreamOption]]:
+    progressive_video_streams = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
+    adaptive_video_streams = yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4").order_by(
+        "resolution"
+    ).desc()
+    video_streams = [*progressive_video_streams, *adaptive_video_streams]
+    audio_streams = yt.streams.filter(only_audio=True, mime_type="audio/mp4").order_by("abr").desc()
+    if len(audio_streams) == 0:
+        audio_streams = yt.streams.filter(only_audio=True).order_by("abr").desc()
+    video_options = [await _stream_option(stream, "video") for stream in video_streams]
+    audio_options = [await _stream_option(stream, "audio") for stream in audio_streams]
+    return _dedupe_options(video_options), _dedupe_options(audio_options)
+
+
+def _dedupe_options(options: list[YoutubeStreamOption]) -> list[YoutubeStreamOption]:
+    by_itag: dict[int, YoutubeStreamOption] = {}
+    ordered: list[int] = []
+    for option in options:
+        if option.itag not in by_itag:
+            by_itag[option.itag] = option
+            ordered.append(option.itag)
+            continue
+        existing = by_itag[option.itag]
+        if option.filesize > existing.filesize:
+            by_itag[option.itag] = option
+    return [by_itag[itag] for itag in ordered]
+
+
+async def fetch_url_youtube_info(
+    url: str,
+    *,
+    options: YoutubeResolveOptions | None = None,
+) -> YoutubeTrackData:
     try:
         # Preprocess the URL
         log.debug(f"Original URL: {url}")
@@ -72,18 +131,29 @@ async def fetch_url_youtube_info(url: str) -> YoutubeTrackData:
         yt = await resolve_with_clients(standard_url)
         if yt is None:
             return YoutubeTrackData()
-        audio_stream = yt.streams.get_audio_only()
-        video_stream = yt.streams.get_highest_resolution()
+        resolve_options = options or YoutubeResolveOptions()
+        video_options, audio_options = await _collect_streams(yt)
+        selected_video_stream = _pick_stream_by_itag(yt, resolve_options.select_video_itag)
+        selected_audio_stream = _pick_stream_by_itag(yt, resolve_options.select_audio_itag)
+
+        if resolve_options.best and not selected_video_stream and video_options:
+            selected_video_stream = _pick_stream_by_itag(yt, video_options[0].itag)
+        if resolve_options.best and not selected_audio_stream and audio_options:
+            selected_audio_stream = _pick_stream_by_itag(yt, audio_options[0].itag)
 
         log.debug(f"Fetched YouTube data: title='{yt.title}', author='{yt.author}'")
 
         return YoutubeTrackData(
-            audio_url=audio_stream.url if audio_stream else "",
-            video_url=video_stream.url if video_stream else "",
+            audio_url=selected_audio_stream.url if selected_audio_stream else "",
+            video_url=selected_video_stream.url if selected_video_stream else "",
+            audio_mime_type=getattr(selected_audio_stream, "mime_type", "") or "",
+            video_mime_type=getattr(selected_video_stream, "mime_type", "") or "",
             thumbnail_url=yt.thumbnail_url,
             title=yt.title,
             author=yt.author,
             duration=yt.length,
+            audio_streams=audio_options,
+            video_streams=video_options,
         )
     except PytubeFixError as e:
         log.error(f"Failed to fetch YouTube data for {url}: {e}")
@@ -120,19 +190,36 @@ async def is_playlist(url: str):
 
 
 @tracer.Async.decorator.call_raise
-async def resolve_single_url(url: str) -> YoutubeTrackData:
-    return await fetch_url_youtube_info(url)
+async def resolve_single_url(
+    url: str,
+    *,
+    options: YoutubeResolveOptions | None = None,
+) -> YoutubeTrackData:
+    return await fetch_url_youtube_info(url, options=options)
 
 
-async def resolve_playlist_url(url: str) -> AsyncGenerator[YoutubeTrackData, None]:
+async def resolve_playlist_url(
+    url: str,
+    *,
+    options: YoutubeResolveOptions | None = None,
+) -> AsyncGenerator[YoutubeTrackData, None]:
     async for playlist_url in fetch_playlist_urls(url):
-        yield await fetch_url_youtube_info(playlist_url)
+        yield await fetch_url_youtube_info(playlist_url, options=options)
 
 
-async def resolve(url: str) -> AsyncGenerator[YoutubeTrackData, None]:
+async def resolve(
+    url: str,
+    *,
+    options: YoutubeResolveOptions | None = None,
+) -> AsyncGenerator[YoutubeTrackData, None]:
     log.debug("Resolving: %s", url)
     if await is_playlist(url):
         async for playlist_url in fetch_playlist_urls(url):
-            yield await fetch_url_youtube_info(playlist_url)
+            yield await fetch_url_youtube_info(playlist_url, options=options)
     else:
-        yield await fetch_url_youtube_info(url)
+        yield await fetch_url_youtube_info(url, options=options)
+
+
+async def probe(url: str) -> AsyncGenerator[YoutubeTrackData, None]:
+    async for track in resolve(url, options=YoutubeResolveOptions(best=False)):
+        yield track

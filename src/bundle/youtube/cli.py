@@ -5,13 +5,46 @@ from random import randint
 
 import rich_click as click
 
-from bundle.core import logger, tracer
+from bundle.core import downloader, logger, tracer
 from bundle.youtube import media, pytube
 from bundle.youtube.database import Database
+from bundle.youtube.track import YoutubeResolveOptions, YoutubeStreamOption
 
 from . import YOUTUBE_PATH
 
 log = logger.get_logger(__name__)
+
+
+def _format_bytes(size: int) -> str:
+    if size <= 0:
+        return "unknown"
+    if size > 1024 * 1024:
+        return f"{size / (1024 * 1024):.1f} MB"
+    if size > 1024:
+        return f"{size / 1024:.1f} KB"
+    return f"{size} B"
+
+
+def _describe_option(option: YoutubeStreamOption) -> str:
+    quality = option.resolution or option.abr or "unknown"
+    fps = f"{option.fps}fps" if option.fps else ""
+    size = _format_bytes(option.filesize)
+    parts = [quality, fps, option.mime_type, size, option.url]
+    return " | ".join(part for part in parts if part)
+
+
+def _select_stream(options: list[YoutubeStreamOption], label: str, best: bool) -> int | None:
+    if not options:
+        log.warning("No %s streams available to choose from.", label)
+        return None
+    if best:
+        return options[0].itag
+    click.echo(f"Available {label} qualities:")
+    for idx, option in enumerate(options, start=1):
+        click.echo(f"{idx}. {_describe_option(option)} (itag {option.itag})")
+    choice = click.prompt(f"Select {label} quality", type=int, default=1, show_default=True)
+    choice = max(1, min(choice, len(options)))
+    return options[choice - 1].itag
 
 
 @click.group()
@@ -35,40 +68,78 @@ async def new_token():
 @click.option("--dry-run", "-dr", is_flag=True, help="Dry run, without any download just resolve the URL")
 @click.option("--mp3", is_flag=True, help="Download MP4 and convert to MP3")
 @click.option("--mp3-only", is_flag=True, help="Download MP4 and convert to MP3")
+@click.option("--best", is_flag=True, help="Pick the best available quality automatically")
 @tracer.Sync.decorator.call_raise
-async def download(url, directory, dry_run, mp3, mp3_only):
+async def download(url, directory, dry_run, mp3, mp3_only, best):
     log.info(f"started {url=}")
     directory = Path(directory)
     db = Database(path=directory)
     await db.load()
     semaphore = asyncio.Semaphore(1)
 
-    async for youtube_track in pytube.resolve(url):
+    selected_video_itag = None
+    selected_audio_itag = None
+    probe_track = None
+
+    async for youtube_track in pytube.probe(url):
         if not youtube_track.is_resolved():
             log.error("Unable to resolve metadata for %s", url)
             continue
-        # Check in Database
-        if db.has(youtube_track.identifier):
-            log.info(f"✨ Already present - {youtube_track.filename}")
-            return 0
-        # Dry run
-        if dry_run:
-            log.info(f"YoutubeTrack:\n{await youtube_track.as_json()}")
-            return 0
+        probe_track = youtube_track
+        break
+
+    if not probe_track:
+        log.error("Unable to resolve metadata for %s", url)
+        return 0
+
+    if not mp3_only:
+        selected_video_itag = _select_stream(probe_track.video_streams, "video", best)
+    if mp3_only:
+        selected_audio_itag = _select_stream(probe_track.audio_streams, "audio", best)
+
+    if dry_run:
+        log.info(f"YoutubeTrack: {await probe_track.as_json()}")
+        return 0
+
+    resolve_options = YoutubeResolveOptions(
+        select_video_itag=selected_video_itag,
+        select_audio_itag=selected_audio_itag,
+        best=False,
+    )
+    async for resolved_track in pytube.resolve(url, options=resolve_options):
+        if not resolved_track.is_resolved():
+            log.error("Unable to resolve stream URLs for %s", url)
+            continue
+        if mp3_only and not resolved_track.audio_url:
+            log.error("Selected audio quality is unavailable for %s", url)
+            continue
+        if not mp3_only and not resolved_track.video_url:
+            log.error("Selected video quality is unavailable for %s", url)
+            continue
+        if db.has(resolved_track.identifier):
+            log.info(f"??? Already present - {resolved_track.filename}")
+            continue
         # Download MP4
-        mp4 = await media.MP4.download(youtube_track, directory)
-        db.add(mp4)
-        # In Mp3
-        if mp3 or mp3_only:
-            _mp3 = await mp4.extract_mp3()
+        if not mp3_only:
+            mp4 = await media.MP4.download(resolved_track, directory)
+            db.add(mp4)
+            if mp3:
+                _mp3 = await mp4.extract_mp3()
+                db.add(_mp3)
+        # MP3 only
+        if mp3_only:
+            audio_path = await media.download_audio(resolved_track, directory)
+            thumbnail_downloader = downloader.Downloader(url=resolved_track.thumbnail_url)
+            await thumbnail_downloader.download()
+            _mp3 = await media.extract_mp3_from_path(audio_path, resolved_track, thumbnail_downloader.buffer)
             db.add(_mp3)
-            if mp3_only:
-                mp4.path.unlink()
+            audio_path.unlink()
         # Safe sleep (avoid been blocked)
         if await pytube.is_playlist(url) and not dry_run:
             sleep_time = 2 + randint(10, 5200) / 1000
             log.info(f"sleeping {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
+
 
 
 @youtube.command()
