@@ -1,24 +1,29 @@
+"""Page registry and mount orchestration for the default Bundle website."""
+
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
+from fastapi import FastAPI
+from fastapi.routing import APIRouter
 from fastapi.staticfiles import StaticFiles
 
-from .. import common
+from ..core.templating import get_logger
 from . import ble
 from . import excalibur as excalidraw
 from . import home, playground, youtube
 
-LOGGER = common.pages.get_logger("pages")
+LOGGER = get_logger("pages")
 
 
 @dataclass(frozen=True)
 class PageDefinition:
+    """Declarative metadata used to register a page router and static mount."""
+
     name: str
     slug: str
     href: str
     description: str
-    router: Any
+    router: APIRouter
     static_path: Path
     show_in_nav: bool = True
     show_on_home: bool = True
@@ -68,7 +73,8 @@ PAGE_REGISTRY: tuple[PageDefinition, ...] = (
 )
 
 
-def mount_page(app, page: PageDefinition):
+def mount_page(app: FastAPI, page: PageDefinition) -> None:
+    """Attach a single page router and its static directory to the app."""
     token = f"*({page.slug})"
     LOGGER.debug("%s registering page..", token)
     LOGGER.debug("%s router", token)
@@ -82,7 +88,8 @@ def mount_page(app, page: PageDefinition):
     LOGGER.debug("%s registered", token)
 
 
-def initialize_pages(app):
+def initialize_pages(app: FastAPI) -> None:
+    """Attach all pages and expose registry/navigation metadata on app state."""
     for page in PAGE_REGISTRY:
         mount_page(app, page)
 

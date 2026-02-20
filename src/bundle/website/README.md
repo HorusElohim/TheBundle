@@ -5,15 +5,16 @@ This package contains the FastAPI website for The Bundle.
 ## High-level architecture
 
 - App entrypoint: `src/bundle/website/__init__.py`
+- Core app factory and policies: `src/bundle/website/core/`
 - Page registry and mounting: `src/bundle/website/pages/__init__.py`
-- Shared page/template helpers: `src/bundle/website/common/pages.py`
+- Shared page/template helpers: `src/bundle/website/core/templating.py`
 - Shared layout + global theme: `src/bundle/website/templates/base.html`, `src/bundle/website/static/theme.css`
 - Reusable page-scoped components: `src/bundle/website/components/`
 
 The app mounts:
 
 - `/static` -> `src/bundle/website/static`
-- `/components-static` -> `src/bundle/website/components` (frontend assets only, guarded by `ComponentStaticFiles`)
+- `/components-static` -> `src/bundle/website/components` (served through `ComponentStaticFiles` suffix allowlist)
 
 ## Install and run
 
@@ -170,7 +171,7 @@ Use these blocks instead of custom ad-hoc websocket loops when possible.
 
 ## Security and static serving notes
 
-- Component static mount only serves frontend assets under `/frontend/` and allowed suffixes.
+- Component static mount only serves allowed static asset suffixes (`.css`, `.js`, `.mjs`, `.map`, fonts/images, etc.).
 - Python source files under `components/` are not exposed by `/components-static`.
 
 ## Excalidraw vendor workflow
