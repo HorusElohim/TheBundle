@@ -1,10 +1,12 @@
+"""Playground page showcasing reusable website components."""
+
 from inspect import getfile
 
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
 from ... import components
-from ...common.pages import base_context, create_templates, get_logger, get_static_path, get_template_path
+from ...core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
 from ...components.websocket import ecc, heartbeat, heartbeat_cardio, heartbeat_earth, heartbeat_earth_moon, toast
 from ...components.websocket.base import WebSocketComponentParams
 
@@ -44,6 +46,7 @@ components.attach_routes(router, *COMPONENTS)
 
 @router.get("/playground", response_class=HTMLResponse)
 async def playground(request: Request):
+    """Render the playground with all demo components and their assets."""
     LOGGER.debug("Rendering playground page")
     context = base_context(request, components.context(*COMPONENTS))
     return templates.TemplateResponse(request, "playground.html", context)

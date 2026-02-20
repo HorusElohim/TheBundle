@@ -1,3 +1,5 @@
+"""YouTube page routes and websocket download/probe workflow."""
+
 import asyncio
 from pathlib import Path
 from typing import Literal
@@ -12,9 +14,9 @@ from bundle.youtube.media import MP4
 from bundle.youtube.pytube import probe
 from bundle.youtube.track import YoutubeStreamOption, YoutubeTrackData
 
-from ...common.downloader import DownloaderWebSocket
-from ...common.pages import base_context, create_templates, get_logger, get_static_path, get_template_path
-from ...common.websocket import WebSocketDataMixin
+from ...core.downloader import DownloaderWebSocket
+from ...core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
+from ...core.websocket import WebSocketDataMixin
 
 NAME = "youtube"
 TEMPLATE_PATH = get_template_path(__file__)
@@ -29,15 +31,21 @@ templates = create_templates(TEMPLATE_PATH)
 
 
 class InfoMessage(data.Data, WebSocketDataMixin):
+    """UI status message sent over websocket."""
+
     type: Literal["info"] = "info"
     info_message: str
 
 
 class CompletedMessage(data.Data, WebSocketDataMixin):
+    """Signal that the current probe/download cycle is finished."""
+
     type: Literal["completed"] = "completed"
 
 
 class FileReadyMessage(data.Data, WebSocketDataMixin):
+    """Provide a ready-to-download file URL to the client."""
+
     type: Literal["file_ready"] = "file_ready"
     url: str
     filename: str
@@ -45,6 +53,8 @@ class FileReadyMessage(data.Data, WebSocketDataMixin):
 
 
 class DownloadTrackRequest(data.Data, WebSocketDataMixin):
+    """Client request payload for YouTube probe/download actions."""
+
     youtube_url: str
     format: str = "mp4"
     action: Literal["probe", "download"] = "probe"
@@ -52,6 +62,7 @@ class DownloadTrackRequest(data.Data, WebSocketDataMixin):
 
     @data.model_validator(mode="after")
     def normalize(self):
+        """Normalize URL and constrain action/format to supported values."""
         self.youtube_url = self.youtube_url.strip()
         fmt = (self.format or "mp4").lower()
         self.format = fmt if fmt in {"mp3", "mp4"} else "mp4"
@@ -60,15 +71,20 @@ class DownloadTrackRequest(data.Data, WebSocketDataMixin):
 
 
 class TrackMetadata(YoutubeTrackData, WebSocketDataMixin):
+    """Resolved track metadata payload for the frontend."""
+
     type: Literal["metadata"] = "metadata"
 
 
 class QualityOptionsMessage(data.Data, WebSocketDataMixin):
+    """Optional payload for available quality selections."""
+
     type: Literal["qualities"] = "qualities"
     options: list[YoutubeStreamOption] = data.Field(default_factory=list)
 
 
 def _pick_simple_mp4_option(track: YoutubeTrackData) -> YoutubeStreamOption | None:
+    """Return preferred progressive MP4 option (360p first, then first MP4)."""
     preferred = next(
         (
             opt
@@ -83,6 +99,7 @@ def _pick_simple_mp4_option(track: YoutubeTrackData) -> YoutubeStreamOption | No
 
 
 def _simple_quality_options(track: YoutubeTrackData) -> list[YoutubeStreamOption]:
+    """Expose simplified frontend options (single MP4 plus derived MP3)."""
     mp4_option = _pick_simple_mp4_option(track)
     if not mp4_option:
         return []
@@ -101,6 +118,7 @@ def _simple_quality_options(track: YoutubeTrackData) -> list[YoutubeStreamOption
 
 
 def _existing_served_path(filename: str, requested_format: str) -> Path | None:
+    """Return existing output path if a requested format is already available."""
     mp4_path = MUSIC_PATH / f"{filename}.mp4"
     mp3_path = MUSIC_PATH / f"{filename}.mp3"
     if requested_format == "mp4" and mp4_path.exists():
@@ -112,11 +130,13 @@ def _existing_served_path(filename: str, requested_format: str) -> Path | None:
 
 @router.get("/youtube", response_class=HTMLResponse)
 async def youtube(request: Request):
+    """Render the YouTube page."""
     return templates.TemplateResponse(request, "youtube.html", base_context(request))
 
 
 @router.websocket("/ws/youtube/download_track")
 async def download_track(websocket: WebSocket):
+    """Handle probe/download commands and stream progress/results to the UI."""
     await websocket.accept()
     LOGGER.debug("callback called from websocket url: %s", websocket.url)
     while True:

@@ -1,3 +1,5 @@
+"""BLE dashboard routes and websocket scan streaming."""
+
 from __future__ import annotations
 
 import asyncio
@@ -8,7 +10,7 @@ from fastapi.responses import HTMLResponse, JSONResponse
 
 from bundle import ble
 
-from ...common.pages import base_context, create_templates, get_logger, get_static_path, get_template_path
+from ...core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
 
 NAME = "ble"
 TEMPLATE_PATH = get_template_path(__file__)
@@ -25,17 +27,20 @@ REFRESH_INTERVAL_MAX = 30.0
 
 @router.get("/ble", response_class=HTMLResponse)
 async def ble_dashboard(request: Request):
+    """Render the BLE dashboard page."""
     return templates.TemplateResponse(request, "index.html", base_context(request))
 
 
 @router.get("/ble/api/devices", response_class=JSONResponse)
 async def ble_scan(timeout: float = ble.DEFAULT_SCAN_TIMEOUT) -> dict:
+    """Run a single BLE scan and return devices as JSON."""
     scan = await _collect_scan(timeout)
     return await scan.as_dict()
 
 
 @router.websocket("/ble/ws/scan")
 async def ble_scan_stream(websocket: WebSocket):
+    """Continuously scan BLE devices and stream updates to the browser."""
     await websocket.accept()
 
     refresh_interval = ble.DEFAULT_SCAN_TIMEOUT
@@ -108,6 +113,7 @@ async def ble_scan_stream(websocket: WebSocket):
 
 
 async def _collect_scan(timeout: float) -> ble.ScanResult:
+    """Wrap manager scan to convert hardware/runtime failures into HTTP 503."""
     try:
         return await MANAGER.scan(timeout=timeout)
     except Exception as exc:  # pragma: no cover - BLE hardware errors logged for UI feedback
@@ -116,4 +122,5 @@ async def _collect_scan(timeout: float) -> ble.ScanResult:
 
 
 def _clamp_interval(value: float) -> float:
+    """Clamp client-provided refresh interval into allowed bounds."""
     return max(REFRESH_INTERVAL_MIN, min(value, REFRESH_INTERVAL_MAX))
