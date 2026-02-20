@@ -74,6 +74,7 @@
   - no dead helpers left from previous designs.
 
 ## Coding Vibes
+- First rule: less code for the same result is always better.
 - Optimize for elegant minimalism: less code, fewer moving parts, clearer intent.
 - Prefer small composable building blocks over large monolithic implementations.
 - Keep abstractions only when they remove real duplication or unlock reuse; avoid “abstraction for abstraction”.
@@ -93,6 +94,7 @@
 - Format with Black (line length 128) and sort imports with isort (line length 120, `__init__.py` skipped).
 - Flake8 max line length is 128; keep lint warnings to zero.
 - Naming: modules `snake_case.py`, classes `CamelCase`, constants `UPPER_SNAKE_CASE`, tests `test_*.py`.
+- For frontend static assets, treat `.ts` as source of truth: never edit built `.js` files directly; make changes in `.ts` and rebuild outputs.
 
 ## Testing Guidelines
 - Frameworks: `pytest` with `pytest-asyncio`; doctests are enabled via `--doctest-modules`.
