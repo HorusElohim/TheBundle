@@ -173,4 +173,4 @@ export class WebSocketComponent {
         return this.channel?.isOpen() ?? false;
     }
 }
-//# sourceMappingURL=ws.js.map
+//# sourceMappingURL=component.js.map

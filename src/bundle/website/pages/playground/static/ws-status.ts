@@ -1,4 +1,4 @@
-﻿import { getWebSocketChannel } from "/components-static/websocket/base/frontend/ws.js";
+import { getWebSocketChannel } from "/components-static/websocket/base/component.js";
 
 const status = document.querySelector('[data-role="ws-status"]');
 
@@ -18,5 +18,4 @@ if (status) {
 
     channel.connect();
 }
-
 

@@ -68,9 +68,10 @@ Use one folder per component:
 src/bundle/website/components/<domain>/<name>/
   component.py
   template.html
-  frontend/
-    ws.css (or component.css)
-    ws.js  (or component.js)
+  component.css  (optional)
+  component.ts   (optional)
+  component.js   (built)
+  assets/        (optional)
 ```
 
 ### 2. Choose a base class
@@ -83,7 +84,7 @@ src/bundle/website/components/<domain>/<name>/
 The base classes auto-hydrate:
 
 - `template` from local `template.html`
-- `assets` from local `frontend/` (`.css`, `.js`, `.mjs`)
+- `assets` from local component root (`component.css`, `component.js`, `component.mjs`)
 
 ### 3. Implement `component.py`
 
@@ -114,12 +115,12 @@ Websocket UI should use shared panel structure classes:
 
 ### 5. Add frontend assets
 
-Put CSS/JS in the component `frontend/` folder.
+Put CSS/JS at component root (`component.css`, `component.ts` -> `component.js`).
 
 For websocket components:
 
-- shared base stylesheet is loaded automatically via `WebSocketBaseComponent.shared_frontend_assets`
-- current shared stylesheet: `websocket/base/frontend/ws-base.css`
+- shared base stylesheet is loaded automatically via `WebSocketBaseComponent.shared_assets`
+- current shared stylesheet: `websocket/base/component.css`
 - local component CSS should mostly set variables and minimal overrides
 
 ### 6. Attach component to a page

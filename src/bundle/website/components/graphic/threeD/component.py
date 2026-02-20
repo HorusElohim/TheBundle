@@ -28,13 +28,4 @@ class GraphicThreeDComponentParams(GraphicComponentParams):
 class GraphicThreeDComponent(GraphicBaseComponent):
     """Base class for Three.js/WebGL style 3D graphics components."""
 
-    params: GraphicThreeDComponentParams | None = None
-
-    @data.model_validator(mode="after")
-    def _ensure_params(self):
-        if self.params is None:
-            self.params = GraphicThreeDComponentParams()
-        elif not isinstance(self.params, GraphicThreeDComponentParams):
-            self.params = GraphicThreeDComponentParams(**self.params.model_dump())
-        self.params.render_mode = "3d"
-        return self
+    params: GraphicThreeDComponentParams = data.Field(default_factory=GraphicThreeDComponentParams)

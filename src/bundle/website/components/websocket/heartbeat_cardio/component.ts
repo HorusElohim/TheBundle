@@ -1,4 +1,4 @@
-import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
+import { WebSocketComponent, createPeriodicSender } from "../base/component.js";
 
 const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
 const lerp = (a, b, t) => a + (b - a) * t;
@@ -328,3 +328,4 @@ class HeartbeatCardioComponent extends WebSocketComponent {
 document.querySelectorAll('[data-component="ws-heartbeat-cardio"]').forEach((element) => {
     new HeartbeatCardioComponent(element);
 });
+

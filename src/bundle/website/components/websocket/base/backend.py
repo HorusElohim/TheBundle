@@ -134,8 +134,7 @@ async def keepalive_loop(websocket: WebSocket) -> None:
             request_payload_bytes=request_payload_bytes,
             ack_frame_bytes=0,
         )
-        ack_dict = await ack_model.as_dict()
-        ack_raw = json.dumps(ack_dict, separators=(",", ":"), ensure_ascii=False)
+        ack_raw = await ack_model.as_json()
         ack_frame_bytes = len(ack_raw.encode("utf-8"))
 
         server_tx_packets += 1
@@ -144,7 +143,7 @@ async def keepalive_loop(websocket: WebSocket) -> None:
         ack_model.server_tx_packets = server_tx_packets
         ack_model.server_tx_bytes = server_tx_bytes
         ack_model.ack_frame_bytes = ack_frame_bytes
-        await ws.send_json(await ack_model.as_dict())
+        await ack_model.send(ws)
 
     try:
         while True:

@@ -1,5 +1,6 @@
-import { HeartbeatMonitorComponent } from "../../common/frontend/heartbeat_monitor.js";
-const HEARTBEAT_EARTH_CONFIG = {
+import { HeartbeatMonitorComponent, type HeartbeatMonitorConfig } from "../common/heartbeat_monitor.js";
+
+const HEARTBEAT_EARTH_CONFIG: HeartbeatMonitorConfig = {
     selector: '[data-component="ws-heartbeat-earth"]',
     toastSource: "heartbeat-earth",
     toastLabel: "Earth",
@@ -29,12 +30,14 @@ const HEARTBEAT_EARTH_CONFIG = {
         },
     },
 };
+
 class HeartbeatEarthComponent extends HeartbeatMonitorComponent {
-    constructor(element) {
+    constructor(element: HTMLElement) {
         super(element, HEARTBEAT_EARTH_CONFIG);
     }
 }
-document.querySelectorAll(HEARTBEAT_EARTH_CONFIG.selector).forEach((element) => {
+
+document.querySelectorAll<HTMLElement>(HEARTBEAT_EARTH_CONFIG.selector).forEach((element) => {
     new HeartbeatEarthComponent(element);
 });
-//# sourceMappingURL=ws.js.map
+

@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import ClassVar
+from typing import ClassVar, Iterable
 
 from fastapi import WebSocket
 
 from bundle.core import data
 
-from ...component import Component, ComponentAsset
+from ...component import COMPONENTS_ROOT, Component
 from .backend import create_router, keepalive_loop
 
 __doc__ = """
@@ -16,8 +16,6 @@ Base component abstractions for websocket UI blocks.
 The base class auto-discovers template/assets from the component folder and
 provides a default keepalive websocket behavior that subclasses can override.
 """
-
-COMPONENTS_ROOT = Path(__file__).resolve().parents[2]
 
 
 class WebSocketComponentParams(data.Data):
@@ -32,41 +30,11 @@ class WebSocketComponentParams(data.Data):
             raise ValueError("WebSocket endpoint path must start with '/'")
         return value
 
-    @property
-    def ws_path(self) -> str:
-        return self.endpoint
-
-
 class WebSocketBaseComponent(Component):
-    """Base websocket component with automatic template/assets hydration."""
+    """Base websocket component with default params and shared assets."""
 
-    shared_frontend_assets: ClassVar[tuple[str, ...]] = ("websocket/base/frontend/ws-base.css",)
-    component_file: str | Path | None = data.Field(default=None, exclude=True, repr=False)
-    params: WebSocketComponentParams | None = None
-
-    @data.model_validator(mode="after")
-    def _hydrate_websocket_defaults(self):
-        if self.params is None:
-            self.params = WebSocketComponentParams()
-        if self.component_file is None:
-            return self
-        if self.template is None:
-            self.template = self.component_template_for(self.component_file)
-        if not self.assets:
-            self.assets = self.component_assets_for(self.component_file)
-        return self
-
-    @staticmethod
-    def websocket_assets(*paths: str, route_name: str = "components_static") -> list[ComponentAsset]:
-        assets: list[ComponentAsset] = []
-        for path in paths:
-            suffix = Path(path).suffix.lower()
-            assets.append(ComponentAsset(path=path, route_name=route_name, module=suffix in {".js", ".mjs"}))
-        return assets
-
-    @staticmethod
-    def _component_relpath(file_path: Path) -> str:
-        return file_path.resolve().relative_to(COMPONENTS_ROOT).as_posix()
+    shared_assets: ClassVar[tuple[str, ...]] = ("websocket/base/component.css",)
+    params: WebSocketComponentParams = data.Field(default_factory=WebSocketComponentParams)
 
     @classmethod
     def _resolve_component_asset(cls, asset_path: str) -> str | None:
@@ -79,7 +47,7 @@ class WebSocketBaseComponent(Component):
     @classmethod
     def shared_asset_paths(cls) -> list[str]:
         paths: list[str] = []
-        for asset_name in cls.shared_frontend_assets:
+        for asset_name in cls.shared_assets:
             resolved = cls._resolve_component_asset(asset_name)
             if resolved is None:
                 continue
@@ -88,24 +56,16 @@ class WebSocketBaseComponent(Component):
         return paths
 
     @classmethod
-    def component_assets_for(cls, component_file: str | Path, *, route_name: str = "components_static") -> list[ComponentAsset]:
-        component_dir = Path(component_file).resolve().parent
-        frontend_dir = component_dir / "frontend"
+    def component_asset_paths_for(
+        cls,
+        component_file: str | Path,
+        *,
+        asset_filenames: Iterable[str] | None = None,
+    ) -> list[str]:
         discovered_paths: list[str] = cls.shared_asset_paths()
-        if frontend_dir.exists():
-            for asset_path in sorted(frontend_dir.iterdir()):
-                if not asset_path.is_file() or asset_path.suffix.lower() not in {".css", ".js", ".mjs"}:
-                    continue
-                discovered_paths.append(cls._component_relpath(asset_path))
+        discovered_paths.extend(super().component_asset_paths_for(component_file, asset_filenames=asset_filenames))
         unique_paths = list(dict.fromkeys(discovered_paths))
-        return cls.websocket_assets(*unique_paths, route_name=route_name)
-
-    @classmethod
-    def component_template_for(cls, component_file: str | Path) -> str | None:
-        template_path = Path(component_file).resolve().parent / "template.html"
-        if not template_path.exists():
-            return None
-        return cls._component_relpath(template_path)
+        return unique_paths
 
     async def handle_websocket(self, websocket: WebSocket) -> None:
         """Default websocket handler (keepalive protocol)."""

@@ -7,7 +7,7 @@ declare module "/static/js/ws-status.js" {
     };
 }
 
-declare module "/components-static/websocket/base/frontend/ws.js" {
+declare module "/components-static/websocket/base/component.js" {
     export function getWebSocketChannel(path: string): {
         on(type: string, handler: (...args: unknown[]) => void): () => void;
         connect(): void;

@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, ClassVar, Iterable, Literal
 
 from fastapi import APIRouter
 
 from bundle.core import data
 
 AssetKind = Literal["style", "script"]
+COMPONENTS_ROOT = Path(__file__).resolve().parent
+DEFAULT_COMPONENT_ASSET_FILES: tuple[str, ...] = ("component.css", "component.js", "component.mjs")
 
 
 class ComponentAsset(data.Data):
@@ -38,9 +40,14 @@ class Component(data.Data):
     params: data.Data | None = None
     name: str | None = None
     description: str | None = None
+    asset_filenames: ClassVar[tuple[str, ...]] = DEFAULT_COMPONENT_ASSET_FILES
+    # Runtime metadata used to derive template/assets from the component folder.
+    # `None` is valid for virtual/manual components that provide template/assets directly.
+    # Excluded from model serialization and repr on purpose.
+    component_file: str | Path | None = data.Field(default=None, exclude=True, repr=False)
 
     @data.model_validator(mode="after")
-    def _normalize_routers(self):
+    def _finalize_component(self):
         deduped: list[APIRouter] = []
         seen: set[int] = set()
         for current in self.routers:
@@ -50,10 +57,56 @@ class Component(data.Data):
             seen.add(marker)
             deduped.append(current)
         self.routers = deduped
+        if self.component_file is None:
+            return self
+        if self.template is None:
+            self.template = self.component_template_for(self.component_file)
+        if not self.assets:
+            self.assets = self.component_assets_for(self.component_file)
         return self
 
     def build_routers(self) -> list[APIRouter]:
         return self.routers
+
+    @staticmethod
+    def component_assets(*paths: str, route_name: str = "components_static") -> list[ComponentAsset]:
+        assets: list[ComponentAsset] = []
+        for path in paths:
+            suffix = Path(path).suffix.lower()
+            assets.append(ComponentAsset(path=path, route_name=route_name, module=suffix in {".js", ".mjs"}))
+        return assets
+
+    @staticmethod
+    def _component_relpath(file_path: Path) -> str:
+        return file_path.resolve().relative_to(COMPONENTS_ROOT).as_posix()
+
+    @classmethod
+    def component_asset_paths_for(
+        cls,
+        component_file: str | Path,
+        *,
+        asset_filenames: Iterable[str] | None = None,
+    ) -> list[str]:
+        component_dir = Path(component_file).resolve().parent
+        names = tuple(asset_filenames) if asset_filenames is not None else cls.asset_filenames
+        discovered: list[str] = []
+        for asset_name in names:
+            asset_path = component_dir / asset_name
+            if not asset_path.exists() or not asset_path.is_file():
+                continue
+            discovered.append(cls._component_relpath(asset_path))
+        return discovered
+
+    @classmethod
+    def component_assets_for(cls, component_file: str | Path, *, route_name: str = "components_static") -> list[ComponentAsset]:
+        return cls.component_assets(*cls.component_asset_paths_for(component_file), route_name=route_name)
+
+    @classmethod
+    def component_template_for(cls, component_file: str | Path) -> str | None:
+        template_path = Path(component_file).resolve().parent / "template.html"
+        if not template_path.exists():
+            return None
+        return cls._component_relpath(template_path)
 
 
 class ComponentAssets(data.Data):

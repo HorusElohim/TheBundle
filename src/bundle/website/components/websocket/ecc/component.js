@@ -1,4 +1,4 @@
-import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
+import { WebSocketComponent, createPeriodicSender } from "../base/component.js";
 class EccComponent extends WebSocketComponent {
     constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
@@ -289,4 +289,4 @@ class EccComponent extends WebSocketComponent {
 document.querySelectorAll('[data-component="ws-ecc"]').forEach((element) => {
     new EccComponent(element);
 });
-//# sourceMappingURL=ws.js.map
+//# sourceMappingURL=component.js.map
