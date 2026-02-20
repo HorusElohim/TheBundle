@@ -1,0 +1,27 @@
+services:
+  ppisp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
+        TORCH_PACKAGES: ${TORCH_PACKAGES:-torch torchvision torchaudio}
+    image: nextgen/ppisp:local
+    container_name: nextgen-ppisp
+    restart: unless-stopped
+    gpus: all
+    tty: true
+    stdin_open: true
+    environment:
+      - PPISP_SOURCE=/opt/ppisp-src
+      - PPISP_INSTALL_MODE=${PPISP_INSTALL_MODE:-editable}
+      - BUNDLE_SOURCE=/opt/thebundle
+      - INSTALL_BUNDLE=${INSTALL_BUNDLE:-1}
+      - TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    volumes:
+      - ../../../../../tmp/ppisp:/opt/ppisp-src
+      - ../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+    command: ["sleep", "infinity"]
