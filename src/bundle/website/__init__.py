@@ -21,7 +21,7 @@ DEFAULT_CSP = "; ".join(
         "object-src 'none'",
         "frame-ancestors 'self'",
         "frame-src 'self'",
-        "img-src 'self' data: blob:",
+        "img-src 'self' data: blob: https://*.ytimg.com https://ytimg.com",
         "font-src 'self' data:",
         "style-src 'self'",
         "script-src 'self' https://unpkg.com https://esm.sh 'report-sample'",
