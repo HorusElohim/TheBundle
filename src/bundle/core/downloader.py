@@ -20,6 +20,7 @@
 import asyncio
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 import aiohttp
 from aiofiles import open as aio_open
@@ -53,6 +54,7 @@ class Downloader(Entity):
     chunk_size: int = 4096
     name: str = data.Field(default="downloader")
     _buffer: bytearray = data.PrivateAttr(default_factory=bytearray)
+    _error_message: str = data.PrivateAttr(default="")
 
     @data.model_validator(mode="after")
     def _assign_name(self):
@@ -68,6 +70,49 @@ class Downloader(Entity):
     def buffer(self) -> bytearray:
         """Expose the in-memory buffer for downstream consumers."""
         return self._buffer
+
+    @property
+    def error_message(self) -> str:
+        return self._error_message
+
+    def _request_headers(self) -> dict[str, str]:
+        """
+        Return request headers for downloads.
+        For YouTube media URLs, match the user-agent with the stream client profile (`c=` query param).
+        """
+        parsed = urlparse(self.url)
+        query = parse_qs(parsed.query)
+        client = (query.get("c", [""])[0] or "").upper()
+
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        )
+        if client == "ANDROID":
+            user_agent = (
+                "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/AP2A.240805.005) "
+                "AppleWebKit/537.36 (KHTML, like Gecko) "
+                "Chrome/131.0.0.0 Mobile Safari/537.36"
+            )
+        elif client == "IOS":
+            user_agent = (
+                "Mozilla/5.0 (iPhone; CPU iPhone OS 17_6 like Mac OS X) "
+                "AppleWebKit/605.1.15 (KHTML, like Gecko) "
+                "Version/17.0 Mobile/15E148 Safari/604.1"
+            )
+
+        headers = {
+            "User-Agent": user_agent,
+            "Accept": "*/*",
+        }
+        host = (parsed.hostname or "").lower()
+        if "youtube.com" in host:
+            headers["Referer"] = "https://www.youtube.com/"
+            headers["Origin"] = "https://www.youtube.com"
+        elif "ytimg.com" in host:
+            headers["Referer"] = "https://www.youtube.com/"
+        return headers
 
     def start(self, byte_size: int):
         """Initializes the download process. Placeholder for subclasses to implement."""
@@ -92,10 +137,13 @@ class Downloader(Entity):
             bool: True if the download was successful, False otherwise.
         """
         status = False
+        downloaded_bytes = 0
+        self._error_message = ""
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.get(self.url) as response:
-                    if response.status != 200:
+                async with session.get(self.url, headers=self._request_headers()) as response:
+                    if response.status not in {200, 206}:
+                        self._error_message = f"HTTP {response.status}"
                         log.error(f"Error downloading {self.url}. Status: {response.status}")
                         return False
 
@@ -107,16 +155,26 @@ class Downloader(Entity):
                         async with aio_open(self.destination, "wb") as fd:
                             async for chunk in response.content.iter_chunked(self.chunk_size):
                                 await tracer.Async.call_raise(fd.write, chunk, log_level=logger.Level.VERBOSE)
+                                downloaded_bytes += len(chunk)
                                 await tracer.Async.call_raise(self.update, len(chunk), log_level=logger.Level.VERBOSE)
                                 await asyncio.sleep(0)
                     else:
                         async for chunk in response.content.iter_chunked(self.chunk_size):
                             self._buffer.extend(chunk)
+                            downloaded_bytes += len(chunk)
                             await tracer.Async.call_raise(self.update, len(chunk))
                             await asyncio.sleep(0)
+                    if downloaded_bytes <= 0:
+                        content_type = response.headers.get("content-type", "")
+                        self._error_message = (
+                            f"Empty response body (status={response.status}, content-type={content_type})"
+                        )
+                        log.error(f"Error downloading {self.url}. {self._error_message}")
+                        return False
                     status = True
 
         except Exception as ex:
+            self._error_message = str(ex)
             log.error(f"Error downloading {self.url}. Exception: {ex}")
         finally:
             await tracer.Async.call_raise(self.end)

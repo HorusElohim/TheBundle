@@ -2,6 +2,8 @@ import hashlib
 import re
 from pathlib import Path
 
+from typing import Literal
+
 from ..core import data
 
 
@@ -36,10 +38,32 @@ class YoutubeTrackData(TrackData):
     audio_url: str = data.Field(default_factory=str)
     video_url: str = data.Field(default_factory=str)
     thumbnail_url: str = data.Field(default_factory=str)
+    audio_mime_type: str = data.Field(default_factory=str)
+    video_mime_type: str = data.Field(default_factory=str)
+    audio_streams: list["YoutubeStreamOption"] = data.Field(default_factory=list)
+    video_streams: list["YoutubeStreamOption"] = data.Field(default_factory=list)
 
     def is_resolved(self) -> bool:
         """Return True when the resolver filled the stream URLs."""
-        return bool(self.video_url.strip())
+        return bool(self.video_url.strip() or self.audio_url.strip() or self.video_streams or self.audio_streams)
+
+
+class YoutubeStreamOption(data.Data):
+    itag: int
+    kind: Literal["audio", "video"]
+    url: str = data.Field(default_factory=str)
+    resolution: str = data.Field(default_factory=str)
+    abr: str = data.Field(default_factory=str)
+    fps: int = 0
+    mime_type: str = data.Field(default_factory=str)
+    progressive: bool = False
+    filesize: int = 0
+
+
+class YoutubeResolveOptions(data.Data):
+    select_video_itag: int | None = None
+    select_audio_itag: int | None = None
+    best: bool = True
 
 
 class MP3TrackData(TrackData):

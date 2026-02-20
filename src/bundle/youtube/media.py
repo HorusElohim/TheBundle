@@ -35,6 +35,20 @@ from .track import MP3TrackData, MP4TrackData, TrackData, YoutubeTrackData
 log = logger.get_logger(__name__)
 
 
+def is_mp4_container(path: Path) -> bool:
+    """
+    Quick MP4 sanity check: MP4 files contain an `ftyp` box near the beginning.
+    """
+    try:
+        with path.open("rb") as fp:
+            head = fp.read(64)
+    except OSError:
+        return False
+    if len(head) < 12:
+        return False
+    return b"ftyp" in head[:32]
+
+
 @tracer.Async.decorator.call_raise
 async def download_mp4(youtube_track: YoutubeTrackData, destination_folder: Path) -> MP4:
     """
@@ -70,6 +84,43 @@ async def extract_mp3(mp4: MP4) -> MP3:
     mp3 = MP3(title=mp4.title, author=mp4.author, path=mp3_path, duration=mp4.duration)
     await mp3.save(thumbnail=await mp4.get_thumbnail())
     log.debug("mp3 generated -> %s", mp3_path)
+    return mp3
+
+
+def _extension_from_mime(mime_type: str, default: str) -> str:
+    mime = (mime_type or "").lower()
+    if "audio/mp4" in mime or "video/mp4" in mime:
+        return ".m4a" if "audio" in mime else ".mp4"
+    if "webm" in mime:
+        return ".webm"
+    return default
+
+
+def audio_target_path(youtube_track: YoutubeTrackData, destination_folder: Path) -> Path:
+    extension = _extension_from_mime(youtube_track.audio_mime_type, ".m4a")
+    return destination_folder / f"{youtube_track.filename}{extension}"
+
+
+@tracer.Async.decorator.call_raise
+async def download_audio(youtube_track: YoutubeTrackData, destination_folder: Path) -> Path:
+    if not youtube_track.audio_url:
+        raise ValueError("Missing audio URL for download")
+    target_path = audio_target_path(youtube_track, destination_folder)
+    audio_downloader = downloader.DownloaderTQDM(url=youtube_track.audio_url, destination=target_path)
+    await audio_downloader.download()
+    return target_path
+
+
+@tracer.Async.decorator.call_raise
+async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: None | bytes = None) -> MP3:
+    mp3_path = source_path.with_suffix(".mp3")
+    (
+        ffmpeg.input(str(source_path))
+        .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
+        .run(overwrite_output=True)
+    )
+    mp3 = MP3.from_track(path=mp3_path, track=track)
+    await mp3.save(thumbnail=thumbnail)
     return mp3
 
 
