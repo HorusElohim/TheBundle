@@ -1,89 +1,57 @@
 {% extends "base.html" %}
 
-{% block title %}Bundle • YouTube Studio{% endblock %}
+{% block title %}Bundle - YouTube Studio{% endblock %}
 
 {% block styles %}
-<link rel="stylesheet" href="{{ url_for('youtube', path='/styles.css') }}?v={{ asset_version }}">
+<link rel="stylesheet" href="{{ url_for('youtube', path='/styles.css') }}">
 {% endblock %}
 
 {% block content %}
-<div class="page">
-    <main class="content">
-        <section class="hero glow-panel">
-            <div class="hero-copy">
-                <p class="eyebrow">Bundled downloads</p>
-                <h1>Bring any video, mix, or playlist into your library.</h1>
-                <p class="lede">
-                    Powered by <code>bundle.youtube</code>: we resolve playlists, fetch thumbnails, tag the media,
-                    and stream progress in real time.
-                </p>
-                <ul class="feature-list">
-                    <li>MP3 & MP4 export</li>
-                    <li>Metadata + artwork embedding</li>
-                    <li>Throttling-resistant downloads</li>
-                </ul>
+<div class="youtube-page">
+    <main class="youtube-layout">
+        <section class="card input-card">
+            <h1>YouTube Downloader</h1>
+            <p class="muted">Paste a link, resolve, then choose MP4 or MP3.</p>
+            <div class="input-row">
+                <input type="url" id="youtube-url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" />
+                <button id="probe-btn" type="button" class="secondary" title="Resolve track">Resolve</button>
             </div>
-            <div class="input-card">
-                <label for="youtube-url">YouTube URL</label>
-                <div class="input-wrap">
-                    <input type="url" id="youtube-url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" />
-                </div>
-                <div class="radio-group" id="format-toggle">
-                    <input type="radio" id="format-mp4" name="format" value="mp4" checked />
-                    <label for="format-mp4">MP4 Video</label>
-                    <input type="radio" id="format-mp3" name="format" value="mp3" />
-                    <label for="format-mp3">MP3 Audio</label>
-                </div>
-                <button id="download-btn" class="primary">Download</button>
-                <p id="form-hint" class="muted">Paste a URL and the studio will queue the job instantly.</p>
-            </div>
+            <p id="form-hint" class="muted"></p>
         </section>
 
-        <section class="panel glow-panel">
-            <header class="panel-header">
-                <div>
-                    <p class="eyebrow">Current transfer</p>
-                    <h2>Live status</h2>
-                </div>
-                <span id="status-message" class="muted">Waiting for a request…</span>
+        <section class="card tracks-card">
+            <header class="card-header">
+                <h2>Tracks</h2>
+                <span id="status-message" class="muted">Waiting for a request...</span>
             </header>
 
-            <div id="metadata-card" class="metadata-card hidden">
-                <img id="track-thumbnail" src="" alt="Track artwork" />
-                <div>
+            <article id="metadata-card" class="track-item live hidden">
+                <img id="track-thumbnail" src="" alt="Track thumbnail" />
+                <div class="track-main">
                     <p id="track-title" class="track-title">--</p>
-                    <p id="track-author" class="track-author muted">--</p>
-                </div>
-            </div>
-
-                <div id="progress-card" class="progress-card hidden">
-                    <div class="progress-header">
-                        <div>
-                            <p class="eyebrow">Transfer</p>
-                            <p id="progress-phase" class="muted">Idle</p>
+                    <p id="track-author" class="muted">--</p>
+                    <div id="format-actions" class="format-actions hidden">
+                        <button id="mp4-btn" class="primary mp4" type="button">MP4</button>
+                        <button id="mp3-btn" class="primary mp3" type="button">MP3</button>
+                    </div>
+                    <div id="progress-card" class="hidden">
+                        <div class="progress-row">
+                            <span id="progress-phase" class="muted">Idle</span>
+                            <span id="progress-percentage" class="muted">0%</span>
                         </div>
-                        <button id="progress-cancel" title="Cancel transfer">×</button>
-                    </div>
-                    <div class="progress-bar">
-                        <div id="progress-fill"></div>
-                    </div>
-                    <div class="progress-info">
-                        <span id="progress-percentage">0%</span>
-                        <span id="progress-bytes">0 / 0</span>
-                        <span id="progress-speed">--</span>
+                        <div class="progress-bar">
+                            <div id="progress-fill"></div>
+                        </div>
+                        <div class="progress-meta">
+                            <span id="progress-bytes" class="muted">0 / 0</span>
+                            <span id="progress-speed" class="muted">--</span>
+                        </div>
                     </div>
                 </div>
-        </section>
+            </article>
 
-        <section class="panel glow-panel">
-            <header class="panel-header">
-                <div>
-                    <p class="eyebrow">Recent files</p>
-                    <h2>Download feed</h2>
-                </div>
-            </header>
-            <div id="history" class="history-grid">
-                <p class="muted" id="history-empty">No downloads yet—your next job will appear here.</p>
+            <div id="history" class="track-list">
+                <p class="muted" id="history-empty">No downloads yet.</p>
             </div>
         </section>
     </main>
@@ -91,5 +59,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script type="module" src="{{ url_for('youtube', path='/app.js') }}?v=1"></script>
+<script type="module" src="{{ url_for('youtube', path='/app.js') }}"></script>
 {% endblock %}

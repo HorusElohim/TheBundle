@@ -1,9 +1,12 @@
-const DEFAULT_HINT = 'Paste a URL and the studio will queue the job instantly.';
+const DEFAULT_HINT = '';
+const EMPTY_THUMBNAIL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
 import { wsNotifier } from '/static/js/ws-status.js';
 const elements = {
     urlInput: document.getElementById('youtube-url'),
-    formatRadios: document.querySelectorAll("input[name='format']"),
-    downloadBtn: document.getElementById('download-btn'),
+    probeButton: document.getElementById('probe-btn'),
+    mp4Button: document.getElementById('mp4-btn'),
+    mp3Button: document.getElementById('mp3-btn'),
+    formatActions: document.getElementById('format-actions'),
     statusMessage: document.getElementById('status-message'),
     formHint: document.getElementById('form-hint'),
     metadataCard: document.getElementById('metadata-card'),
@@ -18,7 +21,6 @@ const elements = {
     historyEmpty: document.getElementById('history-empty'),
     speedLabel: document.getElementById('progress-speed'),
     phaseLabel: document.getElementById('progress-phase'),
-    cancelButton: document.getElementById('progress-cancel'),
 };
 const state = {
     ws: null,
@@ -27,12 +29,34 @@ const state = {
     totalBytes: 0,
     downloadedBytes: 0,
     currentTrack: null,
+    currentAction: null,
     currentFormat: 'mp4',
+    probedUrl: '',
+    probeTimer: null,
+    skipNextInputProbe: false,
     lastUpdateTime: 0,
     lastProgressBytes: 0,
+    lastErrorMessage: '',
 };
 const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/youtube/download_track`;
 const notify = wsNotifier('YouTube');
+function normalizeThumbnailUrl(value) {
+    const url = (value || '').trim();
+    if (!url) {
+        return EMPTY_THUMBNAIL;
+    }
+    if (url.startsWith('http://') ||
+        url.startsWith('https://') ||
+        url.startsWith('//') ||
+        url.startsWith('/') ||
+        url.startsWith('./') ||
+        url.startsWith('../') ||
+        url.startsWith('data:') ||
+        url.startsWith('blob:')) {
+        return url;
+    }
+    return EMPTY_THUMBNAIL;
+}
 function setStatusMessage(message) {
     elements.statusMessage.textContent = message;
 }
@@ -44,27 +68,35 @@ function setHint(message, tone = 'muted') {
     }
 }
 function setBusy(isBusy) {
-    elements.downloadBtn.disabled = isBusy;
-    elements.downloadBtn.textContent = isBusy ? 'Workingâ€¦' : 'Download';
+    elements.probeButton.disabled = isBusy;
+    elements.mp4Button.disabled = isBusy;
+    elements.mp3Button.disabled = isBusy;
+    elements.probeButton.textContent = isBusy ? 'Working...' : 'Resolve';
 }
-function finishTransfer(statusMessage = 'Ready for another URL', hintMessage = DEFAULT_HINT) {
-    setBusy(false);
-    setStatusMessage(statusMessage);
-    resetProgress();
-    hideMetadata();
-    setHint(hintMessage);
+function showActionButtons() {
+    elements.formatActions.classList.remove('hidden');
+}
+function hideActionButtons() {
+    elements.formatActions.classList.add('hidden');
 }
 function showMetadata(track) {
     elements.metadataCard.classList.remove('hidden');
-    elements.thumbnail.src = track.thumbnail_url || '';
+    elements.thumbnail.src = normalizeThumbnailUrl(track.thumbnail_url || '');
     elements.trackTitle.textContent = track.title || 'Unknown title';
     elements.trackAuthor.textContent = track.author || 'Unknown author';
+    showActionButtons();
 }
 function hideMetadata() {
     elements.metadataCard.classList.add('hidden');
     elements.trackTitle.textContent = '--';
     elements.trackAuthor.textContent = '--';
-    elements.thumbnail.src = '';
+    elements.thumbnail.src = EMPTY_THUMBNAIL;
+    hideActionButtons();
+}
+function resetResolvedState() {
+    state.currentTrack = null;
+    state.probedUrl = '';
+    hideMetadata();
 }
 function resetProgress() {
     state.downloadedBytes = 0;
@@ -83,15 +115,13 @@ function updateProgress(bytes, total) {
     if (!total) {
         elements.progressFill.style.width = '100%';
         elements.progressPercentage.textContent = '--';
-        elements.progressBytes.textContent = 'Streamingâ€¦';
+        elements.progressBytes.textContent = 'Streaming...';
         return;
     }
     const percentage = Math.min(100, (bytes / total) * 100);
     elements.progressFill.style.width = `${percentage}%`;
     elements.progressPercentage.textContent = `${percentage.toFixed(1)}%`;
-    const formatBytes = (value) => value > 1024 * 1024
-        ? `${(value / (1024 * 1024)).toFixed(1)} MB`
-        : `${(value / 1024).toFixed(1)} KB`;
+    const formatBytes = (value) => value > 1024 * 1024 ? `${(value / (1024 * 1024)).toFixed(1)} MB` : `${(value / 1024).toFixed(1)} KB`;
     elements.progressBytes.textContent = `${formatBytes(bytes)} / ${formatBytes(total)}`;
     const now = performance.now();
     if (state.lastUpdateTime) {
@@ -110,9 +140,10 @@ function addHistoryItem(track, url, filename, format) {
     elements.historyEmpty?.remove();
     const card = document.createElement('article');
     card.className = 'history-item';
+    const safeThumb = normalizeThumbnailUrl(track?.thumbnail_url);
     card.innerHTML = `
         <div class="history-thumb">
-            <img src="${track?.thumbnail_url || ''}" alt="Thumbnail">
+            <img src="${safeThumb}" alt="Thumbnail">
         </div>
         <div class="history-details">
             <span class="chip">${format.toUpperCase()}</span>
@@ -154,8 +185,10 @@ function connectWebSocket() {
     });
     state.ws.addEventListener('close', () => {
         notify.disconnected();
-        if (elements.downloadBtn.disabled) {
-            finishTransfer('Connection lost. Reconnectingâ€¦', 'Connection droppedâ€”please retry once reconnected.');
+        if (state.currentAction) {
+            setBusy(false);
+            setStatusMessage('Connection lost. Reconnecting...');
+            setHint('Connection dropped, please retry once reconnected.', 'error');
         }
         if (!state.reconnectTimer) {
             state.reconnectTimer = setTimeout(() => {
@@ -166,18 +199,25 @@ function connectWebSocket() {
     });
     state.ws.addEventListener('error', () => {
         notify.error();
-        if (elements.downloadBtn.disabled) {
-            finishTransfer('Connection error', 'Connection errorâ€”try again in a moment.');
+        if (state.currentAction) {
+            setBusy(false);
+            setStatusMessage('Connection error');
+            setHint('Connection error, try again in a moment.', 'error');
         }
     });
 }
-function sendDownloadRequest(payload) {
-    state.currentFormat = payload.format;
-    state.currentTrack = null;
+function sendRequest(payload) {
+    state.currentAction = payload.action || 'download';
+    state.currentFormat = payload.format || 'mp4';
+    state.lastErrorMessage = '';
     resetProgress();
-    hideMetadata();
     setBusy(true);
-    setHint('Queuing jobâ€¦');
+    if (state.currentAction === 'probe') {
+        setHint('Resolving...');
+    }
+    else {
+        setHint('Queuing job...');
+    }
     if (state.ws && state.ws.readyState === WebSocket.OPEN) {
         state.ws.send(JSON.stringify(payload));
     }
@@ -186,19 +226,60 @@ function sendDownloadRequest(payload) {
         connectWebSocket();
     }
 }
+function requestProbe(youtubeUrl) {
+    if (!youtubeUrl) {
+        return;
+    }
+    if (state.probedUrl === youtubeUrl && state.currentTrack) {
+        return;
+    }
+    state.probedUrl = youtubeUrl;
+    setStatusMessage('Resolving...');
+    sendRequest({ youtube_url: youtubeUrl, format: 'mp4', action: 'probe' });
+}
+function scheduleProbe(youtubeUrl) {
+    if (state.probeTimer) {
+        clearTimeout(state.probeTimer);
+    }
+    state.probeTimer = setTimeout(() => requestProbe(youtubeUrl), 400);
+}
+function requestDownload(format) {
+    const youtubeUrl = elements.urlInput.value.trim();
+    if (!youtubeUrl) {
+        setHint('Paste a valid YouTube link first.', 'error');
+        return;
+    }
+    const needsProbe = youtubeUrl !== state.probedUrl || !state.currentTrack;
+    if (needsProbe) {
+        setHint('Resolve the URL first.', 'error');
+        requestProbe(youtubeUrl);
+        return;
+    }
+    sendRequest({ youtube_url: youtubeUrl, format, action: 'download' });
+}
+function isFailureMessage(value) {
+    const text = String(value || '').toLowerCase();
+    return (text.includes('failed') ||
+        text.includes('error') ||
+        text.includes('unable') ||
+        text.includes('unavailable') ||
+        text.includes('status: 403') ||
+        text.includes('forbidden'));
+}
 function handleMessage(message) {
     switch (message.type) {
         case 'metadata':
             state.currentTrack = message;
             showMetadata(message);
-            setStatusMessage('Metadata resolved');
+            setStatusMessage('Track resolved');
+            setHint('Choose MP4 or MP3.');
             break;
         case 'downloader_start':
             state.totalBytes = message.total || 0;
             state.downloadedBytes = 0;
             updateProgress(0, state.totalBytes);
             elements.phaseLabel.textContent = 'Downloading';
-            setStatusMessage('Starting transferâ€¦');
+            setStatusMessage('Starting transfer...');
             break;
         case 'downloader_update':
             state.downloadedBytes += message.progress || 0;
@@ -210,6 +291,10 @@ function handleMessage(message) {
             break;
         case 'info':
             setStatusMessage(message.info_message || '');
+            if (isFailureMessage(message.info_message)) {
+                state.lastErrorMessage = message.info_message || 'Download failed.';
+                setHint(state.lastErrorMessage, 'error');
+            }
             if (message.info_message?.toLowerCase().includes('extracting mp3')) {
                 elements.phaseLabel.textContent = 'Converting to MP3';
             }
@@ -221,25 +306,71 @@ function handleMessage(message) {
             triggerDownload(message.url, message.filename);
             break;
         case 'completed':
-            finishTransfer('Ready for another URL');
+            setBusy(false);
+            if (state.currentAction === 'probe') {
+                if (state.lastErrorMessage) {
+                    setStatusMessage('Probe failed');
+                    setHint(state.lastErrorMessage, 'error');
+                }
+                else {
+                    setStatusMessage('Ready');
+                    setHint('Choose MP4 or MP3.');
+                }
+            }
+            else if (state.lastErrorMessage) {
+                setStatusMessage('Transfer failed');
+                setHint(state.lastErrorMessage, 'error');
+                elements.phaseLabel.textContent = 'Failed';
+            }
+            else {
+                setStatusMessage('Download ready');
+                setHint('You can download again with MP4 or MP3.');
+            }
+            state.currentAction = null;
+            state.lastErrorMessage = '';
             break;
         default:
             console.debug('Unhandled message', message);
     }
 }
-elements.downloadBtn.addEventListener('click', () => {
+elements.probeButton?.addEventListener('click', () => {
     const youtubeUrl = elements.urlInput.value.trim();
     if (!youtubeUrl) {
         setHint('Paste a valid YouTube link first.', 'error');
         return;
     }
-    const selectedFormat = Array.from(elements.formatRadios).find((radio) => radio.checked)?.value || 'mp4';
-    sendDownloadRequest({ youtube_url: youtubeUrl, format: selectedFormat });
+    requestProbe(youtubeUrl);
 });
+elements.mp4Button?.addEventListener('click', () => requestDownload('mp4'));
+elements.mp3Button?.addEventListener('click', () => requestDownload('mp3'));
 elements.urlInput.addEventListener('input', () => {
-    if (elements.urlInput.value.trim()) {
-        setHint('Press download to queue the job.');
+    if (state.skipNextInputProbe) {
+        state.skipNextInputProbe = false;
+        return;
+    }
+    const youtubeUrl = elements.urlInput.value.trim();
+    resetResolvedState();
+    if (youtubeUrl) {
+        scheduleProbe(youtubeUrl);
+    }
+    else {
+        setHint(DEFAULT_HINT);
     }
 });
+elements.urlInput.addEventListener('paste', () => {
+    state.skipNextInputProbe = true;
+    setTimeout(() => {
+        const youtubeUrl = elements.urlInput.value.trim();
+        resetResolvedState();
+        if (youtubeUrl) {
+            requestProbe(youtubeUrl);
+        }
+    }, 0);
+});
+elements.thumbnail.onerror = () => {
+    elements.thumbnail.src = EMPTY_THUMBNAIL;
+};
+hideActionButtons();
 connectWebSocket();
+//# sourceMappingURL=app.js.map
 //# sourceMappingURL=app.js.map
