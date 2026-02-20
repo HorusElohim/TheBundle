@@ -8,7 +8,10 @@ Each component is a complete folder that can include:
 
 - `component.py`: Python `Data` class describing the component.
 - `template.html`: HTML template rendered by page macros.
-- `frontend/`: component CSS/JS assets.
+- `component.css`: component stylesheet (optional).
+- `component.ts`: component TypeScript source (optional).
+- `component.js`: built runtime script (optional).
+- `assets/`: additional static assets (optional).
 
 Example:
 
@@ -16,8 +19,9 @@ Example:
 components/websocket/toast/
   component.py
   template.html
-  frontend/ws.css
-  frontend/ws.js
+  component.css
+  component.ts
+  component.js
 ```
 
 Graphics foundations now live in `components/graphic/`:
@@ -47,10 +51,10 @@ This keeps routing page-scoped and avoids accidental global websocket endpoints.
 `components.websocket.base` provides shared building blocks:
 
 - Frontend inheritance:
-  - `WebSocketBaseComponent.shared_frontend_assets` declares shared assets using component-root paths.
-  - `components/websocket/base/frontend/ws-base.css` is loaded for all websocket components.
+  - `WebSocketBaseComponent.shared_assets` declares shared assets using component-root paths.
+  - `components/websocket/base/component.css` is loaded for all websocket components.
   - Templates use shared `ws-panel` structure classes and keep component classes for local theming.
-  - Local websocket `ws.css` files should focus on variables and necessary overrides only.
+  - Local websocket `component.css` files should focus on variables and necessary overrides only.
 - `create_router(endpoint, handler)`:
   creates one websocket route and delegates to a handler.
 - `run_websocket(websocket, *task_factories)`:

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from bundle.core import data
+
 from ...graphic.threeD import GraphicThreeDComponent, GraphicThreeDComponentParams
 from .component import WebSocketBaseComponent, WebSocketComponentParams
 
@@ -20,4 +22,4 @@ class GPXComponentParams(GraphicThreeDComponentParams, WebSocketComponentParams)
 class GPXWebSocketBaseComponent(WebSocketBaseComponent, GraphicThreeDComponent):
     """Base class for graph-oriented websocket components."""
 
-    params: GPXComponentParams | None = None
+    params: GPXComponentParams = data.Field(default_factory=GPXComponentParams)

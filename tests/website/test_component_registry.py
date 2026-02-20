@@ -15,7 +15,7 @@ def test_websocket_component_defaults():
     default = heartbeat.WebSocketHeartbeatComponent()
     assert default.slug == "ws-heartbeat"
     assert default.params.endpoint == "/ws/heartbeat"
-    assert any(asset.path.endswith("heartbeat/frontend/ws.js") for asset in default.assets)
+    assert any(asset.path.endswith("heartbeat/component.js") for asset in default.assets)
     assert all(asset.route_name == "components_static" for asset in default.assets)
 
 

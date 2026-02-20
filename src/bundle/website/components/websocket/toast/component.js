@@ -1,36 +1,24 @@
-import { WebSocketComponent } from "../../base/frontend/ws.js";
-
-type WebSocketFeedEvent = {
-    url?: string;
-    event?: string;
-    payload?: unknown;
-    timestamp?: number;
-};
-
+import { WebSocketComponent } from "../base/component.js";
 class ToastComponent extends WebSocketComponent {
-    private readonly status: HTMLElement | null;
-    private readonly list: HTMLElement | null;
-    private readonly maxItems: number;
-
-    constructor(element: HTMLElement) {
+    status;
+    list;
+    maxItems;
+    constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
         this.status = element.querySelector('[data-role="status"]');
         this.list = element.querySelector('[data-role="toast-list"]');
         this.maxItems = 24;
         this.bind();
     }
-
-    private bind(): void {
+    bind() {
         this.setStatus("WS Feed Disabled");
     }
-
-    private setStatus(label: string): void {
+    setStatus(label) {
         if (this.status) {
             this.status.textContent = label;
         }
     }
-
-    private pushToast(payload: unknown): void {
+    pushToast(payload) {
         if (!this.list) {
             return;
         }
@@ -38,31 +26,25 @@ class ToastComponent extends WebSocketComponent {
         this.list.prepend(item);
         this.trimOverflow();
     }
-
-    private createToastItem(payload: unknown): HTMLElement {
+    createToastItem(payload) {
         const item = document.createElement("div");
         item.className = "ws-toast__item";
-
         const title = document.createElement("div");
         title.className = "ws-toast__item-title";
-        const feed = payload as WebSocketFeedEvent;
+        const feed = payload;
         const eventType = (feed?.event || "event").toUpperCase();
         const url = (feed?.url || "").replace(/^wss?:\/\/[^/]+/, "");
         title.textContent = `${eventType} ${url || ""}`.trim();
-
         const body = document.createElement("div");
         body.className = "ws-toast__item-body";
         body.textContent = this.formatPayload(feed?.payload ?? payload);
-
         item.append(title, body);
         return item;
     }
-
-    private formatPayload(payload: unknown): string {
+    formatPayload(payload) {
         return typeof payload === "string" ? payload : JSON.stringify(payload);
     }
-
-    private trimOverflow(): void {
+    trimOverflow() {
         if (!this.list) {
             return;
         }
@@ -72,7 +54,7 @@ class ToastComponent extends WebSocketComponent {
         }
     }
 }
-
-document.querySelectorAll<HTMLElement>('[data-component="ws-toast"]').forEach((element) => {
+document.querySelectorAll('[data-component="ws-toast"]').forEach((element) => {
     new ToastComponent(element);
 });
+//# sourceMappingURL=component.js.map

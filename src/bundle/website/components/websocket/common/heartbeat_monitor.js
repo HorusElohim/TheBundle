@@ -1,8 +1,8 @@
-import { createPeriodicSender } from "../../base/frontend/ws.js";
-import { GpxWebSocketComponent } from "../../../graphic/common/frontend/gpx.js";
-import { createArcCurve, createSphereMesh, latLonToVector3, loadHdrTexture, loadTexture, loadThreeModule, } from "../../../graphic/common/frontend/threejs/index.js";
-const PAYLOAD_WORKER_URL = "/components-static/websocket/common/frontend/heartbeat_payload_worker.js";
-const EARTH_MOON_ASSET_BASE = "/components-static/websocket/heartbeat_earth_moon/frontend/assets";
+import { createPeriodicSender } from "../base/component.js";
+import { GpxWebSocketComponent } from "../../graphic/common/gpx.js";
+import { createArcCurve, createSphereMesh, latLonToVector3, loadHdrTexture, loadTexture, loadThreeModule, } from "../../graphic/common/threejs/index.js";
+const PAYLOAD_WORKER_URL = "/components-static/websocket/common/heartbeat_payload_worker.js";
+const EARTH_MOON_ASSET_BASE = "/components-static/websocket/heartbeat_earth_moon/assets";
 const EARTH_MOON_ASSETS = {
     earthMap: `${EARTH_MOON_ASSET_BASE}/earth_atmos_2048.jpg`,
     earthNormal: `${EARTH_MOON_ASSET_BASE}/earth_normal_2048.jpg`,

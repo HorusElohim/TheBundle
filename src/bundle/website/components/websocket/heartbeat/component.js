@@ -1,4 +1,4 @@
-import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
+import { WebSocketComponent, createPeriodicSender } from "../base/component.js";
 class HeartbeatComponent extends WebSocketComponent {
     constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
@@ -83,4 +83,4 @@ class HeartbeatComponent extends WebSocketComponent {
 document.querySelectorAll('[data-component="ws-heartbeat"]').forEach((element) => {
     new HeartbeatComponent(element);
 });
-//# sourceMappingURL=ws.js.map
+//# sourceMappingURL=component.js.map

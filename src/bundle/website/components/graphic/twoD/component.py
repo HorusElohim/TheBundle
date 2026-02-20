@@ -24,13 +24,4 @@ class GraphicTwoDComponentParams(GraphicComponentParams):
 class GraphicTwoDComponent(GraphicBaseComponent):
     """Base class for canvas/SVG style 2D graphics components."""
 
-    params: GraphicTwoDComponentParams | None = None
-
-    @data.model_validator(mode="after")
-    def _ensure_params(self):
-        if self.params is None:
-            self.params = GraphicTwoDComponentParams()
-        elif not isinstance(self.params, GraphicTwoDComponentParams):
-            self.params = GraphicTwoDComponentParams(**self.params.model_dump())
-        self.params.render_mode = "2d"
-        return self
+    params: GraphicTwoDComponentParams = data.Field(default_factory=GraphicTwoDComponentParams)

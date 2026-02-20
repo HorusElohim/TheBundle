@@ -1,26 +1,16 @@
-import { WebSocketComponent } from "../../../websocket/base/frontend/ws.js";
+import { WebSocketComponent } from "../../websocket/base/component.js";
 import { SphericalCameraRig, ThreeRuntime } from "./threejs/index.js";
-
-export type GpxComponentOptions = {
-    canvas: HTMLCanvasElement;
-    cameraRadius: number;
-    cameraMinRadius: number;
-    cameraMaxRadius: number;
-};
-
 export class GpxWebSocketComponent extends WebSocketComponent {
-    runtime: ThreeRuntime | null;
-    cameraRig: SphericalCameraRig | null;
-    canvas: HTMLCanvasElement;
-
-    constructor(element: HTMLElement) {
+    runtime;
+    cameraRig;
+    canvas;
+    constructor(element) {
         super(element, { reconnectDelayMs: 1500 });
         this.runtime = null;
         this.cameraRig = null;
-        this.canvas = element.querySelector('[data-role="canvas"]') as HTMLCanvasElement;
+        this.canvas = element.querySelector('[data-role="canvas"]');
     }
-
-    async initGpxScene(options: GpxComponentOptions) {
+    async initGpxScene(options) {
         this.runtime = new ThreeRuntime();
         await this.runtime.init({
             canvas: options.canvas,
@@ -38,7 +28,6 @@ export class GpxWebSocketComponent extends WebSocketComponent {
         });
         this.cameraRig.bind(options.canvas);
     }
-
     disposeGpxScene() {
         this.cameraRig?.dispose();
         this.cameraRig = null;
@@ -46,3 +35,4 @@ export class GpxWebSocketComponent extends WebSocketComponent {
         this.runtime = null;
     }
 }
+//# sourceMappingURL=gpx.js.map

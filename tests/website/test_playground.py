@@ -40,6 +40,6 @@ def test_toast_websocket_streams_messages(client):
 
 
 def test_component_static_assets_are_served(client):
-    response = client.get("/components-static/websocket/base/frontend/ws.js")
+    response = client.get("/components-static/websocket/base/component.js")
     assert response.status_code == HTTPStatus.OK
     assert "getWebSocketChannel" in response.text

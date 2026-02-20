@@ -28,8 +28,8 @@ class ComponentStaticFiles(StaticFiles):
     Serve only safe static asset types from component folders.
 
     The allowlist blocks Python/templates and only exposes frontend-oriented
-    asset types. This supports both current `frontend/...` layouts and the
-    future atomic component layout (`component.ts` / `component.css` in root).
+    asset types. This supports the atomic component layout
+    (`component.ts` / `component.css` at component root plus optional `assets/`).
     """
 
     _ALLOWED_SUFFIXES = {

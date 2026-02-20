@@ -1,4 +1,4 @@
-﻿import { WebSocketComponent, createPeriodicSender } from "../../base/frontend/ws.js";
+import { WebSocketComponent, createPeriodicSender } from "../base/component.js";
 
 class EccComponent extends WebSocketComponent {
     constructor(element: HTMLElement) {
@@ -336,6 +336,7 @@ class EccComponent extends WebSocketComponent {
 document.querySelectorAll<HTMLElement>('[data-component="ws-ecc"]').forEach((element) => {
     new EccComponent(element);
 });
+
 
 
 
