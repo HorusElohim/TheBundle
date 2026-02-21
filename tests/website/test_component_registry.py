@@ -1,14 +1,14 @@
 from fastapi import APIRouter
 
-from bundle.website import components
-from bundle.website.components.graphic import (
+from bundle.website.builtin import component as components
+from bundle.website.builtin.component.graphic import (
     GraphicBaseComponent,
     GraphicThreeDComponent,
     GraphicThreeDComponentParams,
     GraphicTwoDComponent,
 )
-from bundle.website.components.websocket import heartbeat, heartbeat_cardio, heartbeat_earth, ecc, toast
-from bundle.website.components.websocket.base import GPXWebSocketBaseComponent, WebSocketComponentParams
+from bundle.website.builtin.component.websocket import heartbeat, heartbeat_cardio, heartbeat_earth, ecc, toast
+from bundle.website.builtin.component.websocket.base import GPXWebSocketBaseComponent, WebSocketComponentParams
 
 
 def test_websocket_component_defaults():

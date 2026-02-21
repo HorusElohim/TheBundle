@@ -14,14 +14,14 @@
   },
   "include": [
     "static/types/modules.d.ts",
-    "components/**/*.ts",
-    "pages/playground/static/ws-status.ts",
-    "pages/ble/static/app.ts",
-    "pages/youtube/static/app.ts",
+    "builtin/component/**/*.ts",
+    "sites/thebundle/pages/playground/static/ws-status.ts",
+    "sites/thebundle/pages/ble/static/app.ts",
+    "sites/thebundle/pages/youtube/static/app.ts",
     "static/js/ws-status.ts"
   ],
   "exclude": [
-    "pages/excalibur/**",
+    "sites/thebundle/pages/excalidraw/**",
     "vendor/**",
     "**/__pycache__/**"
   ]

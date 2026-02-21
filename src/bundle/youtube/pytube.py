@@ -18,10 +18,10 @@ log = logger.get_logger(__name__)
 
 PLAYLIST_INDICATOR = "playlist"
 CLIENT_PROFILES: tuple[dict[str, object], ...] = (
+    {"client": "WEB", "use_po_token": True},
     {"client": "ANDROID"},
     {"client": "ANDROID_CREATOR"},
     {"client": "IOS"},
-    {"client": "WEB", "use_po_token": True},
 )
 
 
@@ -53,11 +53,19 @@ async def _stream_filesize(stream) -> int:
     return int(size or 0)
 
 
+def _stream_url(stream) -> str:
+    try:
+        return getattr(stream, "url", "") or ""
+    except Exception:
+        return ""
+
+
 async def _stream_option(stream, kind: str) -> YoutubeStreamOption:
     filesize = await _stream_filesize(stream)
     return YoutubeStreamOption(
         itag=int(stream.itag),
         kind=kind,
+        url=_stream_url(stream),
         resolution=getattr(stream, "resolution", "") or "",
         abr=getattr(stream, "abr", "") or "",
         fps=int(getattr(stream, "fps", 0) or 0),

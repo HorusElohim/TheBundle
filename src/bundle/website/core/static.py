@@ -20,7 +20,7 @@ def default_static_path() -> Path:
 
 def default_components_path() -> Path:
     """Return the default components root directory for static mounting."""
-    return website_root() / "components"
+    return website_root() / "builtin" / "component"
 
 
 class ComponentStaticFiles(StaticFiles):

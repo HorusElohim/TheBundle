@@ -8,7 +8,7 @@ import uvicorn
 
 from bundle.core import logger, process, tracer
 
-from . import get_app
+from .core import create_app
 
 log = logger.get_logger(__name__)
 
@@ -30,6 +30,15 @@ def _resolve_npm_command() -> str | None:
     return None
 
 
+def _bundle_site_manifest():
+    from .sites.thebundle import site_manifest
+
+    return site_manifest()
+
+
+_SITE_MANIFESTS = {"bundle": _bundle_site_manifest}
+
+
 @click.group()
 @tracer.Sync.decorator.call_raise
 async def website():
@@ -37,14 +46,23 @@ async def website():
     pass
 
 
-@website.command()
+@website.group()
+@tracer.Sync.decorator.call_raise
+def site():
+    """Website site commands."""
+    pass
+
+
+@site.command("start")
+@click.argument("name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False))
 @click.option("--host", default="127.0.0.1", help="Host to run the server on.")
 @click.option("--port", default=8000, type=int, help="Port to run the server on.")
 @tracer.Sync.decorator.call_raise
-def start(host, port):
-    """Start the FastAPI web server."""
-    log.debug("creating the FastAPI app")
-    app = get_app()
+def site_start(name: str, host: str, port: int):
+    """Start a website site by name."""
+    site_name = name.lower()
+    log.debug("creating the FastAPI app for site: %s", site_name)
+    app = create_app(manifest=_SITE_MANIFESTS[site_name]())
     log.info(f"running on http://{host}:{port}")
     uvicorn.run(app, host=host, port=port)
 
@@ -98,7 +116,8 @@ def install():
     log.info("frontend dependencies installed")
 
 
-@website.command()
+@site.command("build")
+@click.argument("name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False))
 @click.option(
     "--script",
     default="build:website-ts",
@@ -106,8 +125,9 @@ def install():
     help="NPM script name to execute for website frontend build.",
 )
 @tracer.Sync.decorator.call_raise
-def build(script: str):
-    """Build website frontend assets (for example TypeScript -> JavaScript)."""
+def site_build(name: str, script: str):
+    """Build website frontend assets for a site (for example TypeScript -> JavaScript)."""
+    site_name = name.lower()
     website_root = _website_root()
     package_json = website_root / "package.json"
     if not package_json.exists():
@@ -122,8 +142,8 @@ def build(script: str):
         )
 
     command = f'"{npm_command}" run {script}'
-    log.info(f"running frontend build: {command}")
-    runner = process.Process(name="Website.build")
+    log.info("running frontend build for site '%s': %s", site_name, command)
+    runner = process.Process(name=f"Website.site_build[{site_name}]")
 
     try:
         asyncio.run(runner(command, cwd=str(website_root)))
@@ -152,8 +172,6 @@ def build(script: str):
             ) from exc
 
         raise click.ClickException(f"Frontend build failed with exit code {exc.result.returncode}.") from exc
-    
-    
 
 
 if __name__ == "__main__":
