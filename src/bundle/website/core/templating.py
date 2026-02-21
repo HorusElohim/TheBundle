@@ -57,7 +57,22 @@ def base_context(request: Any, extra: Mapping[str, Any] | None = None) -> dict[s
     app_state = getattr(getattr(request, "app", None), "state", None)
     nav_pages = getattr(app_state, "nav_pages", [])
     asset_version = getattr(app_state, "asset_version", "dev")
-    return {"request": request, "nav_pages": nav_pages, "asset_version": asset_version, **extra}
+    static_mount_path = getattr(app_state, "static_mount_path", "/static")
+    components_mount_path = getattr(app_state, "components_mount_path", "/components-static")
+    website_runtime = {
+        "mounts": {
+            "static": static_mount_path,
+            "components": components_mount_path,
+        },
+        "assetVersion": str(asset_version),
+    }
+    return {
+        "request": request,
+        "nav_pages": nav_pages,
+        "asset_version": asset_version,
+        "website_runtime": website_runtime,
+        **extra,
+    }
 
 
 __all__ = [

@@ -1,21 +1,24 @@
-import { getWebSocketChannel } from "/components-static/websocket/base/component.js";
+const statusElement = document.querySelector('[data-role="ws-status"]');
 
-const status = document.querySelector('[data-role="ws-status"]');
+const toWebSocketUrl = (path: string): string => {
+    if (path.startsWith("ws://") || path.startsWith("wss://")) {
+        return path;
+    }
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    return `${protocol}://${window.location.host}${path}`;
+};
 
-if (status) {
-    const typedStatus = status as HTMLElement;
+if (statusElement) {
+    const typedStatus = statusElement as HTMLElement;
     const path = typedStatus.dataset.wsPath || "/ws/ecc";
-    const channel = getWebSocketChannel(path);
+    const socket = new WebSocket(toWebSocketUrl(path));
 
     const setStatus = (label: string) => {
         typedStatus.textContent = `WS: ${label}`;
     };
 
-    channel.on("connecting", () => setStatus("connecting"));
-    channel.on("open", () => setStatus("connected"));
-    channel.on("close", () => setStatus("disconnected"));
-    channel.on("error", () => setStatus("error"));
-
-    channel.connect();
+    setStatus("connecting");
+    socket.addEventListener("open", () => setStatus("connected"));
+    socket.addEventListener("close", () => setStatus("disconnected"));
+    socket.addEventListener("error", () => setStatus("error"));
 }
-

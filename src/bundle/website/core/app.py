@@ -24,18 +24,43 @@ def _default_manifest() -> SiteManifest:
     return site_manifest()
 
 
+def _normalize_mount_path(path: str, *, field_name: str) -> str:
+    normalized = (path or "").strip()
+    if not normalized.startswith("/"):
+        raise ValueError(f"{field_name} must start with '/'")
+    if len(normalized) > 1:
+        normalized = normalized.rstrip("/")
+    if normalized == "/":
+        raise ValueError(f"{field_name} cannot be '/'")
+    return normalized
+
+
 def create_app(manifest: SiteManifest | None = None) -> FastAPI:
     """Create a FastAPI app from the provided site manifest."""
     resolved_manifest = manifest or _default_manifest()
     static_path = resolved_manifest.static_path or default_static_path()
     components_path = resolved_manifest.components_path or default_components_path()
+    static_mount_path = _normalize_mount_path(
+        resolved_manifest.static_mount_path,
+        field_name="SiteManifest.static_mount_path",
+    )
+    components_mount_path = _normalize_mount_path(
+        resolved_manifest.components_mount_path,
+        field_name="SiteManifest.components_mount_path",
+    )
 
     app = FastAPI(title=resolved_manifest.title)
     app.state.asset_version = str(int(time()))
+    app.state.static_mount_path = static_mount_path
+    app.state.components_mount_path = components_mount_path
     app.add_middleware(SecurityHeadersMiddleware)
 
-    app.mount("/static", StaticFiles(directory=str(static_path)), name="static")
-    app.mount("/components-static", ComponentStaticFiles(directory=str(components_path)), name="components_static")
+    app.mount(static_mount_path, StaticFiles(directory=str(static_path)), name="static")
+    app.mount(
+        components_mount_path,
+        ComponentStaticFiles(directory=str(components_path)),
+        name="components_static",
+    )
 
     # Serve favicon explicitly
     @app.get("/favicon.ico", include_in_schema=False)

@@ -1,6 +1,5 @@
 const DEFAULT_HINT = '';
 const EMPTY_THUMBNAIL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-import { wsNotifier } from '/static/js/ws-status.js';
 const elements = {
     urlInput: document.getElementById('youtube-url'),
     probeButton: document.getElementById('probe-btn'),
@@ -39,7 +38,18 @@ const state = {
     lastErrorMessage: '',
 };
 const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/youtube/download_track`;
-const notify = wsNotifier('YouTube');
+const createNotifier = (label) => {
+    if (typeof window.wsNotifier === "function") {
+        return window.wsNotifier(label);
+    }
+    return {
+        connecting: () => undefined,
+        connected: () => undefined,
+        disconnected: () => undefined,
+        error: () => undefined,
+    };
+};
+const notify = createNotifier("YouTube");
 function normalizeThumbnailUrl(value) {
     const url = (value || '').trim();
     if (!url) {
@@ -398,4 +408,5 @@ elements.thumbnail.onerror = () => {
 };
 hideActionButtons();
 connectWebSocket();
+export {};
 //# sourceMappingURL=app.js.map

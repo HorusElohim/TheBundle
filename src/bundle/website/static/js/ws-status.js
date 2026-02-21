@@ -15,7 +15,6 @@ function showToast(message, variant = "neutral") {
     toast.className = `ws-toast ${variant}`;
     toast.textContent = message;
     container.appendChild(toast);
-    // auto-remove
     setTimeout(() => {
         toast.classList.add("fade");
         setTimeout(() => toast.remove(), 220);
@@ -23,10 +22,11 @@ function showToast(message, variant = "neutral") {
 }
 export function wsNotifier(label = "Connection") {
     return {
-        connecting: () => showToast(`${label}: Connectingâ€¦`, "neutral"),
+        connecting: () => showToast(`${label}: Connecting...`, "neutral"),
         connected: () => showToast(`${label}: Connected`, "success"),
         disconnected: () => showToast(`${label}: Disconnected`, "warning"),
         error: () => showToast(`${label}: Error`, "error"),
     };
 }
+window.wsNotifier = wsNotifier;
 //# sourceMappingURL=ws-status.js.map

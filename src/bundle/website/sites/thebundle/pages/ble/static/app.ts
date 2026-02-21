@@ -1,4 +1,4 @@
-﻿import { wsNotifier } from '/static/js/ws-status.js';
+import type { WsNotifier } from "../../../../../builtin/runtime/site.js";
 
 const listEl = document.getElementById('device-list') as HTMLElement;
 const deviceCountEl = document.getElementById('device-count') as HTMLElement;
@@ -23,7 +23,20 @@ let socket;
 let reconnectTimer;
 let allowReconnect = true;
 let isPaused = false;
-const notify = wsNotifier('BLE');
+
+function createNotifier(label: string): ReturnType<WsNotifier> {
+    if (typeof window.wsNotifier === "function") {
+        return window.wsNotifier(label);
+    }
+    return {
+        connecting: () => undefined,
+        connected: () => undefined,
+        disconnected: () => undefined,
+        error: () => undefined,
+    };
+}
+
+const notify = createNotifier("BLE");
 
 function setStatus(label, variant = 'neutral') {
     const base = 'status-pill';

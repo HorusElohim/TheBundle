@@ -17,6 +17,13 @@ def _website_root() -> Path:
     return Path(__file__).resolve().parent
 
 
+def _site_frontend_root(site_name: str) -> Path:
+    normalized = site_name.lower()
+    if normalized == "bundle":
+        return _website_root() / "sites" / "thebundle"
+    raise ValueError(f"Unknown site frontend workspace: {site_name}")
+
+
 def _resolve_npm_command() -> str | None:
     """Resolve an npm executable name/path, with Windows-safe preference for npm.cmd."""
     candidates = ["npm"]
@@ -71,11 +78,11 @@ def site_start(name: str, host: str, port: int):
 @tracer.Sync.decorator.call_raise
 def install():
     """Install website frontend tooling (Node.js/npm on Windows when needed, then npm dependencies)."""
-    website_root = _website_root()
-    package_json = website_root / "package.json"
+    frontend_root = _site_frontend_root("bundle")
+    package_json = frontend_root / "package.json"
     if not package_json.exists():
         raise click.ClickException(
-            "package.json not found at website root (src/bundle/website). Initialize frontend tooling first, then run this command."
+            "package.json not found at frontend workspace (src/bundle/website/sites/thebundle). Initialize frontend tooling first, then run this command."
         )
 
     runner = process.Process(name="Website.install")
@@ -94,7 +101,7 @@ def install():
         )
         log.info("npm not found; installing Node.js LTS via winget")
         try:
-            asyncio.run(runner(install_node_command, cwd=str(website_root)))
+            asyncio.run(runner(install_node_command, cwd=str(frontend_root)))
         except process.ProcessError as exc:
             raise click.ClickException(
                 f"Node.js installation via winget failed with exit code {exc.result.returncode}."
@@ -109,7 +116,7 @@ def install():
     npm_install_command = f'"{npm_command}" install'
     log.info(f"installing frontend dependencies: {npm_install_command}")
     try:
-        asyncio.run(runner(npm_install_command, cwd=str(website_root)))
+        asyncio.run(runner(npm_install_command, cwd=str(frontend_root)))
     except process.ProcessError as exc:
         raise click.ClickException(f"`npm install` failed with exit code {exc.result.returncode}.") from exc
 
@@ -128,11 +135,11 @@ def install():
 def site_build(name: str, script: str):
     """Build website frontend assets for a site (for example TypeScript -> JavaScript)."""
     site_name = name.lower()
-    website_root = _website_root()
-    package_json = website_root / "package.json"
+    frontend_root = _site_frontend_root(site_name)
+    package_json = frontend_root / "package.json"
     if not package_json.exists():
         raise click.ClickException(
-            "package.json not found at website root (src/bundle/website). Initialize frontend tooling first, then run this command."
+            f"package.json not found at frontend workspace ({frontend_root}). Initialize frontend tooling first, then run this command."
         )
 
     npm_command = _resolve_npm_command()
@@ -146,7 +153,7 @@ def site_build(name: str, script: str):
     runner = process.Process(name=f"Website.site_build[{site_name}]")
 
     try:
-        asyncio.run(runner(command, cwd=str(website_root)))
+        asyncio.run(runner(command, cwd=str(frontend_root)))
         log.info("frontend build")
     except process.ProcessError as exc:
         log.error("frontend build")

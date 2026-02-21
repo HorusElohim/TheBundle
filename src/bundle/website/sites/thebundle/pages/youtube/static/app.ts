@@ -1,6 +1,6 @@
-﻿const DEFAULT_HINT = '';
+const DEFAULT_HINT = '';
 const EMPTY_THUMBNAIL = 'data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=';
-import { wsNotifier } from '/static/js/ws-status.js';
+import type { WsNotifier } from "../../../../../builtin/runtime/site.js";
 
 const elements = {
     urlInput: document.getElementById('youtube-url'),
@@ -42,7 +42,18 @@ const state = {
 };
 
 const wsUrl = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/ws/youtube/download_track`;
-const notify = wsNotifier('YouTube');
+const createNotifier = (label: string): ReturnType<WsNotifier> => {
+    if (typeof window.wsNotifier === "function") {
+        return window.wsNotifier(label);
+    }
+    return {
+        connecting: () => undefined,
+        connected: () => undefined,
+        disconnected: () => undefined,
+        error: () => undefined,
+    };
+};
+const notify = createNotifier("YouTube");
 
 function normalizeThumbnailUrl(value) {
     const url = (value || '').trim();

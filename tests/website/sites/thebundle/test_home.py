@@ -8,3 +8,4 @@ def test_home_renders(client):
     for name in ("BLE", "YouTube", "Excalidraw"):
         assert name in body
     assert "bundle website site start bundle" in body
+    assert "__BUNDLE_WEBSITE_RUNTIME__" in body
