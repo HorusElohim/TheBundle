@@ -40,6 +40,10 @@
         </main>
     </div>
     <script type="module" src="{{ url_for('static', path='js/theme-toggle.js') }}?v={{ asset_version }}"></script>
+    <script>
+        window.__BUNDLE_WEBSITE_RUNTIME__ = {{ website_runtime | tojson }};
+    </script>
+    <script type="module" src="{{ url_for('static', path='js/ws-status.js') }}?v={{ asset_version }}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

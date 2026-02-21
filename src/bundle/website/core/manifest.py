@@ -16,6 +16,8 @@ class SiteManifest:
     """Minimal site contract consumed by the website core app factory."""
 
     title: str = "Bundle Website"
+    static_mount_path: str = "/static"
+    components_mount_path: str = "/components-static"
     static_path: Path | None = None
     components_path: Path | None = None
     initialize_pages: InitializePages | None = None

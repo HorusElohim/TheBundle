@@ -1,4 +1,3 @@
-import { wsNotifier } from '/static/js/ws-status.js';
 const listEl = document.getElementById('device-list');
 const deviceCountEl = document.getElementById('device-count');
 const avgRssiEl = document.getElementById('avg-rssi');
@@ -20,7 +19,18 @@ let socket;
 let reconnectTimer;
 let allowReconnect = true;
 let isPaused = false;
-const notify = wsNotifier('BLE');
+function createNotifier(label) {
+    if (typeof window.wsNotifier === "function") {
+        return window.wsNotifier(label);
+    }
+    return {
+        connecting: () => undefined,
+        connected: () => undefined,
+        disconnected: () => undefined,
+        error: () => undefined,
+    };
+}
+const notify = createNotifier("BLE");
 function setStatus(label, variant = 'neutral') {
     const base = 'status-pill';
     statusEl.className = variant === 'neutral' ? base : `${base} ${variant}`;
@@ -265,4 +275,5 @@ streamToggle.addEventListener('click', toggleStream);
 updateIntervalLabel();
 showMessage('Connecting to scanner...');
 connectSocket();
+export {};
 //# sourceMappingURL=app.js.map

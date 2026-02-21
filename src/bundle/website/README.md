@@ -11,6 +11,7 @@ This package contains the FastAPI website for The Bundle.
 - Shared page/template helpers: `src/bundle/website/core/templating.py`
 - Shared layout + global theme: `src/bundle/website/templates/base.html`, `src/bundle/website/static/theme.css`
 - Reusable page-scoped components: `src/bundle/website/builtin/component/`
+- Frontend workspace (npm + tsconfig): `src/bundle/website/sites/thebundle/`
 
 The app mounts:
 
@@ -27,7 +28,7 @@ The app mounts:
 
 - Install frontend tooling/deps: `bundle website install`
 - Build frontend assets: `bundle website site build bundle`
-- Type-check website TS only: `cd src/bundle/website && npm run check:website-ts`
+- Type-check website TS only: `cd src/bundle/website/sites/thebundle && npm run check:website-ts`
 
 ## Pages
 
@@ -112,7 +113,7 @@ Override `handle_websocket(self, websocket)` only when you need custom runtime b
 
 ### 4. Build `template.html`
 
-Use `component.slug`/`component.params.ws_path` pattern and stable `data-*` selectors for JS hooks.
+Use `component.slug`/`component.params.endpoint` pattern and stable `data-*` selectors for JS hooks.
 
 Websocket UI should use shared panel structure classes:
 

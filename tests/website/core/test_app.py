@@ -30,6 +30,8 @@ def test_create_app_uses_manifest_and_mounts_assets(tmp_path):
 
     manifest = SiteManifest(
         title="Custom Test Site",
+        static_mount_path="/assets",
+        components_mount_path="/widgets-static",
         static_path=static_dir,
         components_path=components_dir,
         initialize_pages=initialize_pages,
@@ -39,6 +41,8 @@ def test_create_app_uses_manifest_and_mounts_assets(tmp_path):
     assert app.title == "Custom Test Site"
     assert called["initialized"] is True
     assert app.state.asset_version.isdigit()
+    assert app.state.static_mount_path == "/assets"
+    assert app.state.components_mount_path == "/widgets-static"
 
     with TestClient(app) as client:
         assert client.get("/custom").text == "custom-page"
@@ -47,11 +51,11 @@ def test_create_app_uses_manifest_and_mounts_assets(tmp_path):
         assert webmanifest.status_code == 200
         assert webmanifest.json() == {"name": "test"}
 
-        allowed = client.get("/components-static/demo/component.js")
+        allowed = client.get("/widgets-static/demo/component.js")
         assert allowed.status_code == 200
         assert "console.log" in allowed.text
 
-        blocked = client.get("/components-static/demo/component.py")
+        blocked = client.get("/widgets-static/demo/component.py")
         assert blocked.status_code == 404
 
         csp_json = client.post("/csp-report", json={"csp-report": {"blocked-uri": "inline"}})

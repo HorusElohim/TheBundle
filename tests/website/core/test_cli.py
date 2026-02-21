@@ -29,3 +29,10 @@ def test_website_site_start_bundle_invokes_uvicorn(monkeypatch):
     assert captured["host"] == "127.0.0.1"
     assert captured["port"] == 9001
     assert captured["title"] == "Bundle Website"
+
+
+def test_website_site_build_help_exposes_site_argument():
+    runner = CliRunner()
+    result = runner.invoke(website_cli.website, ["site", "build", "--help"])
+    assert result.exit_code == 0
+    assert "{bundle}" in result.output
