@@ -6,31 +6,36 @@ This package contains the FastAPI website for The Bundle.
 
 - App entrypoint: `src/bundle/website/__init__.py`
 - Core app factory and policies: `src/bundle/website/core/`
-- Page registry and mounting: `src/bundle/website/pages/__init__.py`
+- Reusable page mounting primitives: `src/bundle/website/core/pages.py`
+- TheBundle page registry: `src/bundle/website/sites/thebundle/pages/__init__.py`
 - Shared page/template helpers: `src/bundle/website/core/templating.py`
 - Shared layout + global theme: `src/bundle/website/templates/base.html`, `src/bundle/website/static/theme.css`
-- Reusable page-scoped components: `src/bundle/website/components/`
+- Reusable page-scoped components: `src/bundle/website/builtin/component/`
 
 The app mounts:
 
 - `/static` -> `src/bundle/website/static`
-- `/components-static` -> `src/bundle/website/components` (served through `ComponentStaticFiles` suffix allowlist)
+- `/components-static` -> `src/bundle/website/builtin/component` (served through `ComponentStaticFiles` suffix allowlist)
 
 ## Install and run
 
 - Install website extras: `pip install -e ".[website]"`
-- Start server: `bundle website start`
+- Start server: `bundle website site start bundle`
 - Open: `http://127.0.0.1:8000/`
 
 ## Frontend build commands
 
 - Install frontend tooling/deps: `bundle website install`
-- Build frontend assets: `bundle website build`
+- Build frontend assets: `bundle website site build bundle`
 - Type-check website TS only: `cd src/bundle/website && npm run check:website-ts`
 
 ## Pages
 
-Pages are registered in `src/bundle/website/pages/__init__.py` using `PageDefinition`.
+Pages are registered per site using `PageDefinition`.
+
+Default site registry:
+
+- `src/bundle/website/sites/thebundle/pages/__init__.py`
 
 Each page module typically defines:
 
@@ -39,7 +44,8 @@ Each page module typically defines:
 - `STATIC_PATH`
 - one or more route handlers returning `TemplateResponse`
 
-`initialize_pages(app)` mounts every page router and page static folder and publishes nav data on `app.state`.
+Reusable mount functions live in `src/bundle/website/core/pages.py`.
+`initialize_pages(app, pages)` mounts every page router and page static folder and publishes nav data on `app.state`.
 
 ## Component system
 
@@ -65,7 +71,7 @@ This is the current recommended flow.
 Use one folder per component:
 
 ```text
-src/bundle/website/components/<domain>/<name>/
+src/bundle/website/builtin/component/<domain>/<name>/
   component.py
   template.html
   component.css  (optional)
@@ -77,9 +83,9 @@ src/bundle/website/components/<domain>/<name>/
 ### 2. Choose a base class
 
 - Websocket component: inherit `WebSocketBaseComponent`
-  - file: `src/bundle/website/components/websocket/base/component.py`
+  - file: `src/bundle/website/builtin/component/websocket/base/component.py`
 - Graphics component: inherit `GraphicBaseComponent` / typed 2D/3D variants
-  - file: `src/bundle/website/components/graphic/base/component.py`
+  - file: `src/bundle/website/builtin/component/graphic/base/component.py`
 
 The base classes auto-hydrate:
 
@@ -125,7 +131,7 @@ For websocket components:
 
 ### 6. Attach component to a page
 
-In page module (for example `pages/playground/playground.py`):
+In page module (for example `sites/thebundle/pages/playground/page.py`):
 
 ```python
 COMPONENTS = (
@@ -162,7 +168,7 @@ In the page template:
 
 ## Websocket internals
 
-`src/bundle/website/components/websocket/base` provides:
+`src/bundle/website/builtin/component/websocket/base` provides:
 
 - route/runtime helpers: `create_router`, `run_websocket`, `every`, `drain_text`, `receive_json`, `keepalive_loop`
 - typed message models: `KeepAliveMessage`, `AckMessage`, `ErrorMessage`
@@ -173,16 +179,16 @@ Use these blocks instead of custom ad-hoc websocket loops when possible.
 ## Security and static serving notes
 
 - Component static mount only serves allowed static asset suffixes (`.css`, `.js`, `.mjs`, `.map`, fonts/images, etc.).
-- Python source files under `components/` are not exposed by `/components-static`.
+- Python source files under `builtin/component/` are not exposed by `/components-static`.
 
 ## Excalidraw vendor workflow
 
 - Vendor source: `src/bundle/website/vendor/excalidraw`
-- Served build: `src/bundle/website/pages/excalibur/static/excalidraw-web`
+- Served build: `src/bundle/website/sites/thebundle/pages/excalidraw/static/excalidraw-web`
 
 Typical update flow:
 
 1. `git submodule update --init --recursive`
 2. checkout desired vendor ref
 3. build vendor app
-4. copy built assets into `pages/excalibur/static/excalidraw-web`
+4. copy built assets into `sites/thebundle/pages/excalidraw/static/excalidraw-web`

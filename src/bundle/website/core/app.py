@@ -18,15 +18,10 @@ WEB_LOGGER = setup_root_logger(__name__, level=10)
 
 
 def _default_manifest() -> SiteManifest:
-    """Build the default manifest used by the legacy Bundle website entrypoint."""
-    from .. import pages
+    """Build the default manifest for the TheBundle site."""
+    from ..sites.thebundle import site_manifest
 
-    return SiteManifest(
-        title="Bundle Website",
-        static_path=default_static_path(),
-        components_path=default_components_path(),
-        initialize_pages=pages.initialize_pages,
-    )
+    return site_manifest()
 
 
 def create_app(manifest: SiteManifest | None = None) -> FastAPI:
