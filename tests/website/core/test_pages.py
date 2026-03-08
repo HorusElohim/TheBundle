@@ -1,8 +1,23 @@
+from dataclasses import dataclass
+from pathlib import Path
+
 from fastapi import APIRouter, FastAPI
 from fastapi.responses import PlainTextResponse
 from fastapi.testclient import TestClient
 
-from bundle.website.core.pages import PageDefinition, initialize_pages
+from bundle.website.core.pages import initialize_pages
+
+
+@dataclass
+class _TestPage:
+    name: str
+    slug: str
+    href: str
+    description: str
+    router: APIRouter
+    static_path: Path | None = None
+    show_in_nav: bool = True
+    show_on_home: bool = True
 
 
 def test_initialize_pages_mounts_routes_static_and_nav(tmp_path):
@@ -29,7 +44,7 @@ def test_initialize_pages_mounts_routes_static_and_nav(tmp_path):
         return "hidden-page"
 
     pages = (
-        PageDefinition(
+        _TestPage(
             name="Demo",
             slug="demo",
             href="/demo",
@@ -37,7 +52,7 @@ def test_initialize_pages_mounts_routes_static_and_nav(tmp_path):
             router=demo_router,
             static_path=demo_static,
         ),
-        PageDefinition(
+        _TestPage(
             name="Hidden",
             slug="hidden",
             href="/hidden",

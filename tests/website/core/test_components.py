@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from bundle.website.core import components
+from bundle.website.builtin import components
 
 
 def test_websocket_component_defaults():

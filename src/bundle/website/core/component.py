@@ -8,7 +8,7 @@ from fastapi import APIRouter
 from bundle.core import data
 
 AssetKind = Literal["style", "script"]
-COMPONENTS_ROOT = Path(__file__).resolve().parents[1] / "builtin" / "component"
+COMPONENTS_ROOT = Path(__file__).resolve().parents[1] / "builtin" / "components"
 DEFAULT_COMPONENT_ASSET_FILES: tuple[str, ...] = ("component.css", "component.js", "component.mjs")
 
 

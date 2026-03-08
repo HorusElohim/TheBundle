@@ -5,7 +5,7 @@ from inspect import getfile
 from fastapi import Request
 from fastapi.responses import HTMLResponse
 
-from bundle.website.core import components
+from bundle.website.builtin import components
 from bundle.website.core.templating import PageModule, base_context
 
 page = PageModule(
