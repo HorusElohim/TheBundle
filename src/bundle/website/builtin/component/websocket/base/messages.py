@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-from typing import Literal, TypeVar
-
-from fastapi import WebSocket
+from typing import Literal
 
 from bundle.core import data
+from bundle.website.core.ws_messages import WebSocketDataMixin
 
 __doc__ = """
 Typed websocket message models built on `bundle.core.data.Data`.
@@ -12,22 +11,6 @@ Typed websocket message models built on `bundle.core.data.Data`.
 These models provide consistent validation plus async helpers for websocket
 serialization/deserialization.
 """
-
-MessageT = TypeVar("MessageT", bound=data.Data)
-
-
-class WebSocketDataMixin:
-    """Mixin that adds websocket send/receive helpers to `Data` messages."""
-
-    async def send(self, websocket: WebSocket) -> None:
-        """Serialize the current message and send it over websocket."""
-        await websocket.send_json(await self.as_dict())
-
-    @classmethod
-    async def receive(cls: type[MessageT], websocket: WebSocket) -> MessageT:
-        """Receive JSON from websocket and deserialize as `cls`."""
-        payload = await websocket.receive_json()
-        return await cls.from_dict(payload)
 
 
 class KeepAliveMessage(data.Data, WebSocketDataMixin):

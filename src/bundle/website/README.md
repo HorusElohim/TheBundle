@@ -7,10 +7,11 @@ This package contains the FastAPI website for The Bundle.
 - App entrypoint: `src/bundle/website/__init__.py`
 - Core app factory and policies: `src/bundle/website/core/`
 - Reusable page mounting primitives: `src/bundle/website/core/pages.py`
+- Reusable component import surface: `src/bundle/website/core/components.py`
 - TheBundle page registry: `src/bundle/website/sites/thebundle/pages/__init__.py`
 - Shared page/template helpers: `src/bundle/website/core/templating.py`
 - Shared layout + global theme: `src/bundle/website/templates/base.html`, `src/bundle/website/static/theme.css`
-- Reusable page-scoped components: `src/bundle/website/builtin/component/`
+- Builtin component implementations: `src/bundle/website/builtin/component/`
 - Frontend workspace (npm + tsconfig): `src/bundle/website/sites/thebundle/`
 
 The app mounts:
@@ -52,6 +53,7 @@ Reusable mount functions live in `src/bundle/website/core/pages.py`.
 
 Components are page-scoped and explicit:
 
+- Import component APIs from `bundle.website.core.components` (or `from bundle.website.core import components`).
 - Create component instances in the page module.
 - Attach websocket/API routes with `components.attach_routes(router, *COMPONENTS)`.
 - Pass render/assets context with `components.context(*COMPONENTS)`.
@@ -135,8 +137,10 @@ For websocket components:
 In page module (for example `sites/thebundle/pages/playground/page.py`):
 
 ```python
+from bundle.website.core import components
+
 COMPONENTS = (
-    websocket.example.WebSocketExampleComponent(),
+    components.WebSocketECCComponent(),
 )
 
 components.attach_routes(router, *COMPONENTS)

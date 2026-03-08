@@ -1,15 +1,13 @@
 from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
-from typing import TypeVar
 
 from fastapi import WebSocket
 
 from bundle.core import data
+from bundle.website.core.ws_messages import MessageT
 
 from .messages import ErrorMessage
-
-MessageT = TypeVar("MessageT", bound=data.Data)
 
 
 class MessageRouter:

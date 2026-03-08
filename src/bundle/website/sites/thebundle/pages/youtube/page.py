@@ -16,7 +16,7 @@ from bundle.youtube.track import YoutubeResolveOptions, YoutubeStreamOption, You
 
 from bundle.website.core.downloader import DownloaderWebSocket
 from bundle.website.core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
-from bundle.website.core.websocket import WebSocketDataMixin
+from bundle.website.core.ws_messages import WebSocketDataMixin
 
 NAME = "youtube"
 TEMPLATE_PATH = get_template_path(__file__)

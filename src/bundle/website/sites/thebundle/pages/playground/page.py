@@ -5,9 +5,7 @@ from inspect import getfile
 from fastapi import APIRouter, Request
 from fastapi.responses import HTMLResponse
 
-from bundle.website.builtin import component as components
-from bundle.website.builtin.component.websocket import ecc, heartbeat, heartbeat_cardio, heartbeat_earth, heartbeat_earth_moon, toast
-from bundle.website.builtin.component.websocket.base import WebSocketComponentParams
+from bundle.website.core import components
 from bundle.website.core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
 
 NAME = "playground"
@@ -32,13 +30,13 @@ COMPONENTS = (
         description="Pseudo-3D starfield with pointer-driven parallax.",
         component_file=getfile(components.graphic.GraphicThreeDComponent),
     ),
-    ecc.WebSocketECCComponent(params=WebSocketComponentParams(endpoint="/ws/ecc-1")),
-    ecc.WebSocketECCComponent(params=WebSocketComponentParams(endpoint="/ws/ecc-2")),
-    heartbeat.WebSocketHeartbeatComponent(),
-    heartbeat_cardio.WebSocketHeartBeatCardioComponent(),
-    heartbeat_earth.WebSocketHeartBeatMonitorEarthComponent(),
-    heartbeat_earth_moon.WebSocketHeartBeatMonitorEarthMoonComponent(),
-    toast.WebSocketToastComponent(),
+    components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")),
+    components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")),
+    components.WebSocketHeartbeatComponent(),
+    components.WebSocketHeartBeatCardioComponent(),
+    components.WebSocketHeartBeatMonitorEarthComponent(),
+    components.WebSocketHeartBeatMonitorEarthMoonComponent(),
+    components.WebSocketToastComponent(),
 )
 
 components.attach_routes(router, *COMPONENTS)

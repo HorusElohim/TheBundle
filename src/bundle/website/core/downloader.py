@@ -6,7 +6,7 @@ from fastapi import WebSocket
 
 from bundle.core import Downloader, data
 
-from .websocket import DownloaderEndMessage, DownloaderStartMessage, DownloaderUpdateMessage
+from .ws_messages import DownloaderEndMessage, DownloaderStartMessage, DownloaderUpdateMessage
 
 
 class DownloaderWebSocket(Downloader):

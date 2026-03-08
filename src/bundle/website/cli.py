@@ -9,18 +9,15 @@ import uvicorn
 from bundle.core import logger, process, tracer
 
 from .core import create_app
+from .core.static import website_root
 
 log = logger.get_logger(__name__)
-
-
-def _website_root() -> Path:
-    return Path(__file__).resolve().parent
 
 
 def _site_frontend_root(site_name: str) -> Path:
     normalized = site_name.lower()
     if normalized == "bundle":
-        return _website_root() / "sites" / "thebundle"
+        return website_root() / "sites" / "thebundle"
     raise ValueError(f"Unknown site frontend workspace: {site_name}")
 
 

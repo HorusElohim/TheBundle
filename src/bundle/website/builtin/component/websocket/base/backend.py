@@ -43,7 +43,7 @@ def create_router(endpoint: str, handler: WebSocketHandler | None = None) -> API
     resolved_handler = handler or keepalive_loop
 
     @router.websocket(endpoint)
-    async def ecc_websocket(websocket: WebSocket) -> None:
+    async def _ws_handler(websocket: WebSocket) -> None:
         await resolved_handler(websocket)
 
     return router
