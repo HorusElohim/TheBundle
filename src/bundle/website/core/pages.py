@@ -2,30 +2,28 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, Protocol
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
 from fastapi.staticfiles import StaticFiles
 
 
-@dataclass(frozen=True)
-class PageDefinition:
-    """Declarative metadata used to register a page router and static mount."""
+class Page(Protocol):
+    """Structural interface a page module must satisfy to be registered."""
 
     name: str
     slug: str
     href: str
     description: str
     router: APIRouter
-    static_path: Path | None = None
-    show_in_nav: bool = True
-    show_on_home: bool = True
+    static_path: Path | None
+    show_in_nav: bool
+    show_on_home: bool
 
 
-def mount_page(app: FastAPI, page: PageDefinition) -> None:
+def mount_page(app: FastAPI, page: Page) -> None:
     """Attach a single page router and its static directory to the app."""
     app.include_router(page.router)
     if page.static_path and page.static_path.is_dir():
@@ -36,7 +34,7 @@ def mount_page(app: FastAPI, page: PageDefinition) -> None:
         )
 
 
-def initialize_pages(app: FastAPI, pages: Iterable[PageDefinition]) -> tuple[PageDefinition, ...]:
+def initialize_pages(app: FastAPI, pages: Iterable[Page]) -> tuple[Page, ...]:
     """Attach all pages and expose registry/navigation metadata on app state."""
     page_registry = tuple(pages)
     for page in page_registry:
@@ -47,4 +45,4 @@ def initialize_pages(app: FastAPI, pages: Iterable[PageDefinition]) -> tuple[Pag
     return page_registry
 
 
-__all__ = ["PageDefinition", "mount_page", "initialize_pages"]
+__all__ = ["Page", "mount_page", "initialize_pages"]

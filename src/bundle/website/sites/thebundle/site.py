@@ -15,4 +15,3 @@ def site_manifest() -> SiteManifest:
         components_path=default_components_path(),
         initialize_pages=initialize_pages,
     )
-

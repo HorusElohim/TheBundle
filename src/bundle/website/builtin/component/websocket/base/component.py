@@ -6,8 +6,8 @@ from typing import ClassVar, Iterable
 from fastapi import WebSocket
 
 from bundle.core import data
-
 from bundle.website.core.component import COMPONENTS_ROOT, Component
+
 from .backend import create_router, keepalive_loop
 
 __doc__ = """

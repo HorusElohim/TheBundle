@@ -2,20 +2,17 @@
 
 from inspect import getfile
 
-from fastapi import APIRouter, Request
+from fastapi import Request
 from fastapi.responses import HTMLResponse
 
 from bundle.website.core import components
-from bundle.website.core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
+from bundle.website.core.templating import PageModule, base_context
 
-NAME = "playground"
-TEMPLATE_PATH = get_template_path(__file__)
-STATIC_PATH = get_static_path(__file__)
-LOGGER = get_logger(NAME)
-
-router = APIRouter()
-templates = create_templates(TEMPLATE_PATH)
-
+page = PageModule(
+    __file__,
+    name="Playground",
+    description="Prototype components quickly with backend and frontend hooks.",
+)
 
 COMPONENTS = (
     components.graphic.GraphicTwoDComponent(
@@ -39,12 +36,12 @@ COMPONENTS = (
     components.WebSocketToastComponent(),
 )
 
-components.attach_routes(router, *COMPONENTS)
+components.attach_routes(page.router, *COMPONENTS)
 
 
-@router.get("/playground", response_class=HTMLResponse)
+@page.router.get("/playground", response_class=HTMLResponse)
 async def playground(request: Request):
     """Render the playground with all demo components and their assets."""
-    LOGGER.debug("Rendering playground page")
+    page.logger.debug("Rendering playground page")
     context = base_context(request, components.context(*COMPONENTS))
-    return templates.TemplateResponse(request, "playground.html", context)
+    return page.templates.TemplateResponse(request, "playground.html", context)

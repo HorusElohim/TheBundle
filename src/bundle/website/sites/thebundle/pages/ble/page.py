@@ -5,21 +5,18 @@ from __future__ import annotations
 import asyncio
 import contextlib
 
-from fastapi import APIRouter, HTTPException, Request, WebSocket, WebSocketDisconnect
+from fastapi import HTTPException, Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse, JSONResponse
 
 from bundle import ble
+from bundle.website.core.templating import PageModule, base_context
 
-from bundle.website.core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
-
-NAME = "ble"
-TEMPLATE_PATH = get_template_path(__file__)
-STATIC_PATH = get_static_path(__file__)
-LOGGER = get_logger(NAME)
+page = PageModule(
+    __file__,
+    name="BLE",
+    description="Scan, inspect, and connect to Nordic UART devices in real time.",
+)
 _manager: ble.Manager | None = None
-
-router = APIRouter()
-templates = create_templates(TEMPLATE_PATH)
 
 REFRESH_INTERVAL_MIN = 1.0
 REFRESH_INTERVAL_MAX = 30.0
@@ -33,20 +30,20 @@ def _get_manager() -> ble.Manager:
     return _manager
 
 
-@router.get("/ble", response_class=HTMLResponse)
+@page.router.get("/ble", response_class=HTMLResponse)
 async def ble_dashboard(request: Request):
     """Render the BLE dashboard page."""
-    return templates.TemplateResponse(request, "index.html", base_context(request))
+    return page.templates.TemplateResponse(request, "index.html", base_context(request))
 
 
-@router.get("/ble/api/devices", response_class=JSONResponse)
+@page.router.get("/ble/api/devices", response_class=JSONResponse)
 async def ble_scan(timeout: float = ble.DEFAULT_SCAN_TIMEOUT) -> dict:
     """Run a single BLE scan and return devices as JSON."""
     scan = await _collect_scan(timeout)
     return await scan.as_dict()
 
 
-@router.websocket("/ble/ws/scan")
+@page.router.websocket("/ble/ws/scan")
 async def ble_scan_stream(websocket: WebSocket):
     """Continuously scan BLE devices and stream updates to the browser."""
     await websocket.accept()
@@ -76,7 +73,7 @@ async def ble_scan_stream(websocket: WebSocket):
                 stop_event.set()
                 break
             except Exception as exc:  # pragma: no cover - defensive logging for BLE hw
-                LOGGER.error("BLE scan failed during websocket stream: %s", exc)
+                page.logger.error("BLE scan failed during websocket stream: %s", exc)
                 try:
                     await websocket.send_json({"type": "error", "message": "BLE scan unavailable"})
                 except (RuntimeError, WebSocketDisconnect):
@@ -104,7 +101,7 @@ async def ble_scan_stream(websocket: WebSocket):
         except WebSocketDisconnect:
             stop_event.set()
         except Exception as exc:  # pragma: no cover - malformed client input
-            LOGGER.warning("BLE websocket config error: %s", exc)
+            page.logger.warning("BLE websocket config error: %s", exc)
             stop_event.set()
 
     scan_task = asyncio.create_task(scan_loop())
@@ -126,7 +123,7 @@ async def _collect_scan(timeout: float) -> ble.ScanResult:
     try:
         return await _get_manager().scan(timeout=timeout)
     except Exception as exc:  # pragma: no cover - BLE hardware errors logged for UI feedback
-        LOGGER.error("BLE scan failed: %s", exc)
+        page.logger.error("BLE scan failed: %s", exc)
         raise HTTPException(status_code=503, detail="BLE scan unavailable") from exc
 
 
