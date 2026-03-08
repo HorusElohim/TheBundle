@@ -8,10 +8,7 @@ from typing import Any, Iterable, Mapping
 
 from fastapi.templating import Jinja2Templates
 
-
-def website_root() -> Path:
-    """Return the website package root directory."""
-    return Path(__file__).resolve().parents[1]
+from .static import website_root
 
 
 def get_template_path(file_path: str | Path) -> Path:

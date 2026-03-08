@@ -16,13 +16,21 @@ NAME = "ble"
 TEMPLATE_PATH = get_template_path(__file__)
 STATIC_PATH = get_static_path(__file__)
 LOGGER = get_logger(NAME)
-MANAGER = ble.Manager()
+_manager: ble.Manager | None = None
 
 router = APIRouter()
 templates = create_templates(TEMPLATE_PATH)
 
 REFRESH_INTERVAL_MIN = 1.0
 REFRESH_INTERVAL_MAX = 30.0
+
+
+def _get_manager() -> ble.Manager:
+    """Create BLE manager lazily to avoid hardware setup at module import time."""
+    global _manager
+    if _manager is None:
+        _manager = ble.Manager()
+    return _manager
 
 
 @router.get("/ble", response_class=HTMLResponse)
@@ -48,10 +56,11 @@ async def ble_scan_stream(websocket: WebSocket):
 
     async def scan_loop() -> None:
         nonlocal refresh_interval
+        manager = _get_manager()
         while not stop_event.is_set():
             try:
                 scan_timeout = min(refresh_interval, ble.DEFAULT_SCAN_TIMEOUT)
-                scan = await MANAGER.scan(timeout=scan_timeout)
+                scan = await manager.scan(timeout=scan_timeout)
                 payload = await scan.as_dict()
                 await websocket.send_json({"type": "scan", "data": payload})
             except RuntimeError as exc:
@@ -115,7 +124,7 @@ async def ble_scan_stream(websocket: WebSocket):
 async def _collect_scan(timeout: float) -> ble.ScanResult:
     """Wrap manager scan to convert hardware/runtime failures into HTTP 503."""
     try:
-        return await MANAGER.scan(timeout=timeout)
+        return await _get_manager().scan(timeout=timeout)
     except Exception as exc:  # pragma: no cover - BLE hardware errors logged for UI feedback
         LOGGER.error("BLE scan failed: %s", exc)
         raise HTTPException(status_code=503, detail="BLE scan unavailable") from exc

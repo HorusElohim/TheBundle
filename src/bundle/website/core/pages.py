@@ -20,7 +20,7 @@ class PageDefinition:
     href: str
     description: str
     router: APIRouter
-    static_path: Path
+    static_path: Path | None = None
     show_in_nav: bool = True
     show_on_home: bool = True
 
@@ -28,11 +28,12 @@ class PageDefinition:
 def mount_page(app: FastAPI, page: PageDefinition) -> None:
     """Attach a single page router and its static directory to the app."""
     app.include_router(page.router)
-    app.mount(
-        f"/{page.slug}",
-        StaticFiles(directory=str(page.static_path)),
-        name=page.slug,
-    )
+    if page.static_path and page.static_path.is_dir():
+        app.mount(
+            f"/{page.slug}",
+            StaticFiles(directory=str(page.static_path)),
+            name=page.slug,
+        )
 
 
 def initialize_pages(app: FastAPI, pages: Iterable[PageDefinition]) -> tuple[PageDefinition, ...]:

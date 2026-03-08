@@ -176,6 +176,7 @@ logs/
 
 tmp/
 .vscode/
+.claude
 
 src/bundle/_version.py
 
