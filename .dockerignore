@@ -1,0 +1,17 @@
+.github
+.claude
+.pytest_cache/
+.venv/
+.venv_*/
+venv/
+node_modules/
+tmp/
+performances/
+profiler/
+tests/
+references/
+**/__pycache__/
+**/*.py[cod]
+src/bundle/pods/pods/comfyui/data/
+src/bundle/pods/pods/ppisp/workspace/data/
+src/bundle/website/sites/thebundle/node_modules/
