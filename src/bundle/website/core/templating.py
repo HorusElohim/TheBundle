@@ -27,7 +27,7 @@ def get_logger(page_name: str) -> logging.Logger:
 
 
 _BASE_TEMPLATE_PATH = website_root() / "templates"
-_COMPONENT_TEMPLATE_PATH = website_root() / "builtin" / "component"
+_COMPONENT_TEMPLATE_PATH = website_root() / "builtin" / "components"
 
 
 def create_templates(*template_roots: Iterable[Path | str] | Path | str) -> Jinja2Templates:

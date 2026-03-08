@@ -1,8 +1,7 @@
 """Public API for website core application composition."""
 
-from . import components
 from .app import create_app
 from .manifest import SiteManifest
 from .pages import Page, initialize_pages, mount_page
 
-__all__ = ["create_app", "SiteManifest", "Page", "mount_page", "initialize_pages", "components"]
+__all__ = ["create_app", "SiteManifest", "Page", "mount_page", "initialize_pages"]

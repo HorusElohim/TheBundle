@@ -1,5 +1,5 @@
 """Built-in website modules shipped with Bundle."""
 
-from . import component
+from . import components
 
-__all__ = ["component"]
+__all__ = ["components"]
