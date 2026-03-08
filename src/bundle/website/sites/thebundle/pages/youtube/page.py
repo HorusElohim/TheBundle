@@ -4,30 +4,26 @@ import asyncio
 from pathlib import Path
 from typing import Literal
 
-from fastapi import APIRouter, Request, WebSocket, WebSocketDisconnect
+from fastapi import Request, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
 
 from bundle.core import data
 from bundle.core.downloader import Downloader
+from bundle.website.core.downloader import DownloaderWebSocket
+from bundle.website.core.templating import PageModule, base_context
+from bundle.website.core.ws_messages import WebSocketDataMixin
 from bundle.youtube import media
 from bundle.youtube.media import MP4
 from bundle.youtube.pytube import probe, resolve
 from bundle.youtube.track import YoutubeResolveOptions, YoutubeStreamOption, YoutubeTrackData
 
-from bundle.website.core.downloader import DownloaderWebSocket
-from bundle.website.core.templating import base_context, create_templates, get_logger, get_static_path, get_template_path
-from bundle.website.core.ws_messages import WebSocketDataMixin
-
-NAME = "youtube"
-TEMPLATE_PATH = get_template_path(__file__)
-STATIC_PATH = get_static_path(__file__)
-LOGGER = get_logger(NAME)
+page = PageModule(
+    __file__,
+    name="YouTube",
+    description="Resolve and download tracks directly into The Bundle workbench.",
+)
 
 MUSIC_PATH = Path(__file__).parent / "static"
-
-
-router = APIRouter()
-templates = create_templates(TEMPLATE_PATH)
 
 
 class InfoMessage(data.Data, WebSocketDataMixin):
@@ -86,11 +82,7 @@ class QualityOptionsMessage(data.Data, WebSocketDataMixin):
 def _pick_simple_mp4_option(track: YoutubeTrackData) -> YoutubeStreamOption | None:
     """Return preferred progressive MP4 option (360p first, then first MP4)."""
     preferred = next(
-        (
-            opt
-            for opt in track.video_streams
-            if opt.progressive and opt.mime_type == "video/mp4" and opt.resolution == "360p"
-        ),
+        (opt for opt in track.video_streams if opt.progressive and opt.mime_type == "video/mp4" and opt.resolution == "360p"),
         None,
     )
     if preferred:
@@ -128,28 +120,28 @@ def _existing_served_path(filename: str, requested_format: str) -> Path | None:
     return None
 
 
-@router.get("/youtube", response_class=HTMLResponse)
+@page.router.get("/youtube", response_class=HTMLResponse)
 async def youtube(request: Request):
     """Render the YouTube page."""
-    return templates.TemplateResponse(request, "youtube.html", base_context(request))
+    return page.templates.TemplateResponse(request, "youtube.html", base_context(request))
 
 
-@router.websocket("/ws/youtube/download_track")
+@page.router.websocket("/ws/youtube/download_track")
 async def download_track(websocket: WebSocket):
     """Handle probe/download commands and stream progress/results to the UI."""
     await websocket.accept()
-    LOGGER.debug("callback called from websocket url: %s", websocket.url)
+    page.logger.debug("callback called from websocket url: %s", websocket.url)
     while True:
         try:
             request_payload = await DownloadTrackRequest.receive(websocket)
         except WebSocketDisconnect:
-            LOGGER.debug("YouTube websocket disconnected: %s", websocket.client)
+            page.logger.debug("YouTube websocket disconnected: %s", websocket.client)
             break
         except Exception as exc:
-            LOGGER.warning("Invalid YouTube websocket payload: %s", exc)
+            page.logger.warning("Invalid YouTube websocket payload: %s", exc)
             continue
 
-        LOGGER.debug("received: %s", await request_payload.as_dict())
+        page.logger.debug("received: %s", await request_payload.as_dict())
         youtube_url = request_payload.youtube_url
         requested_format = request_payload.format
 
@@ -166,9 +158,7 @@ async def download_track(websocket: WebSocket):
                 await track_metadata.send(websocket)
                 simple_options = _simple_quality_options(youtube_track)
                 if not simple_options:
-                    await InfoMessage(info_message="No supported progressive MP4 stream found for this video").send(
-                        websocket
-                    )
+                    await InfoMessage(info_message="No supported progressive MP4 stream found for this video").send(websocket)
                     continue
                 break
 

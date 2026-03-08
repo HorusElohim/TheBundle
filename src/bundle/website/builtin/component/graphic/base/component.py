@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from bundle.core import data
-
 from bundle.website.core.component import Component
 
 __doc__ = """

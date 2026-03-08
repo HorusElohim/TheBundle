@@ -1,2 +1,1 @@
-from .page import NAME, STATIC_PATH, router
-
+from .page import page

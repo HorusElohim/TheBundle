@@ -8,7 +8,7 @@ from collections.abc import Awaitable, Callable
 
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 
-from bundle.core import tracer, logger
+from bundle.core import logger, tracer
 
 from .messages import AckMessage, ErrorMessage, KeepAliveMessage
 

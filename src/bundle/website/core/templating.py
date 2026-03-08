@@ -72,7 +72,41 @@ def base_context(request: Any, extra: Mapping[str, Any] | None = None) -> dict[s
     }
 
 
+class PageModule:
+    """Derive page boilerplate (router, templates, logger, paths) from a module file.
+
+    Holds both runtime objects (router, templates, logger) and page metadata
+    (name, slug, href, description) so each page declares everything in one place.
+    """
+
+    def __init__(
+        self,
+        module_file: str | Path,
+        name: str,
+        *,
+        slug: str | None = None,
+        href: str | None = None,
+        description: str = "",
+        show_in_nav: bool = True,
+        show_on_home: bool = True,
+    ) -> None:
+        from fastapi import APIRouter
+
+        self.name = name
+        self.slug = slug or name.lower().replace(" ", "-")
+        self.href = href if href is not None else f"/{self.slug}"
+        self.description = description
+        self.show_in_nav = show_in_nav
+        self.show_on_home = show_on_home
+        self.template_path = get_template_path(module_file)
+        self.static_path = get_static_path(module_file)
+        self.logger = get_logger(self.slug)
+        self.router = APIRouter()
+        self.templates = create_templates(self.template_path)
+
+
 __all__ = [
+    "PageModule",
     "get_template_path",
     "get_static_path",
     "get_logger",
