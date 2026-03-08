@@ -1,0 +1,10 @@
+services:
+  website:
+    build:
+      context: ../../../../..
+      dockerfile: src/bundle/pods/pods/website/Dockerfile
+    image: nextgen/website:local
+    container_name: nextgen-website
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
