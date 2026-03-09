@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from discord import app_commands
 from discord.ext import commands
 
 from bundle.core import logger, tracer
@@ -44,13 +45,11 @@ class YoutubeCog(commands.Cog, name="youtube"):
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
 
-    @commands.command(name="yt")
+    @commands.hybrid_command(name="yt")
+    @app_commands.describe(url="YouTube video URL to resolve")
     @tracer.Async.decorator.call_raise
     async def resolve(self, ctx: commands.Context, url: str) -> None:
-        """Resolve a YouTube URL and show available streams.
-
-        Usage: !yt <youtube-url>
-        """
+        """Resolve a YouTube URL and show available streams."""
         e = self.bot.embeds
         msg = await ctx.send(
             embed=e.progress(title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10)

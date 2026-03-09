@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 import discord
+from discord import app_commands
 from discord.ext import commands
 
 from bundle.core import logger, tracer
@@ -326,13 +327,11 @@ class MusicCog(commands.Cog, name="music"):
 
     # ---- commands ----
 
-    @commands.command()
+    @commands.hybrid_command()
+    @app_commands.describe(url="YouTube video or playlist URL")
     @tracer.Async.decorator.call_raise
     async def play(self, ctx: commands.Context, url: str) -> None:
-        """Add a YouTube URL (video or playlist) to the queue and start playing.
-
-        Usage: !play <youtube-url>
-        """
+        """Add a YouTube URL to the queue and start playing."""
         e = self.bot.embeds
         if not ctx.author.voice or not ctx.author.voice.channel:
             await ctx.send(embed=e.error(title="Music", description="Join a voice channel first."))
@@ -351,18 +350,22 @@ class MusicCog(commands.Cog, name="music"):
         is_first_play = not gs.queue and not gs.queue.resolving
         gs.queue.resolving = True
 
-        await gs.embed.send_or_update(
-            e.progress(
-                title="Music",
-                status=f"{'Resolving' if is_first_play else 'Adding to queue'}: `{url}` ...",
-                percent=5,
-            ),
-        )
+        if gs.embed.msg:
+            # Adding to existing queue -- brief acknowledgment, persistent embed stays
+            await ctx.send(
+                embed=e.info(title="Music", description=f"Adding `{url}` to queue..."),
+                delete_after=10,
+            )
+        else:
+            # First play -- ctx.send works for both prefix and slash interactions
+            gs.embed.msg = await ctx.send(
+                embed=e.progress(title="Music", status=f"Resolving `{url}` ...", percent=5),
+            )
 
         task = asyncio.create_task(self._resolve_and_queue(url, ctx.guild, is_first_play))
         gs.resolve_tasks.append(task)
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def skip(self, ctx: commands.Context) -> None:
         """Skip to the next track in the queue."""
@@ -370,8 +373,9 @@ class MusicCog(commands.Cog, name="music"):
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
             return
         await self._advance(ctx.guild, +1)
+        await ctx.send("\u23ED Skipped", delete_after=5)
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def prev(self, ctx: commands.Context) -> None:
         """Go back to the previous track."""
@@ -379,8 +383,9 @@ class MusicCog(commands.Cog, name="music"):
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
             return
         await self._advance(ctx.guild, -1)
+        await ctx.send("\u23EE Previous", delete_after=5)
 
-    @commands.command(name="queue")
+    @commands.hybrid_command(name="queue")
     @tracer.Async.decorator.call_raise
     async def show_queue(self, ctx: commands.Context) -> None:
         """Display the current queue."""
@@ -390,21 +395,27 @@ class MusicCog(commands.Cog, name="music"):
             return
         await ctx.send(embed=gs.embed.queue_embed())
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def stop(self, ctx: commands.Context) -> None:
         """Stop playback, clear the queue, and disconnect."""
         await self._stop_guild(ctx.guild)
         await ctx.send(embed=self.bot.embeds.success(title="Music", description="Playback stopped."))
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def pause(self, ctx: commands.Context) -> None:
         """Pause playback."""
-        await self._pause_guild(ctx.guild)
+        if await self._pause_guild(ctx.guild):
+            await ctx.send("\u23F8 Paused", delete_after=5)
+        else:
+            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to pause."))
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def resume(self, ctx: commands.Context) -> None:
         """Resume paused playback."""
-        await self._resume_guild(ctx.guild)
+        if await self._resume_guild(ctx.guild):
+            await ctx.send("\u25B6 Resumed", delete_after=5)
+        else:
+            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to resume."))

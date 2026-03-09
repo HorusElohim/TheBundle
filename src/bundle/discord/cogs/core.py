@@ -20,7 +20,7 @@ class CoreCog(commands.Cog, name="core"):
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
 
-    @commands.command()
+    @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def ping(self, ctx: commands.Context) -> None:
         """Check bot responsiveness."""
