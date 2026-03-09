@@ -18,10 +18,10 @@ log = logger.get_logger(__name__)
 
 PLAYLIST_INDICATOR = "playlist"
 CLIENT_PROFILES: tuple[dict[str, object], ...] = (
-    {"client": "WEB", "use_po_token": True},
+    {"client": "ANDROID_VR"},
     {"client": "ANDROID"},
-    {"client": "ANDROID_CREATOR"},
     {"client": "IOS"},
+    {"client": "WEB"},
 )
 
 
@@ -173,14 +173,14 @@ async def resolve_with_clients(url: str) -> YouTube | None:
     for profile in CLIENT_PROFILES:
         client_name = profile["client"]
         kwargs = {"client": client_name}
-        if profile.get("use_po_token"):
-            kwargs.update({"use_po_token": True, "po_token_verifier": load_poto_token})
         try:
             yt = await loop.run_in_executor(None, partial(YouTube, url, **kwargs))
+            # Verify streams are actually accessible (not just metadata)
+            _ = yt.streams
             log.debug("Resolved %s using client %s", url, client_name)
             return yt
-        except PytubeFixError as exc:
-            log.warning("Client %s failed to resolve %s: %s", client_name, url, exc)
+        except Exception as exc:
+            log.warning("Client %s failed for %s: %s", client_name, url, exc)
             continue
     log.error("All clients failed to resolve %s", url)
     return None

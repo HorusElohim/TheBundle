@@ -10,6 +10,7 @@ from bundle.core import data, logger, tracer
 from .cogs.core import CoreCog
 from .cogs.greet import GreetCog
 from .cogs.lifecycle import LifecycleCog
+from .cogs.youtube import YoutubeCog
 
 log = logger.get_logger(__name__)
 
@@ -51,7 +52,7 @@ class Bot(commands.Bot):
 
     async def setup_hook(self) -> None:
         """Load all cogs."""
-        for cog in (CoreCog(self), GreetCog(self), LifecycleCog(self)):
+        for cog in (CoreCog(self), GreetCog(self), LifecycleCog(self), YoutubeCog(self)):
             await self.add_cog(cog)
         log.info(f"Loaded {len(self.cogs)} cog(s): {list(self.cogs.keys())}")
 
