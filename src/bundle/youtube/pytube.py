@@ -23,6 +23,12 @@ def _playlist_id(url: str) -> str | None:
     return ids[0] if ids else None
 
 
+def _has_video_id(url: str) -> bool:
+    """Return True if the URL contains a ``v=`` parameter (single video)."""
+    query = parse_qs(urlparse(url).query)
+    return bool(query.get("v"))
+
+
 CLIENT_PROFILES: tuple[dict[str, object], ...] = (
     {"client": "ANDROID_VR"},
     {"client": "ANDROID"},
@@ -195,7 +201,7 @@ async def resolve_with_clients(url: str) -> YouTube | None:
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
     list_id = _playlist_id(url)
     playlist_url = f"https://www.youtube.com/playlist?list={list_id}" if list_id else url
-    playlist = await tracer.Async.call_raise(Playlist, playlist_url, use_po_token=True)
+    playlist = await tracer.Async.call_raise(Playlist, playlist_url)
     for video_url in playlist.video_urls:
         yield video_url
 
@@ -230,8 +236,17 @@ async def resolve(
 ) -> AsyncGenerator[YoutubeTrackData, None]:
     log.debug("Resolving: %s", url)
     if await is_playlist(url):
-        async for playlist_url in fetch_playlist_urls(url):
-            yield await fetch_url_youtube_info(playlist_url, options=options)
+        yielded = False
+        try:
+            async for playlist_url in fetch_playlist_urls(url):
+                yield await fetch_url_youtube_info(playlist_url, options=options)
+                yielded = True
+        except Exception:
+            log.warning("Playlist resolution failed for %s, falling back to single video", url)
+        # Fall back to single video if playlist yielded nothing (e.g. Radio/Mix)
+        if not yielded and _has_video_id(url):
+            log.info("Falling back to single-video resolve for %s", url)
+            yield await fetch_url_youtube_info(url, options=options)
     else:
         yield await fetch_url_youtube_info(url, options=options)
 
