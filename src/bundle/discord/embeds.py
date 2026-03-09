@@ -121,3 +121,28 @@ def success(
 def error(*, title: str, description: str, bot_avatar_url: str | None = None) -> discord.Embed:
     """Operation failed — red embed."""
     return _base(title=title, description=description, color=Color.ERROR, bot_avatar_url=bot_avatar_url)
+
+
+# ---------------------------------------------------------------------------
+# Now Playing
+# ---------------------------------------------------------------------------
+
+MUSIC = 0xE91E63  # pink
+
+
+def now_playing(
+    *,
+    title: str,
+    author: str,
+    duration: str,
+    status: str = "Playing",
+    thumbnail_url: str | None = None,
+    bot_avatar_url: str | None = None,
+) -> discord.Embed:
+    """Now-playing embed — pink sidebar, track info."""
+    embed = _base(title=title, description=f"**{status}**", color=MUSIC, bot_avatar_url=bot_avatar_url)
+    embed.add_field(name="Author", value=author, inline=True)
+    embed.add_field(name="Duration", value=duration, inline=True)
+    if thumbnail_url:
+        embed.set_thumbnail(url=thumbnail_url)
+    return embed
