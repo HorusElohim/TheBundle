@@ -6,6 +6,10 @@ services:
     image: nextgen/discord-music:local
     container_name: nextgen-discord-music
     restart: unless-stopped
+    init: true
+    cap_add:
+      - SYS_NICE
+    network_mode: "host"
     env_file:
       - path: .discord.env
         required: false
