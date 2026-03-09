@@ -45,7 +45,7 @@ class QueuePaginator(discord.ui.View):
 
 
 class PlayerControls(discord.ui.View):
-    """Five-button control strip attached to the now-playing embed."""
+    """Six-button control strip attached to the now-playing embed: prev, pause, skip, stop, shuffle, queue."""
 
     def __init__(self, cog: MusicCog, guild_id: int) -> None:
         super().__init__(timeout=None)
