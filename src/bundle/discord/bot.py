@@ -15,6 +15,7 @@ from .cogs.lifecycle import LifecycleCog
 from .cogs.music import MusicCog
 from .cogs.youtube import YoutubeCog
 from .embeds import EmbedFactory
+from .help import BundleHelpCommand
 
 log = logger.get_logger(__name__)
 
@@ -48,10 +49,15 @@ class Bot(commands.Bot):
 
     def __init__(self, config: BotConfig) -> None:
         self.config = config
+        self._tree_synced = False
         intents = discord.Intents.default()
         intents.message_content = config.intents_message_content
         intents.members = config.intents_members
-        super().__init__(command_prefix=config.command_prefix, intents=intents)
+        super().__init__(
+            command_prefix=config.command_prefix,
+            intents=intents,
+            help_command=BundleHelpCommand(),
+        )
 
     @property
     def brand_name(self) -> str:
@@ -98,6 +104,25 @@ class Bot(commands.Bot):
         log.info(f"Guilds: {[g.name for g in self.guilds]}")
         for guild in self.guilds:
             await self.sync_guild_identity(guild)
+        await self._sync_tree()
+
+    async def _sync_tree(self) -> None:
+        """Sync slash commands to all guilds (once per session)."""
+        if self._tree_synced:
+            return
+        for guild in self.guilds:
+            self.tree.copy_global_to(guild=guild)
+            await self.tree.sync(guild=guild)
+        self._tree_synced = True
+        log.info("Synced slash commands to %d guild(s)", len(self.guilds))
+
+    @tracer.Async.decorator.call_raise
+    async def on_guild_join(self, guild: discord.Guild) -> None:
+        """Sync slash commands when the bot joins a new guild."""
+        self.tree.copy_global_to(guild=guild)
+        await self.tree.sync(guild=guild)
+        log.info("Synced slash commands to new guild: %s", guild.name)
+        await self.sync_guild_identity(guild)
 
     async def setup_hook(self) -> None:
         """Load all cogs."""
