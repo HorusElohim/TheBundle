@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING
 
 import discord
 
+from .embed import vc_status
+
 if TYPE_CHECKING:
     from .embed import PlayerEmbed
     from . import MusicCog
@@ -73,6 +75,16 @@ class PlayerControls(discord.ui.View):
     async def btn_stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         await self.cog._stop_guild(interaction.guild)
+
+    @discord.ui.button(emoji="\U0001F500", style=discord.ButtonStyle.secondary)
+    async def btn_shuffle(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+        gs = self.cog._get_session(self.guild_id)
+        if not gs or not gs.queue:
+            await interaction.response.send_message("Queue is empty.", ephemeral=True)
+            return
+        await interaction.response.defer()
+        gs.queue.shuffle()
+        await gs.embed.refresh(status=vc_status(interaction.guild.voice_client))
 
     @discord.ui.button(emoji="\U0001F4CB", style=discord.ButtonStyle.secondary)
     async def btn_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
