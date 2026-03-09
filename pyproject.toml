@@ -48,6 +48,7 @@ ble = [
     "bleak>=0.22.1",
     "pyyaml",
 ]
+discord = ["discord.py>=2.3"]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 web = ["fastapi", "uvicorn[standard]", "websockets", "jinja2", "bleak>=0.22.1", "pyyaml"]
 website = [
