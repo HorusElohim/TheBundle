@@ -123,6 +123,23 @@ def error(*, title: str, description: str, bot_avatar_url: str | None = None) ->
     return _base(title=title, description=description, color=Color.ERROR, bot_avatar_url=bot_avatar_url)
 
 
+def info(
+    *,
+    title: str,
+    description: str,
+    fields: dict[str, str] | None = None,
+    thumbnail_url: str | None = None,
+    bot_avatar_url: str | None = None,
+) -> discord.Embed:
+    """Informational embed — blue sidebar."""
+    embed = _base(title=title, description=description, color=Color.INFO, bot_avatar_url=bot_avatar_url)
+    if thumbnail_url:
+        embed.set_thumbnail(url=thumbnail_url)
+    for name, value in (fields or {}).items():
+        embed.add_field(name=name, value=value, inline=True)
+    return embed
+
+
 # ---------------------------------------------------------------------------
 # Now Playing
 # ---------------------------------------------------------------------------
@@ -136,11 +153,14 @@ def now_playing(
     author: str,
     duration: str,
     status: str = "Playing",
+    queue_pos: str | None = None,
     thumbnail_url: str | None = None,
     bot_avatar_url: str | None = None,
 ) -> discord.Embed:
-    """Now-playing embed — pink sidebar, track info."""
+    """Now-playing embed — pink sidebar, track info, optional queue position."""
     embed = _base(title=title, description=f"**{status}**", color=MUSIC, bot_avatar_url=bot_avatar_url)
+    if queue_pos:
+        embed.add_field(name="Track", value=queue_pos, inline=True)
     embed.add_field(name="Author", value=author, inline=True)
     embed.add_field(name="Duration", value=duration, inline=True)
     if thumbnail_url:

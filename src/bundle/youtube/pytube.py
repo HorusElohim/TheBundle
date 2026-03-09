@@ -16,7 +16,13 @@ from .track import YoutubeResolveOptions, YoutubeStreamOption, YoutubeTrackData
 
 log = logger.get_logger(__name__)
 
-PLAYLIST_INDICATOR = "playlist"
+def _playlist_id(url: str) -> str | None:
+    """Return the playlist ID from any YouTube URL that contains one, or None."""
+    query = parse_qs(urlparse(url).query)
+    ids = query.get("list", [])
+    return ids[0] if ids else None
+
+
 CLIENT_PROFILES: tuple[dict[str, object], ...] = (
     {"client": "ANDROID_VR"},
     {"client": "ANDROID"},
@@ -187,14 +193,16 @@ async def resolve_with_clients(url: str) -> YouTube | None:
 
 
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
-    playlist = await tracer.Async.call_raise(Playlist, url, use_po_token=True)
+    list_id = _playlist_id(url)
+    playlist_url = f"https://www.youtube.com/playlist?list={list_id}" if list_id else url
+    playlist = await tracer.Async.call_raise(Playlist, playlist_url, use_po_token=True)
     for video_url in playlist.video_urls:
         yield video_url
 
 
 @tracer.Async.decorator.call_raise
-async def is_playlist(url: str):
-    return PLAYLIST_INDICATOR in url
+async def is_playlist(url: str) -> bool:
+    return _playlist_id(url) is not None
 
 
 @tracer.Async.decorator.call_raise
