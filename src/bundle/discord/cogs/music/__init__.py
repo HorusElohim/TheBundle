@@ -14,7 +14,7 @@ from bundle.core import logger, tracer
 from bundle.youtube import pytube
 from bundle.youtube.track import YoutubeResolveOptions
 
-from .controls import PlayerControls
+from .controls import PlayerControls, QueuePaginator
 from .embed import PlayerEmbed, vc_status
 from .player import GuildPlayer
 from .queue import TrackQueue
@@ -393,7 +393,8 @@ class MusicCog(commands.Cog, name="music"):
         if not gs or not gs.queue:
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Queue is empty."))
             return
-        await ctx.send(embed=gs.embed.queue_embed())
+        paginator = QueuePaginator(gs.embed)
+        await ctx.send(embed=gs.embed.queue_embed(page=0), view=paginator)
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
