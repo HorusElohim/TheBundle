@@ -7,3 +7,5 @@ BUNDLE_LOGGER.level = logger.Level.DEBUG
 
 log = logger.get_logger(__name__)
 log.setLevel(logger.Level.DEBUG)
+
+BOT_NAME = "Beta"
