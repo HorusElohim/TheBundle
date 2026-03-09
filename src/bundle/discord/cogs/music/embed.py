@@ -123,46 +123,15 @@ class PlayerEmbed:
             item.disabled = True  # type: ignore[union-attr]
         self.view.stop()
 
-    async def show_finished(self) -> None:
-        """Show the last track as 'Finished' with disabled controls."""
+    async def delete(self) -> None:
+        """Delete the persistent message and clean up the view."""
         self.disable_view()
-        last = self._queue.tracks[-1] if self._queue else None
-        if self.msg and last:
+        if self.msg:
             try:
-                await self.msg.edit(embed=self.now_playing(last, "Finished"), view=self.view)
+                await self.msg.delete()
             except discord.HTTPException:
                 pass
-
-    async def show_stopped(self) -> None:
-        """Show the current track as 'Stopped' with disabled controls."""
-        self.disable_view()
-        track = self._queue.current
-        if self.msg and track:
-            try:
-                await self.msg.edit(embed=self.now_playing(track, "Stopped"), view=self.view)
-            except discord.HTTPException:
-                pass
-
-    async def show_idle_disconnect(self, reason: str) -> None:
-        """Show that the bot disconnected due to inactivity."""
-        self.disable_view()
-        track = self._queue.current
-        if self.msg and track:
-            try:
-                await self.msg.edit(
-                    embed=self.now_playing(track, "Stopped"),
-                    view=self.view,
-                )
-            except discord.HTTPException:
-                pass
-        elif self.msg:
-            try:
-                await self.msg.edit(
-                    embed=self._embeds.info(title="Music", description=reason),
-                    view=self.view,
-                )
-            except discord.HTTPException:
-                pass
+            self.msg = None
 
     async def show_error(self, description: str) -> None:
         """Update the persistent message with an error embed."""

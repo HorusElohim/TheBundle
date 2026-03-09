@@ -23,7 +23,7 @@ class Color:
     PROGRESS = 0xFEE75C  # yellow
     SUCCESS = 0x57F287  # green
     ERROR = 0xED4245  # red
-    MUSIC = 0xE91E63  # pink
+    MUSIC = 0x00ff00  # green
 
 
 def _progress_bar(percent: int, length: int = 10) -> str:
