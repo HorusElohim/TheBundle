@@ -27,5 +27,7 @@ class GreetCog(commands.Cog, name="greet"):
     @tracer.Async.decorator.call_raise
     async def on_member_join(self, member: discord.Member) -> None:
         channel = member.guild.system_channel or await self.bot.bot_channel(member.guild)
-        await channel.send(embed=embeds.welcome(member, bot_avatar_url=self.bot.user.display_avatar.url))
+        await channel.send(
+            embed=embeds.welcome(member, bot_avatar_url=self.bot.brand_avatar_url, bot_name=self.bot.brand_name)
+        )
         log.info(f"Welcomed {member} in #{channel.name} ({member.guild.name})")

@@ -180,7 +180,7 @@ class MusicCog(commands.Cog, name="music"):
     # ---------- embed builders ----------
 
     def _avatar(self) -> str:
-        return self.bot.user.display_avatar.url
+        return self.bot.brand_avatar_url or ""
 
     def _now_playing_embed(self, track: YoutubeTrackData, status: str, state: GuildState) -> discord.Embed:
         return embeds.now_playing(
@@ -191,6 +191,7 @@ class MusicCog(commands.Cog, name="music"):
             queue_pos=state.queue_pos_str(),
             thumbnail_url=track.thumbnail_url or None,
             bot_avatar_url=self._avatar(),
+            bot_name=self.bot.brand_name,
         )
 
     def _queue_embed(self, state: GuildState) -> discord.Embed:
@@ -208,6 +209,7 @@ class MusicCog(commands.Cog, name="music"):
             title=f"Queue — {len(state.queue)} track(s)",
             description=description or "Queue is empty.",
             bot_avatar_url=self._avatar(),
+            bot_name=self.bot.brand_name,
         )
 
     # ---------- now-playing message ----------
@@ -261,6 +263,7 @@ class MusicCog(commands.Cog, name="music"):
                                 title="Music",
                                 description="Waiting for next track...",
                                 bot_avatar_url=self._avatar(),
+                                bot_name=self.bot.brand_name,
                             ),
                             view=state.view,
                         )
@@ -438,6 +441,7 @@ class MusicCog(commands.Cog, name="music"):
                             title="Music",
                             description=f"Failed to resolve `{url}`.",
                             bot_avatar_url=self._avatar(),
+                            bot_name=self.bot.brand_name,
                         )
                     )
                     state.notify_msg = None
@@ -486,7 +490,12 @@ class MusicCog(commands.Cog, name="music"):
         """
         if not ctx.author.voice or not ctx.author.voice.channel:
             await ctx.send(
-                embed=embeds.error(title="Music", description="Join a voice channel first.", bot_avatar_url=self._avatar())
+                embed=embeds.error(
+                    title="Music",
+                    description="Join a voice channel first.",
+                    bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
+                )
             )
             return
 
@@ -510,6 +519,7 @@ class MusicCog(commands.Cog, name="music"):
                 status=f"{'Starting' if is_first_play else 'Adding to queue'}: `{url}` ...",
                 percent=5,
                 bot_avatar_url=self._avatar(),
+                bot_name=self.bot.brand_name,
             )
         )
 
@@ -531,7 +541,14 @@ class MusicCog(commands.Cog, name="music"):
         """Skip to the next track in the queue."""
         state = self._get_state(ctx.guild.id)
         if not state:
-            await ctx.send(embed=embeds.error(title="Music", description="Nothing playing.", bot_avatar_url=self._avatar()))
+            await ctx.send(
+                embed=embeds.error(
+                    title="Music",
+                    description="Nothing playing.",
+                    bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
+                )
+            )
             return
         await self._advance(ctx.guild, +1)
 
@@ -541,7 +558,14 @@ class MusicCog(commands.Cog, name="music"):
         """Go back to the previous track."""
         state = self._get_state(ctx.guild.id)
         if not state:
-            await ctx.send(embed=embeds.error(title="Music", description="Nothing playing.", bot_avatar_url=self._avatar()))
+            await ctx.send(
+                embed=embeds.error(
+                    title="Music",
+                    description="Nothing playing.",
+                    bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
+                )
+            )
             return
         await self._advance(ctx.guild, -1)
 
@@ -551,7 +575,14 @@ class MusicCog(commands.Cog, name="music"):
         """Display the current queue."""
         state = self._get_state(ctx.guild.id)
         if not state or not state.queue:
-            await ctx.send(embed=embeds.error(title="Music", description="Queue is empty.", bot_avatar_url=self._avatar()))
+            await ctx.send(
+                embed=embeds.error(
+                    title="Music",
+                    description="Queue is empty.",
+                    bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
+                )
+            )
             return
         await ctx.send(embed=self._queue_embed(state))
 
@@ -561,7 +592,12 @@ class MusicCog(commands.Cog, name="music"):
         """Stop playback, clear the queue, and disconnect."""
         await self._stop_guild(ctx.guild)
         await ctx.send(
-            embed=embeds.success(title="Music", description="Playback stopped.", bot_avatar_url=self._avatar())
+            embed=embeds.success(
+                title="Music",
+                description="Playback stopped.",
+                bot_avatar_url=self._avatar(),
+                bot_name=self.bot.brand_name,
+            )
         )
 
     @commands.command()

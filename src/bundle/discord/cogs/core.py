@@ -25,4 +25,4 @@ class CoreCog(commands.Cog, name="core"):
     async def ping(self, ctx: commands.Context) -> None:
         """Check bot responsiveness."""
         latency_ms = round(self.bot.latency * 1000)
-        await ctx.send(f"pong ({latency_ms}ms)")
+        await ctx.send(f"{self.bot.brand_name} pong ({latency_ms}ms)")
