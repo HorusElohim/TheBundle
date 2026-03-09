@@ -4,7 +4,7 @@
 - `src/bundle/` is the main Python package; subpackages are organized by feature area.
 - `tests/` holds pytest suites and example modules.
 - `references/` stores golden data used by tests; update only when intentionally regenerating reference outputs.
-- `src/bundle/website/vendor/excalidraw/` is vendored third-party code, and `src/bundle/website/pages/*/static/` contains built assets.
+- `src/bundle/website/vendor/` contains vendored third-party code.
 
 ## Build, Test, and Development Commands
 - `pip install -e ".[test]"` installs the project with test tooling.
@@ -19,75 +19,41 @@
 - `Data.from_dict` and `Data.as_dict` are traced at `VERBOSE` level; keep high-volume serialization logs at verbose, not debug/info.
 - For `@data.model_validator(mode="after")`, use instance methods (`self`) rather than class-style signatures.
 
-## Core Logging
-- Use `bundle.core.logger` as the canonical logging API (`setup_root_logger`, `get_logger`).
-- Default runtime logs should stay practical: `DEBUG` for development, `INFO` for normal operation, `VERBOSE` only when deep tracing is required.
-- Avoid `print` for runtime behavior; use structured logger calls so output remains filterable and test-friendly.
-- Keep exception logging explicit with context; use tracer exception levels rather than duplicating stack traces manually.
-
-## Core Tracing
-- Use `bundle.core.tracer.Sync/Async` wrappers and decorators for call-level instrumentation.
-- Prefer decorator form for stable APIs and wrapper form for one-off calls.
-- Use `call_raise` when failure should propagate; use `call` only when tuple `(result, exception)` handling is needed.
-- Set `log_level`/`exc_log_level` intentionally for noisy paths (for example serialization or streaming loops).
-
-## Core Sockets
-- Use `bundle.core.sockets` abstractions for ZeroMQ patterns instead of ad hoc socket wrappers.
-- Keep socket config explicit in the model (`type`, `mode`, `endpoint`) and validated through `Data` fields.
-- Prefer async send/recv flows and tracer wrappers for observability in long-running socket tasks.
-- Keep protocol payloads typed (`Data`) where possible; avoid raw dict contracts spread across modules.
-
-## Core Platform
-- Use `bundle.core.platform.Platform` and related helpers for environment/process introspection.
-- Avoid duplicating OS/python/runtime detection logic; centralize it in `platform.py`.
-- Keep platform-specific behavior isolated behind platform helpers, not scattered in feature code.
-
-## Core Utils
-- Use `bundle.core.utils` for shared helpers (path, duration, generic utility behavior) before introducing new local helpers.
-- If a helper is reused across modules, promote it to `core.utils`; if it is feature-specific, keep it local and minimal.
-- Do not add convenience wrappers without a clear reduction in duplication.
+## Core Subsystems
+- **Logging**: Use `bundle.core.logger` (`setup_root_logger`, `get_logger`). Levels: `DEBUG` for dev, `INFO` for normal, `VERBOSE` for deep tracing. Never use `print` for runtime behavior.
+- **Tracing**: Use `bundle.core.tracer.Sync/Async` decorators/wrappers. Prefer decorator form for stable APIs. Use `call_raise` for propagation, `call` for tuple `(result, exception)` handling. Set `log_level`/`exc_log_level` intentionally on noisy paths.
+- **Sockets**: Use `bundle.core.sockets` for ZeroMQ patterns. Keep config in `Data` fields, payloads typed, prefer async flows.
+- **Platform**: Use `bundle.core.platform.Platform` for environment/process introspection. Centralize OS/runtime detection there.
+- **Utils**: Use `bundle.core.utils` for shared helpers before introducing local ones. Promote reused helpers to `core.utils`.
 
 ## Bundle CLI
-- Top-level CLI entrypoint is `src/bundle/cli.py` (`bundle` command group via `rich_click`).
-- Feature CLIs (`website`, `ble`, `youtube`, `pybind`, `testing`, `scraper`) should remain thin adapters over core services.
-- CLI commands should validate inputs early and delegate business logic to reusable modules, not embed heavy logic in command functions.
-- Keep CLI output consistent with logger/tracer strategy; avoid mixed style output unless interactive UX explicitly requires it.
+- Top-level CLI entrypoint is `src/bundle/cli.py` (`bundle` command group via `rich_click`); feature CLIs are loaded dynamically.
+- Feature CLIs should remain thin adapters over core services; validate inputs early, delegate logic to reusable modules.
+- Website: `bundle website install`, `bundle site start [name]`, `bundle site build [name]`.
+- Pods: `bundle pods list|status|build|run|down|logs [pod_name]`.
 
-## Website Architecture (Consolidated)
-- Use the names `pages` and `components` only. Do not re-introduce `sections/widgets` aliases or compatibility hacks.
-- Components are page-scoped: instantiate them in the page module and attach routes with `components.attach_routes(router, *COMPONENTS)`.
-- Do not maintain global component activation/registration for runtime behavior.
-- Each component is atomic and folder-local:
-  - `component.py` (primary `Data` class)
-  - `template.html`
-  - `frontend/` assets
-- Prefer inheritance over duplication:
-  - common websocket behavior belongs in `components/websocket/base/`
-  - child components override only what is unique (typically `handle_websocket`).
-- Keep websocket route creation centralized via base `create_router(...)`.
-- Use typed websocket payloads in `components/websocket/base/messages.py` (`Data` models + ser/des helpers).
-- Keep message dispatch logic in `components/websocket/base/message_router.py`.
-- Use composable websocket runtime blocks from base backend (`run_websocket`, `every`, `drain_text`, `receive_json`) instead of ad hoc loops.
-- Keep code minimal and explicit:
-  - no speculative abstractions
-  - no duplicate route declarations
-  - no dead helpers left from previous designs.
+## Website Architecture
+- Layout: `website/core/` (framework), `website/builtin/` (built-in components), `website/sites/` (site implementations), `website/vendor/` (third-party).
+- Sites use `SiteManifest` to register pages via `initialize_pages(app, [...])`.
+- Pages use `PageModule(__file__, name=..., slug=..., ...)` to encapsulate router, logger, templates, and metadata.
+- Components are page-scoped: instantiate in the page module, attach with `components.attach_routes(page.router, *COMPONENTS)`.
+- Each component is atomic and folder-local: `component.py`, `template.html`, optional CSS/JS.
+- Websocket components inherit from `builtin/components/websocket/base/`; child components override `handle_websocket`.
+- Use typed payloads via `base/messages.py` and dispatch via `base/message_router.py`.
+- Use composable runtime blocks from base backend (`run_websocket`, `every`, `drain_text`, `receive_json`).
+
+## Pods
+- `src/bundle/pods/` manages containerized services via Docker Compose.
+- Each pod is a folder under `pods/pods/` containing a `docker-compose.yml` (required for discovery).
+- CLI: `bundle pods list|status|build|run|down|logs [pod_name]`.
+- Root path via `--pods-root` flag or `BUNDLE_PODS_ROOT` env var.
 
 ## Coding Vibes
-- First rule: less code for the same result is always better.
-- Optimize for elegant minimalism: less code, fewer moving parts, clearer intent.
-- Prefer small composable building blocks over large monolithic implementations.
-- Keep abstractions only when they remove real duplication or unlock reuse; avoid “abstraction for abstraction”.
-- Inheritance is valid when behavior is truly shared; overrides should stay tiny and purpose-specific.
-- Every new line should justify its existence (readability, correctness, reuse, or testability).
-- Favor explicit, typed contracts (`Data` models, clear method boundaries) over implicit dict-based behavior.
-- Keep APIs concise and modern: predictable names, narrow signatures, zero compatibility hacks unless explicitly requested.
-- Refactors should trend toward simpler architecture, not broader architecture.
-- When in doubt, choose the solution that is:
-  - easier to read
-  - easier to test
-  - easier to delete or evolve later
-  - and uses the fewest concepts possible.
+- Less code for the same result is always better. Elegant minimalism: fewer moving parts, clearer intent.
+- Small composable blocks over monoliths. Abstractions only when they remove real duplication.
+- Favor explicit, typed contracts (`Data` models) over implicit dict-based behavior.
+- Refactors should trend toward simpler, not broader, architecture.
+- When in doubt: easier to read, easier to test, easier to delete, fewest concepts.
 
 ## Coding Style & Naming Conventions
 - Use 4-space indentation and target Python 3.10+.
