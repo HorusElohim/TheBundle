@@ -47,7 +47,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
         self.bot = bot
 
     def _avatar(self) -> str:
-        return self.bot.user.display_avatar.url
+        return self.bot.brand_avatar_url or ""
 
     @commands.command(name="yt")
     @tracer.Async.decorator.call_raise
@@ -63,6 +63,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
                 status=f"Resolving `{url}` ...",
                 percent=10,
                 bot_avatar_url=self._avatar(),
+                bot_name=self.bot.brand_name,
             )
         )
 
@@ -80,6 +81,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
                         percent=60,
                         thumbnail_url=track.thumbnail_url or None,
                         bot_avatar_url=self._avatar(),
+                        bot_name=self.bot.brand_name,
                     )
                 )
 
@@ -89,6 +91,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
                         title="YouTube Resolve",
                         description=f"Could not resolve streams for `{url}`.",
                         bot_avatar_url=self._avatar(),
+                        bot_name=self.bot.brand_name,
                     )
                 )
                 return
@@ -111,6 +114,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
                     fields=fields,
                     thumbnail_url=track.thumbnail_url or None,
                     bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
                 )
             )
 
@@ -121,5 +125,6 @@ class YoutubeCog(commands.Cog, name="youtube"):
                     title="YouTube Resolve Failed",
                     description=f"```{exc}```",
                     bot_avatar_url=self._avatar(),
+                    bot_name=self.bot.brand_name,
                 )
             )
