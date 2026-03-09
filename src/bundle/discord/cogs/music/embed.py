@@ -129,6 +129,27 @@ class PlayerEmbed:
             except discord.HTTPException:
                 pass
 
+    async def show_idle_disconnect(self, reason: str) -> None:
+        """Show that the bot disconnected due to inactivity."""
+        self.disable_view()
+        track = self._queue.current
+        if self.msg and track:
+            try:
+                await self.msg.edit(
+                    embed=self.now_playing(track, "Stopped"),
+                    view=self.view,
+                )
+            except discord.HTTPException:
+                pass
+        elif self.msg:
+            try:
+                await self.msg.edit(
+                    embed=self._embeds.info(title="Music", description=reason),
+                    view=self.view,
+                )
+            except discord.HTTPException:
+                pass
+
     async def show_error(self, description: str) -> None:
         """Update the persistent message with an error embed."""
         if not self.msg:
