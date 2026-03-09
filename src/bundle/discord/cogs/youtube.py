@@ -10,8 +10,6 @@ from bundle.core import logger, tracer
 from bundle.youtube import pytube
 from bundle.youtube.track import YoutubeResolveOptions, YoutubeTrackData
 
-from .. import embeds
-
 if TYPE_CHECKING:
     from ..bot import Bot
 
@@ -46,9 +44,6 @@ class YoutubeCog(commands.Cog, name="youtube"):
     def __init__(self, bot: Bot) -> None:
         self.bot = bot
 
-    def _avatar(self) -> str:
-        return self.bot.brand_avatar_url or ""
-
     @commands.command(name="yt")
     @tracer.Async.decorator.call_raise
     async def resolve(self, ctx: commands.Context, url: str) -> None:
@@ -56,15 +51,9 @@ class YoutubeCog(commands.Cog, name="youtube"):
 
         Usage: !yt <youtube-url>
         """
-        # Send initial progress embed
+        e = self.bot.embeds
         msg = await ctx.send(
-            embed=embeds.progress(
-                title="YouTube Resolve",
-                status=f"Resolving `{url}` ...",
-                percent=10,
-                bot_avatar_url=self._avatar(),
-                bot_name=self.bot.brand_name,
-            )
+            embed=e.progress(title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10)
         )
 
         try:
@@ -73,26 +62,18 @@ class YoutubeCog(commands.Cog, name="youtube"):
 
             async for result in pytube.resolve(url, options=options):
                 track = result
-                # Update progress after metadata is fetched
                 await msg.edit(
-                    embed=embeds.progress(
+                    embed=e.progress(
                         title="YouTube Resolve",
                         status=f"Fetched **{track.title}**\nCollecting streams...",
                         percent=60,
                         thumbnail_url=track.thumbnail_url or None,
-                        bot_avatar_url=self._avatar(),
-                        bot_name=self.bot.brand_name,
                     )
                 )
 
             if not track or not track.is_resolved():
                 await msg.edit(
-                    embed=embeds.error(
-                        title="YouTube Resolve",
-                        description=f"Could not resolve streams for `{url}`.",
-                        bot_avatar_url=self._avatar(),
-                        bot_name=self.bot.brand_name,
-                    )
+                    embed=e.error(title="YouTube Resolve", description=f"Could not resolve streams for `{url}`.")
                 )
                 return
 
@@ -108,23 +89,14 @@ class YoutubeCog(commands.Cog, name="youtube"):
                 fields["Best Audio"] = f"`{best.abr}` {best.mime_type}"
 
             await msg.edit(
-                embed=embeds.success(
+                embed=e.success(
                     title=track.title,
                     description=_stream_table(track),
                     fields=fields,
                     thumbnail_url=track.thumbnail_url or None,
-                    bot_avatar_url=self._avatar(),
-                    bot_name=self.bot.brand_name,
                 )
             )
 
         except Exception as exc:
             log.exception(f"YouTube resolve failed for {url}")
-            await msg.edit(
-                embed=embeds.error(
-                    title="YouTube Resolve Failed",
-                    description=f"```{exc}```",
-                    bot_avatar_url=self._avatar(),
-                    bot_name=self.bot.brand_name,
-                )
-            )
+            await msg.edit(embed=e.error(title="YouTube Resolve Failed", description=f"```{exc}```"))

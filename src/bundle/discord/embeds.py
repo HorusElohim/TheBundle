@@ -1,7 +1,9 @@
 """Reusable Discord embed builders for the Discord bot.
 
-Each builder returns a ``discord.Embed`` ready to be sent via ``channel.send(embed=...)``.
-All embeds share a consistent style: colored sidebar, timestamp, and bot-branded footer.
+``EmbedFactory`` holds the bot brand context (name + avatar) so callers
+don't have to pass ``bot_name`` / ``bot_avatar_url`` on every call.
+
+Standalone module-level functions are kept as thin convenience wrappers.
 """
 
 from __future__ import annotations
@@ -21,194 +23,153 @@ class Color:
     PROGRESS = 0xFEE75C  # yellow
     SUCCESS = 0x57F287  # green
     ERROR = 0xED4245  # red
-
-
-def _footer_name(bot_name: str | None) -> str:
-    return bot_name or "Discord Bot"
-
-
-def _base(
-    *,
-    title: str,
-    description: str,
-    color: int,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Create a timestamped embed with a branded footer."""
-    embed = discord.Embed(title=title, description=description, color=color, timestamp=datetime.now(timezone.utc))
-    embed.set_footer(text=_footer_name(bot_name), icon_url=bot_avatar_url)
-    return embed
-
-
-def online(bot_user: discord.User, guild_count: int, latency_ms: int, *, bot_name: str | None = None) -> discord.Embed:
-    """Bot came online with guild count and latency."""
-    avatar = bot_user.display_avatar.url
-    name = _footer_name(bot_name)
-    embed = _base(
-        title=f"{name} Online",
-        description=f"**{name}** is up and running.",
-        color=Color.ONLINE,
-        bot_avatar_url=avatar,
-        bot_name=name,
-    )
-    embed.add_field(name="Guilds", value=str(guild_count), inline=True)
-    embed.add_field(name="Latency", value=f"{latency_ms}ms", inline=True)
-    embed.set_thumbnail(url=avatar)
-    return embed
-
-
-def offline(bot_user: discord.User, *, bot_name: str | None = None) -> discord.Embed:
-    """Bot shutting down."""
-    avatar = bot_user.display_avatar.url
-    name = _footer_name(bot_name)
-    return _base(
-        title=f"{name} Offline",
-        description=f"**{name}** is shutting down.",
-        color=Color.OFFLINE,
-        bot_avatar_url=avatar,
-        bot_name=name,
-    )
-
-
-def welcome(member: discord.Member, bot_avatar_url: str | None = None, bot_name: str | None = None) -> discord.Embed:
-    """New member joined with member avatar and server member count."""
-    guild = member.guild
-    embed = _base(
-        title="New Member",
-        description=f"Welcome {member.mention} to **{guild.name}**!",
-        color=Color.WELCOME,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
-    embed.set_thumbnail(url=member.display_avatar.url)
-    embed.add_field(name="Members", value=str(guild.member_count), inline=True)
-    return embed
+    MUSIC = 0xE91E63  # pink
 
 
 def _progress_bar(percent: int, length: int = 10) -> str:
-    """Render a text-based progress bar for embed descriptions."""
     filled = round(length * percent / 100)
     return "`" + "\u2588" * filled + "\u2591" * (length - filled) + f"` {percent}%"
 
 
-def progress(
-    *,
-    title: str,
-    status: str,
-    percent: int = 0,
-    fields: dict[str, str] | None = None,
-    thumbnail_url: str | None = None,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Generic progress embed."""
-    bar = _progress_bar(min(max(percent, 0), 100))
-    embed = _base(
-        title=title,
-        description=f"{status}\n{bar}",
-        color=Color.PROGRESS,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
-    if thumbnail_url:
-        embed.set_thumbnail(url=thumbnail_url)
-    for name, value in (fields or {}).items():
-        embed.add_field(name=name, value=value, inline=True)
-    return embed
+def _fmt_ts(seconds: int) -> str:
+    m, s = divmod(seconds, 60)
+    h, m = divmod(m, 60)
+    return f"{h}:{m:02}:{s:02}" if h else f"{m}:{s:02}"
 
 
-def success(
-    *,
-    title: str,
-    description: str,
-    fields: dict[str, str] | None = None,
-    thumbnail_url: str | None = None,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Operation completed."""
-    embed = _base(
-        title=title,
-        description=description,
-        color=Color.SUCCESS,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
-    if thumbnail_url:
-        embed.set_thumbnail(url=thumbnail_url)
-    for name, value in (fields or {}).items():
-        embed.add_field(name=name, value=value, inline=True)
-    return embed
+def _seek_bar(elapsed: int, total: int, length: int = 16) -> str:
+    """Render a seek bar like: `0:42 ▶ ━━━━━●━━━━━━━━━━ 3:21`."""
+    if total <= 0:
+        return ""
+    elapsed = min(elapsed, total)
+    pos = elapsed / total
+    dot = round(pos * (length - 1))
+    bar = "\u2501" * dot + "\u25CF" + "\u2501" * (length - 1 - dot)
+    return f"`{_fmt_ts(elapsed)}` {bar} `{_fmt_ts(total)}`"
 
 
-def error(
-    *,
-    title: str,
-    description: str,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Operation failed."""
-    return _base(
-        title=title,
-        description=description,
-        color=Color.ERROR,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
+class EmbedFactory:
+    """Brand-aware embed builder.  Create one per bot and reuse everywhere."""
 
+    def __init__(self, bot_name: str = "Discord Bot", bot_avatar_url: str = "") -> None:
+        self.bot_name = bot_name
+        self.bot_avatar_url = bot_avatar_url
 
-def info(
-    *,
-    title: str,
-    description: str,
-    fields: dict[str, str] | None = None,
-    thumbnail_url: str | None = None,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Informational embed."""
-    embed = _base(
-        title=title,
-        description=description,
-        color=Color.INFO,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
-    if thumbnail_url:
-        embed.set_thumbnail(url=thumbnail_url)
-    for name, value in (fields or {}).items():
-        embed.add_field(name=name, value=value, inline=True)
-    return embed
+    # ---- internal helpers ----
 
+    def _base(self, *, title: str, description: str, color: int) -> discord.Embed:
+        embed = discord.Embed(
+            title=title,
+            description=description,
+            color=color,
+            timestamp=datetime.now(timezone.utc),
+        )
+        embed.set_footer(text=self.bot_name, icon_url=self.bot_avatar_url or None)
+        return embed
 
-MUSIC = 0xE91E63  # pink
+    def _with_extras(
+        self,
+        embed: discord.Embed,
+        *,
+        fields: dict[str, str] | None = None,
+        thumbnail_url: str | None = None,
+    ) -> discord.Embed:
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+        for name, value in (fields or {}).items():
+            embed.add_field(name=name, value=value, inline=True)
+        return embed
 
+    # ---- public builders ----
 
-def now_playing(
-    *,
-    title: str,
-    author: str,
-    duration: str,
-    status: str = "Playing",
-    queue_pos: str | None = None,
-    thumbnail_url: str | None = None,
-    bot_avatar_url: str | None = None,
-    bot_name: str | None = None,
-) -> discord.Embed:
-    """Now-playing embed with track info and optional queue position."""
-    embed = _base(
-        title=title,
-        description=f"**{status}**",
-        color=MUSIC,
-        bot_avatar_url=bot_avatar_url,
-        bot_name=bot_name,
-    )
-    if queue_pos:
-        embed.add_field(name="Track", value=queue_pos, inline=True)
-    embed.add_field(name="Author", value=author, inline=True)
-    embed.add_field(name="Duration", value=duration, inline=True)
-    if thumbnail_url:
-        embed.set_thumbnail(url=thumbnail_url)
-    return embed
+    def online(self, bot_user: discord.User, guild_count: int, latency_ms: int) -> discord.Embed:
+        avatar = bot_user.display_avatar.url
+        embed = self._base(
+            title=f"{self.bot_name} Online",
+            description=f"**{self.bot_name}** is up and running.",
+            color=Color.ONLINE,
+        )
+        embed.add_field(name="Guilds", value=str(guild_count), inline=True)
+        embed.add_field(name="Latency", value=f"{latency_ms}ms", inline=True)
+        embed.set_thumbnail(url=avatar)
+        return embed
+
+    def offline(self) -> discord.Embed:
+        return self._base(
+            title=f"{self.bot_name} Offline",
+            description=f"**{self.bot_name}** is shutting down.",
+            color=Color.OFFLINE,
+        )
+
+    def welcome(self, member: discord.Member) -> discord.Embed:
+        guild = member.guild
+        embed = self._base(
+            title="New Member",
+            description=f"Welcome {member.mention} to **{guild.name}**!",
+            color=Color.WELCOME,
+        )
+        embed.set_thumbnail(url=member.display_avatar.url)
+        embed.add_field(name="Members", value=str(guild.member_count), inline=True)
+        return embed
+
+    def progress(
+        self,
+        *,
+        title: str,
+        status: str,
+        percent: int = 0,
+        fields: dict[str, str] | None = None,
+        thumbnail_url: str | None = None,
+    ) -> discord.Embed:
+        bar = _progress_bar(min(max(percent, 0), 100))
+        embed = self._base(title=title, description=f"{status}\n{bar}", color=Color.PROGRESS)
+        return self._with_extras(embed, fields=fields, thumbnail_url=thumbnail_url)
+
+    def success(
+        self,
+        *,
+        title: str,
+        description: str,
+        fields: dict[str, str] | None = None,
+        thumbnail_url: str | None = None,
+    ) -> discord.Embed:
+        embed = self._base(title=title, description=description, color=Color.SUCCESS)
+        return self._with_extras(embed, fields=fields, thumbnail_url=thumbnail_url)
+
+    def error(self, *, title: str, description: str) -> discord.Embed:
+        return self._base(title=title, description=description, color=Color.ERROR)
+
+    def info(
+        self,
+        *,
+        title: str,
+        description: str,
+        fields: dict[str, str] | None = None,
+        thumbnail_url: str | None = None,
+    ) -> discord.Embed:
+        embed = self._base(title=title, description=description, color=Color.INFO)
+        return self._with_extras(embed, fields=fields, thumbnail_url=thumbnail_url)
+
+    def now_playing(
+        self,
+        *,
+        title: str,
+        author: str,
+        duration_secs: int,
+        elapsed_secs: int = 0,
+        status: str = "Playing",
+        queue_pos: str | None = None,
+        thumbnail_url: str | None = None,
+    ) -> discord.Embed:
+        # Status icon
+        icons = {"Playing": "\u25B6", "Paused": "\u23F8", "Stopped": "\u23F9", "Finished": "\u2705"}
+        icon = icons.get(status, "\u25B6")
+        seek = _seek_bar(elapsed_secs, duration_secs)
+        desc = f"{icon} **{status}**\n{seek}" if seek else f"{icon} **{status}**"
+        embed = self._base(title=title, description=desc, color=Color.MUSIC)
+        embed.add_field(name="Author", value=author, inline=True)
+        if queue_pos:
+            embed.add_field(name="Track", value=queue_pos, inline=True)
+        if thumbnail_url:
+            embed.set_thumbnail(url=thumbnail_url)
+        return embed
