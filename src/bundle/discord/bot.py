@@ -14,6 +14,7 @@ from .cogs.greet import GreetCog
 from .cogs.lifecycle import LifecycleCog
 from .cogs.music import MusicCog
 from .cogs.youtube import YoutubeCog
+from .embeds import EmbedFactory
 
 log = logger.get_logger(__name__)
 
@@ -59,6 +60,14 @@ class Bot(commands.Bot):
     @property
     def brand_avatar_url(self) -> str | None:
         return self.user.display_avatar.url if self.user else None
+
+    @property
+    def embeds(self) -> EmbedFactory:
+        """Embed factory pre-configured with the bot's brand identity."""
+        return EmbedFactory(
+            bot_name=self.brand_name,
+            bot_avatar_url=self.brand_avatar_url or "",
+        )
 
     async def bot_channel(self, guild: discord.Guild) -> discord.TextChannel:
         """Get or create the dedicated bot channel for a guild."""

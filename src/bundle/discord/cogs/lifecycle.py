@@ -9,8 +9,6 @@ from discord.ext import commands
 
 from bundle.core import logger, tracer
 
-from .. import embeds
-
 if TYPE_CHECKING:
     from ..bot import Bot
 
@@ -29,16 +27,14 @@ class LifecycleCog(commands.Cog, name="lifecycle"):
         latency_ms = round(self.bot.latency * 1000)
         for guild in self.bot.guilds:
             channel = await self.bot.bot_channel(guild)
-            embed = embeds.online(self.bot.user, len(self.bot.guilds), latency_ms, bot_name=self.bot.brand_name)
-            await channel.send(embed=embed)
+            await channel.send(embed=self.bot.embeds.online(self.bot.user, len(self.bot.guilds), latency_ms))
             log.info(f"Sent online announcement in #{channel.name} ({guild.name})")
 
     async def cog_unload(self) -> None:
         for guild in self.bot.guilds:
             try:
                 channel = await self.bot.bot_channel(guild)
-                embed = embeds.offline(self.bot.user, bot_name=self.bot.brand_name)
-                await channel.send(embed=embed)
+                await channel.send(embed=self.bot.embeds.offline())
                 log.info(f"Sent offline announcement in #{channel.name} ({guild.name})")
             except discord.HTTPException as exc:
                 log.warning(f"Could not send offline message to {guild.name}: {exc}")
