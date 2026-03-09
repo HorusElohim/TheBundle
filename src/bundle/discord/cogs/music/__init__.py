@@ -88,7 +88,7 @@ class MusicCog(commands.Cog, name="music"):
                     gs.embed.view,
                 )
             else:
-                await gs.embed.show_finished()
+                await gs.embed.delete()
                 self._clear_session(guild.id)
                 vc = guild.voice_client
                 if vc:
@@ -145,7 +145,7 @@ class MusicCog(commands.Cog, name="music"):
         vc = guild.voice_client
 
         if gs:
-            await gs.embed.show_stopped()
+            await gs.embed.delete()
             if vc:
                 gs.player.stop(vc)
             self._clear_session(guild.id)
@@ -216,7 +216,7 @@ class MusicCog(commands.Cog, name="music"):
         log.info("Auto-disconnecting from guild %s (alone in VC)", guild_id)
         gs = self._get_session(guild_id)
         if gs:
-            await gs.embed.show_idle_disconnect("Disconnected \u2014 alone in voice channel.")
+            await gs.embed.delete()
         await self._stop_guild(guild)
 
     async def _pause_timeout(self, guild_id: int) -> None:
@@ -230,7 +230,7 @@ class MusicCog(commands.Cog, name="music"):
         log.info("Auto-disconnecting from guild %s (paused too long)", guild_id)
         gs = self._get_session(guild_id)
         if gs:
-            await gs.embed.show_idle_disconnect("Disconnected \u2014 paused for too long.")
+            await gs.embed.delete()
         await self._stop_guild(guild)
 
     # ---- voice state listener ----
@@ -254,7 +254,7 @@ class MusicCog(commands.Cog, name="music"):
         # Bot was force-disconnected
         if member.id == self.bot.user.id and before.channel and not after.channel:
             log.info("Bot force-disconnected from guild %s", guild.id)
-            await gs.embed.show_idle_disconnect("Disconnected from voice.")
+            await gs.embed.delete()
             self._clear_session(guild.id)
             return
 
