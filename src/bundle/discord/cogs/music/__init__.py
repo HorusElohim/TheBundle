@@ -419,6 +419,18 @@ class MusicCog(commands.Cog, name="music"):
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
+    async def shuffle(self, ctx: commands.Context) -> None:
+        """Shuffle the remaining tracks in the queue."""
+        gs = self._get_session(ctx.guild.id)
+        if not gs or len(gs.queue) < 2:
+            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Not enough tracks to shuffle."))
+            return
+        gs.queue.shuffle()
+        await gs.embed.refresh(status=vc_status(ctx.guild.voice_client))
+        await ctx.send("\U0001F500 Queue shuffled!", delete_after=5)
+
+    @commands.hybrid_command()
+    @tracer.Async.decorator.call_raise
     async def resume(self, ctx: commands.Context) -> None:
         """Resume paused playback."""
         if await self._resume_guild(ctx.guild):

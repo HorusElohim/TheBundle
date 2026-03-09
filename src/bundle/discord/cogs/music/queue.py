@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import random
+
 from bundle.youtube.track import YoutubeTrackData
 
 
@@ -62,6 +64,15 @@ class TrackQueue:
             self._index = target
             return True
         return False
+
+    def shuffle(self) -> None:
+        """Shuffle remaining tracks after the current cursor position."""
+        start = self._index + 1
+        if start >= len(self._tracks):
+            return
+        tail = self._tracks[start:]
+        random.shuffle(tail)
+        self._tracks[start:] = tail
 
     # ---- display ----
 
