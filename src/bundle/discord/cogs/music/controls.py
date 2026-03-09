@@ -25,15 +25,11 @@ class PlayerControls(discord.ui.View):
 
     @discord.ui.button(emoji="\u23EF\uFE0F", style=discord.ButtonStyle.primary)
     async def btn_pause(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
-        gs = self.cog._get_session(self.guild_id)
-        vc = interaction.guild.voice_client
-        if not gs or not vc:
+        if not self.cog._get_session(self.guild_id):
             await interaction.response.send_message("Nothing playing.", ephemeral=True)
             return
-        if gs.player.resume(vc):
-            await gs.embed.refresh(status="Playing")
-        elif gs.player.pause(vc):
-            await gs.embed.refresh(status="Paused")
+        if not await self.cog._resume_guild(interaction.guild):
+            await self.cog._pause_guild(interaction.guild)
         await interaction.response.defer()
 
     @discord.ui.button(emoji="\u23ED\uFE0F", style=discord.ButtonStyle.secondary)

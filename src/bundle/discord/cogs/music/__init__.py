@@ -23,6 +23,9 @@ if TYPE_CHECKING:
 
 log = logger.get_logger(__name__)
 
+ALONE_TIMEOUT = 30  # seconds before auto-disconnect when alone in VC
+PAUSE_TIMEOUT = 300  # seconds before auto-disconnect when paused (5 min)
+
 
 @dataclass
 class GuildSession:
@@ -32,6 +35,8 @@ class GuildSession:
     player: GuildPlayer
     embed: PlayerEmbed
     resolve_tasks: list[asyncio.Task] = field(default_factory=list)
+    alone_task: asyncio.Task | None = None
+    pause_task: asyncio.Task | None = None
 
 
 class MusicCog(commands.Cog, name="music"):
@@ -59,6 +64,10 @@ class MusicCog(commands.Cog, name="music"):
         if gs:
             for task in gs.resolve_tasks:
                 task.cancel()
+            if gs.alone_task and not gs.alone_task.done():
+                gs.alone_task.cancel()
+            if gs.pause_task and not gs.pause_task.done():
+                gs.pause_task.cancel()
             gs.embed.cancel_seek_loop()
 
     # ---- core playback ----
@@ -95,6 +104,7 @@ class MusicCog(commands.Cog, name="music"):
             await self._play_current(guild)
             return
 
+        self._cancel_pause_timer(guild.id)
         view = PlayerControls(self, guild.id)
         gs.embed.view = view
         await gs.embed.send_or_update(gs.embed.now_playing(track, "Playing"), view)
@@ -141,6 +151,118 @@ class MusicCog(commands.Cog, name="music"):
 
         if vc:
             await vc.disconnect()
+
+    # ---- pause / resume (centralized for timer management) ----
+
+    async def _pause_guild(self, guild: discord.Guild) -> bool:
+        gs = self._get_session(guild.id)
+        vc = guild.voice_client
+        if not gs or not vc:
+            return False
+        if gs.player.pause(vc):
+            await gs.embed.refresh(status="Paused")
+            self._start_pause_timer(guild.id)
+            return True
+        return False
+
+    async def _resume_guild(self, guild: discord.Guild) -> bool:
+        gs = self._get_session(guild.id)
+        vc = guild.voice_client
+        if not gs or not vc:
+            return False
+        if gs.player.resume(vc):
+            await gs.embed.refresh(status="Playing")
+            self._cancel_pause_timer(guild.id)
+            return True
+        return False
+
+    # ---- voice lifecycle timers ----
+
+    def _start_alone_timer(self, guild_id: int) -> None:
+        gs = self._get_session(guild_id)
+        if not gs:
+            return
+        self._cancel_alone_timer(guild_id)
+        gs.alone_task = asyncio.create_task(self._alone_timeout(guild_id))
+
+    def _cancel_alone_timer(self, guild_id: int) -> None:
+        gs = self._get_session(guild_id)
+        if gs and gs.alone_task and not gs.alone_task.done():
+            gs.alone_task.cancel()
+            gs.alone_task = None
+
+    def _start_pause_timer(self, guild_id: int) -> None:
+        gs = self._get_session(guild_id)
+        if not gs:
+            return
+        self._cancel_pause_timer(guild_id)
+        gs.pause_task = asyncio.create_task(self._pause_timeout(guild_id))
+
+    def _cancel_pause_timer(self, guild_id: int) -> None:
+        gs = self._get_session(guild_id)
+        if gs and gs.pause_task and not gs.pause_task.done():
+            gs.pause_task.cancel()
+            gs.pause_task = None
+
+    async def _alone_timeout(self, guild_id: int) -> None:
+        try:
+            await asyncio.sleep(ALONE_TIMEOUT)
+        except asyncio.CancelledError:
+            return
+        guild = self.bot.get_guild(guild_id)
+        if not guild:
+            return
+        log.info("Auto-disconnecting from guild %s (alone in VC)", guild_id)
+        gs = self._get_session(guild_id)
+        if gs:
+            await gs.embed.show_idle_disconnect("Disconnected \u2014 alone in voice channel.")
+        await self._stop_guild(guild)
+
+    async def _pause_timeout(self, guild_id: int) -> None:
+        try:
+            await asyncio.sleep(PAUSE_TIMEOUT)
+        except asyncio.CancelledError:
+            return
+        guild = self.bot.get_guild(guild_id)
+        if not guild:
+            return
+        log.info("Auto-disconnecting from guild %s (paused too long)", guild_id)
+        gs = self._get_session(guild_id)
+        if gs:
+            await gs.embed.show_idle_disconnect("Disconnected \u2014 paused for too long.")
+        await self._stop_guild(guild)
+
+    # ---- voice state listener ----
+
+    @commands.Cog.listener()
+    async def on_voice_state_update(
+        self,
+        member: discord.Member,
+        before: discord.VoiceState,
+        after: discord.VoiceState,
+    ) -> None:
+        guild = member.guild
+        gs = self._get_session(guild.id)
+        if not gs:
+            return
+
+        vc = guild.voice_client
+        if not vc or not vc.channel:
+            return
+
+        # Bot was force-disconnected
+        if member.id == self.bot.user.id and before.channel and not after.channel:
+            log.info("Bot force-disconnected from guild %s", guild.id)
+            await gs.embed.show_idle_disconnect("Disconnected from voice.")
+            self._clear_session(guild.id)
+            return
+
+        # Check if bot is alone in its voice channel
+        humans = [m for m in vc.channel.members if not m.bot]
+        if not humans:
+            self._start_alone_timer(guild.id)
+        else:
+            self._cancel_alone_timer(guild.id)
 
     # ---- resolution ----
 
@@ -279,16 +401,10 @@ class MusicCog(commands.Cog, name="music"):
     @tracer.Async.decorator.call_raise
     async def pause(self, ctx: commands.Context) -> None:
         """Pause playback."""
-        gs = self._get_session(ctx.guild.id)
-        vc = ctx.guild.voice_client
-        if gs and vc and gs.player.pause(vc):
-            await gs.embed.refresh(status="Paused")
+        await self._pause_guild(ctx.guild)
 
     @commands.command()
     @tracer.Async.decorator.call_raise
     async def resume(self, ctx: commands.Context) -> None:
         """Resume paused playback."""
-        gs = self._get_session(ctx.guild.id)
-        vc = ctx.guild.voice_client
-        if gs and vc and gs.player.resume(vc):
-            await gs.embed.refresh(status="Playing")
+        await self._resume_guild(ctx.guild)
