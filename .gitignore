@@ -204,3 +204,6 @@ src/bundle/pods/pods/comfyui/data/
 # PPISP local workspace datasets/artifacts
 src/bundle/pods/pods/ppisp/.env
 src/bundle/pods/pods/ppisp/workspace/data/
+
+# Discord-Music 
+.discord.env

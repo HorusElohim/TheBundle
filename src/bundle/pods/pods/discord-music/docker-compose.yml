@@ -1,0 +1,15 @@
+services:
+  discord-music:
+    build:
+      context: ../../../../..
+      dockerfile: src/bundle/pods/pods/discord-music/Dockerfile
+    image: nextgen/discord-music:local
+    container_name: nextgen-discord-music
+    restart: unless-stopped
+    env_file:
+      - path: .discord.env
+        required: false
+    environment:
+      DISCORD_BOT_NAME: "${DISCORD_BOT_NAME:-Bundle Bot}"
+      DISCORD_BOT_TOKEN: "${DISCORD_BOT_TOKEN:-}"
+      DISCORD_BOT_PREFIX: "${DISCORD_BOT_PREFIX:-!}"
