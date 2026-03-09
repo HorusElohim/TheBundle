@@ -57,12 +57,14 @@ def load_poto_token():
         return {"po_token": poto_entity.potoken, "visitor_data": poto_entity.visitor_data}
 
 
-@tracer.Async.decorator.call_raise
 async def _stream_filesize(stream) -> int:
-    size = getattr(stream, "filesize", None) or getattr(stream, "filesize_approx", None)
-    if asyncio.iscoroutine(size):
-        size = await size
-    return int(size or 0)
+    try:
+        size = getattr(stream, "filesize", None) or getattr(stream, "filesize_approx", None)
+        if asyncio.iscoroutine(size):
+            size = await size
+        return int(size or 0)
+    except Exception:
+        return 0
 
 
 def _stream_url(stream) -> str:

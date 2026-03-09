@@ -341,9 +341,14 @@ class MusicCog(commands.Cog, name="music"):
         gs = self._ensure_session(ctx.guild.id, ctx.channel)
 
         vc = ctx.guild.voice_client
-        if vc and vc.is_connected():
-            if vc.channel != voice_channel:
-                await vc.move_to(voice_channel)
+        if vc:
+            if vc.is_connected():
+                if vc.channel != voice_channel:
+                    await vc.move_to(voice_channel)
+            else:
+                # Stale voice client from a prior disconnect — clean up and reconnect
+                await vc.disconnect(force=True)
+                await voice_channel.connect()
         else:
             await voice_channel.connect()
 
