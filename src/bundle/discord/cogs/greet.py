@@ -9,8 +9,10 @@ from discord.ext import commands
 
 from bundle.core import logger, tracer
 
+from .. import embeds
+
 if TYPE_CHECKING:
-    from bundle.discord.bot import Bot
+    from ..bot import Bot
 
 log = logger.get_logger(__name__)
 
@@ -25,5 +27,5 @@ class GreetCog(commands.Cog, name="greet"):
     @tracer.Async.decorator.call_raise
     async def on_member_join(self, member: discord.Member) -> None:
         channel = member.guild.system_channel or await self.bot.bot_channel(member.guild)
-        await channel.send(f"Welcome to **{member.guild.name}**, {member.mention}!")
+        await channel.send(embed=embeds.welcome(member, bot_avatar_url=self.bot.user.display_avatar.url))
         log.info(f"Welcomed {member} in #{channel.name} ({member.guild.name})")

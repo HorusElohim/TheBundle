@@ -9,7 +9,7 @@ from discord.ext import commands
 from bundle.core import logger, tracer
 
 if TYPE_CHECKING:
-    from bundle.discord.bot import Bot
+    from ..bot import Bot
 
 log = logger.get_logger(__name__)
 

@@ -5,7 +5,8 @@ import os
 import rich_click as click
 
 from bundle.core import logger, tracer
-from bundle.discord.bot import BotConfig, run_bot
+
+from .bot import BotConfig, run_bot
 
 log = logger.get_logger(__name__)
 

@@ -6,9 +6,10 @@ import discord
 from discord.ext import commands
 
 from bundle.core import data, logger, tracer
-from bundle.discord.cogs.core import CoreCog
-from bundle.discord.cogs.greet import GreetCog
-from bundle.discord.cogs.lifecycle import LifecycleCog
+
+from .cogs.core import CoreCog
+from .cogs.greet import GreetCog
+from .cogs.lifecycle import LifecycleCog
 
 log = logger.get_logger(__name__)
 
