@@ -6,8 +6,8 @@ services:
       args:
         TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
         TORCH_PACKAGES: ${TORCH_PACKAGES:-torch torchvision torchaudio}
-    image: nextgen/ppisp:local
-    container_name: nextgen-ppisp
+    image: thebundle/ppisp:local
+    container_name: thebundle-ppisp
     restart: unless-stopped
     gpus: all
     tty: true
