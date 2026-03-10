@@ -9,6 +9,7 @@
     image: thebundle/comfyui:local
     container_name: thebundle-comfyui
     restart: unless-stopped
+    tty: true
     ports:
       - "8188:8188"
     gpus: all
