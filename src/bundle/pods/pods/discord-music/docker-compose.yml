@@ -12,8 +12,4 @@ services:
     network_mode: "host"
     env_file:
       - path: .discord.env
-        required: false
-    environment:
-      DISCORD_BOT_NAME: "${DISCORD_BOT_NAME:-Bundle Bot}"
-      DISCORD_BOT_TOKEN: "${DISCORD_BOT_TOKEN:-}"
-      DISCORD_BOT_PREFIX: "${DISCORD_BOT_PREFIX:-!}"
+        required: true
