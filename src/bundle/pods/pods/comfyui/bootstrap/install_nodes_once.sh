@@ -4,7 +4,7 @@ set -euo pipefail
 BASE_DIR="${COMFY_BASE_DIR:-/opt/content}"
 CN_DIR="${BASE_DIR}/custom_nodes"
 MODELS_DIR="${BASE_DIR}/models"
-MARKER_FILE="${CN_DIR}/.nextgen_custom_nodes_initialized"
+MARKER_FILE="${CN_DIR}/.thebundle_custom_nodes_initialized"
 PYTHON_BIN="${PYTHON_BIN:-/opt/ComfyUI.venv/bin/python}"
 PIP_BIN="${PIP_BIN:-/opt/ComfyUI.venv/bin/pip}"
 

@@ -6,8 +6,8 @@
       target: nvidia
       args:
         COMFYUI_VERSION: ${COMFYUI_VERSION:-master}
-    image: nextgen/comfyui:local
-    container_name: nextgen-comfyui
+    image: thebundle/comfyui:local
+    container_name: thebundle-comfyui
     restart: unless-stopped
     ports:
       - "8188:8188"
