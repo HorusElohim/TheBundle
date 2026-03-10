@@ -1,4 +1,4 @@
-# Discord Music Pod
+# Discord Bot Pod
 
 This pod starts the Discord music bot with:
 
@@ -15,13 +15,13 @@ The bot reads its configuration from environment variables:
 ## Usage
 
 ```bash
-cd src/bundle/pods/pods/discord-music
+cd src/bundle/pods/pods/discord-bot
 cp example.discord.env .discord.env
 
-bundle pods build discord-music
-bundle pods run discord-music
-bundle pods logs discord-music
-bundle pods status discord-music
+bundle pods build discord-bot
+bundle pods run discord-bot
+bundle pods logs discord-bot
+bundle pods status discord-bot
 ```
 
 ## Notes

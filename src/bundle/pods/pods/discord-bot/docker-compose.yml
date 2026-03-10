@@ -1,10 +1,10 @@
 services:
-  discord-music:
+  discord-bot:
     build:
       context: ../../../../..
-      dockerfile: src/bundle/pods/pods/discord-music/Dockerfile
-    image: thebundle/discord-music:local
-    container_name: thebundle-discord-music
+      dockerfile: src/bundle/pods/pods/discord-bot/Dockerfile
+    image: thebundle/discord-bot:local
+    container_name: thebundle-discord-bot
     restart: unless-stopped
     init: true
     tty: true

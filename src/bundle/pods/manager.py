@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import asyncio
 import os
 import re
 import shutil
@@ -22,7 +21,7 @@ class PodSpec(data.Data):
     """Declarative specification for a single pod.
 
     Attributes:
-        name: Pod identifier (e.g. "comfyui", "discord-music").
+        name: Pod identifier (e.g. "comfyui", "discord-bot").
         folder: Subdirectory name under the pods root.
         service: Docker Compose service name, if the compose file defines one matching the pod name.
         buildable: Whether the compose file contains a ``build:`` section.
@@ -149,12 +148,10 @@ class PodManager(Entity):
             )
         return path
 
-    def running_containers(self) -> set[str]:
+    async def running_containers(self) -> set[str]:
         """Query Docker for currently running container names."""
         try:
-            result = asyncio.run(process.Process(name="docker.ps")(
-                "docker ps --format {{.Names}}"
-            ))
+            result = await process.Process(name="docker.ps")("docker ps --format {{.Names}}")
             return {line.strip() for line in result.stdout.splitlines() if line.strip()}
         except Exception:
             return set()
