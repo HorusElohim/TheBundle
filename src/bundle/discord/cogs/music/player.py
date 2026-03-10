@@ -1,4 +1,4 @@
-"""Guild voice playback -- timing, FFmpeg source, pause/resume."""
+"""Guild voice playback -- timing, pause/resume."""
 
 from __future__ import annotations
 
@@ -12,13 +12,9 @@ import discord
 from bundle.core import logger
 from bundle.youtube.track import YoutubeTrackData
 
-log = logger.get_logger(__name__)
+from .source import make_source
 
-FFMPEG_BEFORE_OPTIONS = (
-    "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
-    " -analyzeduration 0 -probesize 32768"
-)
-FFMPEG_OPTIONS = "-vn"
+log = logger.get_logger(__name__)
 
 
 class GuildPlayer:
@@ -64,11 +60,7 @@ class GuildPlayer:
         self._reset_timing()
 
         loop = asyncio.get_running_loop()
-        source = discord.FFmpegOpusAudio(
-            stream_url,
-            before_options=FFMPEG_BEFORE_OPTIONS,
-            options=FFMPEG_OPTIONS,
-        )
+        source = make_source(stream_url)
         vc.play(
             source,
             after=lambda err: asyncio.run_coroutine_threadsafe(
