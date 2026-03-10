@@ -41,7 +41,7 @@ async def list_pods(ctx: click.Context) -> None:
         log.info("No pods discovered in %s", mgr.pods_root)
         return
 
-    running = mgr.running_containers()
+    running = await mgr.running_containers()
 
     table = Table(title=f"Pods  [{mgr.pods_root}]", title_style="bold cyan")
     table.add_column("Pod", style="bold white")
