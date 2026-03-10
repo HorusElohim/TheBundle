@@ -14,7 +14,10 @@ from bundle.youtube.track import YoutubeTrackData
 
 log = logger.get_logger(__name__)
 
-FFMPEG_BEFORE_OPTIONS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -loglevel warning"
+FFMPEG_BEFORE_OPTIONS = (
+    "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5"
+    " -analyzeduration 0 -probesize 32768"
+)
 FFMPEG_OPTIONS = "-vn"
 
 
@@ -61,7 +64,7 @@ class GuildPlayer:
         self._reset_timing()
 
         loop = asyncio.get_running_loop()
-        source = discord.FFmpegPCMAudio(
+        source = discord.FFmpegOpusAudio(
             stream_url,
             before_options=FFMPEG_BEFORE_OPTIONS,
             options=FFMPEG_OPTIONS,

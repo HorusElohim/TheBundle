@@ -30,7 +30,7 @@ ENV PIP_NO_CACHE_DIR=1 \
     PATH=/opt/venv/bin:$PATH
 
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends --fix-missing ffmpeg && \
+    apt-get install -y --no-install-recommends --fix-missing ffmpeg libopus0 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
