@@ -22,7 +22,7 @@ jobs:
         shell: powershell
         run: New-Item -ItemType Directory -Force -Path C:\tmp
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - uses: ./.github/actions/setup-test
         with:
