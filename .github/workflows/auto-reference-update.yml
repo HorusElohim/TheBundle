@@ -10,7 +10,7 @@ jobs:
     outputs:
       should_generate_ref: ${{ steps.check.outputs.should_generate_ref }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 2
           ref: ${{ github.head_ref || github.event.pull_request.head.ref }}
@@ -33,10 +33,10 @@ jobs:
     if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Wait for Ubuntu tests
-        uses: lewagon/wait-on-check-action@v1.3.1
+        uses: lewagon/wait-on-check-action@v1.5.0
         with:
           ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^ubuntu_tests \(3\.\d{2}\)$'
@@ -45,7 +45,7 @@ jobs:
           allowed-conclusions: success
 
       - name: Wait for macOS tests
-        uses: lewagon/wait-on-check-action@v1.3.1
+        uses: lewagon/wait-on-check-action@v1.5.0
         with:
           ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^macos_tests \(3\.\d{2}\)$'
@@ -54,7 +54,7 @@ jobs:
           allowed-conclusions: success
 
       - name: Wait for Windows tests
-        uses: lewagon/wait-on-check-action@v1.3.1
+        uses: lewagon/wait-on-check-action@v1.5.0
         with:
           ref: ${{ github.head_ref || github.ref_name }}
           check-regexp: '^windows_tests \(3\.\d{2}\)$'
@@ -67,7 +67,7 @@ jobs:
     if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
@@ -93,7 +93,7 @@ jobs:
     if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
@@ -119,7 +119,7 @@ jobs:
     if: ${{ needs.check_commit_message.outputs.should_generate_ref == 'true' }}
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           ref: ${{ github.head_ref || github.ref_name }}
@@ -146,7 +146,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       
-      - uses: actions/checkout@v4 
+      - uses: actions/checkout@v6 
       
       - name: Pull changes
         run: |
