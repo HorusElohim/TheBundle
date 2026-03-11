@@ -17,11 +17,12 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pytest
 from typing import Type
-from bundle.core.browser import Browser, BrowserType
+
+import pytest
 from playwright.async_api import Page
 
+from bundle.core.browser import Browser, BrowserType
 
 # Mark all tests in this module as asynchronous
 pytestmark = pytest.mark.asyncio
@@ -47,7 +48,7 @@ async def playwright_instance():
         (Browser.webkit, BrowserType.WEBKIT),
     ],
 )
-async def test_browser_instantiation(browser_cls: Type[Browser], browser_type):
+async def test_browser_instantiation(browser_cls: type[Browser], browser_type):
     """
     Test instantiation of Browser using class methods.
     """

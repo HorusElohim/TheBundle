@@ -32,4 +32,3 @@ async def test_stream_option_includes_url():
 async def test_stream_option_handles_unavailable_url():
     option = await _stream_option(_BrokenUrlStream(), "video")
     assert option.url == ""
-

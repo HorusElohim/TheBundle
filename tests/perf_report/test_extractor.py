@@ -32,7 +32,7 @@ def sample_prof(tmp_path) -> Path:
     profiler = cProfile.Profile()
     profiler.enable()
     # Profile some actual work
-    total = sum(range(1000))
+    _ = sum(range(1000))
     _ = [x**2 for x in range(100)]
     profiler.disable()
     profiler.dump_stats(str(prof_path))
