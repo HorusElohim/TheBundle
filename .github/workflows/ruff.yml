@@ -14,8 +14,8 @@ jobs:
 
       - uses: astral-sh/ruff-action@v3
         with:
-          args: "check src/ tests/ profiler/"
+          args: "check src/ tests/"
 
       - uses: astral-sh/ruff-action@v3
         with:
-          args: "format --check src/ tests/ profiler/"
+          args: "format --check src/ tests/"
