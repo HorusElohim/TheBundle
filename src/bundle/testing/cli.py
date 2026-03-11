@@ -44,7 +44,7 @@ async def pytest_cmd(show_exc: bool, no_logs: bool, no_cprof: bool, capture: boo
         log.info("disable cprofile")
         bundle.testing.decorators.set_cprofile_enabled(False)
 
-    bundle_folder = bundle.Path(list(bundle.__path__)[0])  # noqa: RUF015
+    bundle_folder = bundle.Path(next(iter(bundle.__path__)))
     tests_folder = bundle_folder.parent.parent / "tests"
     log.info("bundle_folder=%s, tests_folder=%s", str(bundle_folder), tests_folder)
 

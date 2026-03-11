@@ -75,7 +75,6 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
     directory = Path(directory)
     db = Database(path=directory)
     await db.load()
-    semaphore = asyncio.Semaphore(1)  # noqa: F841
 
     selected_video_itag = None
     selected_audio_itag = None
@@ -192,7 +191,7 @@ async def to_mp3(track_paths):
 
     @tracer.Async.decorator.call_raise
     async def extract_mp4_audio(track_path: Path):
-        if not track_path.suffix == ".mp4":
+        if track_path.suffix != ".mp4":
             log.warning(f"Only MP4 audio extraction to MP3 is supported. Skipping: {track_path}")
             return
 

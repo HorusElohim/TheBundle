@@ -54,7 +54,7 @@ FFMPEG_BEFORE_OPTIONS = (
 )
 FFMPEG_OPTIONS = "-vn -b:a 256k -bufsize 5M -application audio"
 
-# 500 frames × 20 ms = 10 seconds of pre-buffer  # noqa: RUF003
+# 500 frames x 20 ms = 10 seconds of pre-buffer
 JITTER_BUFFER_SIZE = 250
 # Pre-fill 250 frames (5 s) before playback begins
 PREFILL_FRAMES = 250
