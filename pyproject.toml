@@ -10,7 +10,16 @@ readme = "README.md"
 license = "Apache-2.0"
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
 requires-python = ">=3.10"
-keywords = ["framework", "async", "testing", "pybind11", "zmq", "automation", "tracing", "logging"]
+keywords = [
+    "framework",
+    "async",
+    "testing",
+    "pybind11",
+    "zmq",
+    "automation",
+    "tracing",
+    "logging",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -59,14 +68,18 @@ version_file = "src/bundle/_version.py"
 test = ["pytest", "pytest-asyncio", "nest_asyncio"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
-ble = [
-    "bleak>=0.22.1",
-    "pyyaml",
-]
+ble = ["bleak>=0.22.1", "pyyaml"]
 discord = ["discord.py[voice]>=2.3"]
 youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
 report = ["latex", "matplotlib", "h5py", "numpy"]
-web = ["fastapi", "uvicorn[standard]", "websockets", "jinja2", "bleak>=0.22.1", "pyyaml"]
+web = [
+    "fastapi",
+    "uvicorn[standard]",
+    "websockets",
+    "jinja2",
+    "bleak>=0.22.1",
+    "pyyaml",
+]
 website = [
     "fastapi",
     "uvicorn[standard]",
@@ -121,15 +134,30 @@ log_cli = true
 log_cli_level = "ERROR"
 asyncio_default_fixture_loop_scope = "function"
 
-[tool.black]
+[tool.ruff]
+target-version = "py310"
 line-length = 128
-target-version = ['py310']
-include = '\.pyi?$'
+src = ["src"]
 
-[tool.isort]
-profile = "black"
-line_length = 120
-skip = ["__init__.py"]
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "UP",   # pyupgrade
+    "B",    # flake8-bugbear
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific rules
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+    "SIM108", # use ternary operator (can reduce readability)
+    "F401",   # unused imports (re-exports in __init__.py)
+    "F403",   # star imports
+    "RUF012", # mutable class default (pydantic models)
+]
 
-[tool.flake8]
-max-line-length = 128
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
