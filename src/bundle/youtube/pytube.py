@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from functools import partial
 from collections.abc import AsyncGenerator
+from functools import partial
 from urllib.parse import parse_qs, urlparse
 
 from pytubefix import Playlist, YouTube

@@ -9,8 +9,8 @@ import discord
 from .embed import vc_status
 
 if TYPE_CHECKING:
-    from .embed import PlayerEmbed
     from . import MusicCog
+    from .embed import PlayerEmbed
 
 
 class QueuePaginator(discord.ui.View):

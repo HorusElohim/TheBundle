@@ -28,8 +28,8 @@ try:
 except ImportError:
     from typing_extensions import Self
 
-from typing import Any, Generic, List, Type, TypeVar
 from collections.abc import AsyncIterator, Awaitable, Callable
+from typing import Any, Generic, List, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright

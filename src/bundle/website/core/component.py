@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
 from typing import Any, ClassVar, Literal
-from collections.abc import Iterable
 
 from fastapi import APIRouter
 

@@ -18,14 +18,14 @@
 # under the License.
 
 import json
-import sys
 import logging
+import sys
 import time
+from collections.abc import Callable, Mapping
 from datetime import datetime, timezone
 from enum import IntEnum
 from pathlib import Path
 from typing import Any, cast
-from collections.abc import Callable, Mapping
 
 from rich.logging import RichHandler
 from rich.pretty import pretty_repr

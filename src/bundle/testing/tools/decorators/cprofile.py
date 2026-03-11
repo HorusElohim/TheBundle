@@ -1,10 +1,11 @@
 from __future__ import annotations
+
 import cProfile
 import time
+from collections.abc import Callable
 from functools import wraps
 from pathlib import Path
 from typing import Any, Optional
-from collections.abc import Callable
 
 from .... import core
 from .. import utils

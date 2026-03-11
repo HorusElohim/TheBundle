@@ -1,7 +1,7 @@
 import torch
+from ppisp import PPISP
 
 from bundle import core
-from ppisp import PPISP
 
 log = core.logger.setup_root_logger(name="ppisp.smoke", level=core.logger.Level.INFO)
 
