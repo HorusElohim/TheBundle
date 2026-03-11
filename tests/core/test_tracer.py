@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-import pytest
 import logging
 import os
-from typing import Generator, Any
+from typing import Any, Generator
 
 import pytest
+
 from bundle.core import tracer
 
 # --- Helper functions for testing ---
@@ -241,14 +241,12 @@ def assert_log_correct(record: logging.LogRecord, file_name: str, func_name: str
 
 # --- Direct Calls Tests ---
 def test_sync_direct_stacklevel(list_handler: ListHandler, file_name) -> None:
-    test_file = os.path.basename(__file__)
-
     def dummy() -> int:
         return 42
 
     result, exc = tracer.Sync.call(dummy)
     assert result == 42, "Dummy function did not return expected value"
-    assert exc == None
+    assert exc is None
     record = list_handler.records[-1]
     assert_log_correct(record, file_name, "test_sync_direct_stacklevel")
 

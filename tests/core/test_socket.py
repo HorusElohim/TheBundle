@@ -1,8 +1,10 @@
 import asyncio
 from pathlib import Path
-import bundle
+
 import pytest
 import zmq
+
+import bundle
 
 DEFAULT_SAFE_SLEEP = 0.1
 PROTOCOLS = ["tcp", "ipc", "inproc"]
@@ -23,11 +25,11 @@ def resolve_endpoint(protocol: str, tmp_path: Path, port: int):
             return f"{protocol}://127.0.0.1:{port}"
         case "inproc":
             tmp_path = bundle.core.utils.ensure_path(tmp_path)
-            return f"{protocol}://{str(tmp_path / 'sock.sock')}"
+            return f"{protocol}://{tmp_path / 'sock.sock'!s}"
         case "ipc":
             # IPC has a maximum of 103 characters
             tmp_path = bundle.core.utils.ensure_path(Path("/tmp/") / tmp_path.name)
-            return f"{protocol}://{str(tmp_path / 'sock.sock')}"
+            return f"{protocol}://{tmp_path / 'sock.sock'!s}"
 
     raise ValueError(f"Unsupported protocol {protocol}")
 

@@ -24,7 +24,6 @@ import pytest
 
 from bundle.perf_report import ProfileExtractor, ProfileStorage
 
-
 VERSION = "0.1.dev1"
 PLATFORM = "linux-x86_64-CPython3.12.8"
 
@@ -120,7 +119,7 @@ class TestProfileStorage:
         loaded = storage.load_profiles(VERSION, PLATFORM)
         assert len(loaded) == len(profiles)
 
-        for orig, back in zip(
+        for orig, back in zip(  # noqa: B905
             sorted(profiles, key=lambda p: p.name),
             sorted(loaded, key=lambda p: p.name),
         ):

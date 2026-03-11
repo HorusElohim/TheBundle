@@ -3,10 +3,10 @@ import asyncio
 import logging
 import os
 import sys
-from typing import Callable, Any
+from typing import Any, Callable
 
 import bundle
-from bundle.core import tracer, logger
+from bundle.core import logger, tracer
 
 MAX_SL = 15
 
@@ -85,7 +85,7 @@ def calibrate_sync_call(handler: ListHandler) -> int:
     for sl in range(MAX_SL):
         handler.records.clear()
         # Call tracer.Sync.call with sync_success
-        result, exc = tracer.Sync.call(sync_success, 2, 3, stacklevel=sl)
+        _result, _exc = tracer.Sync.call(sync_success, 2, 3, stacklevel=sl)
         if handler.records:
             rec = handler.records[-1]
             mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
@@ -104,7 +104,7 @@ def calibrate_sync_call_raise(handler: ListHandler) -> int:
     for sl in range(MAX_SL):
         handler.records.clear()
         try:
-            result = tracer.Sync.call_raise(sync_success, 2, 3, stacklevel=sl)
+            _result = tracer.Sync.call_raise(sync_success, 2, 3, stacklevel=sl)
         except Exception:
             pass
         if handler.records:
@@ -129,7 +129,7 @@ def calibrate_sync_decorated_call(handler: ListHandler) -> int:
         def dummy_decorated() -> int:
             return sync_success(2, 3)
 
-        result, exc = dummy_decorated()
+        _result, _exc = dummy_decorated()
         if handler.records:
             rec = handler.records[-1]
             mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
@@ -153,7 +153,7 @@ def calibrate_sync_decorated_call_raise(handler: ListHandler) -> int:
             return sync_success(2, 3)
 
         try:
-            result = dummy_decorated()
+            _result = dummy_decorated()
         except Exception:
             pass
         if handler.records:
@@ -176,7 +176,7 @@ async def calibrate_async_call(handler: ListHandler) -> int:
     candidate = None
     for sl in range(MAX_SL):
         handler.records.clear()
-        res, exc = await tracer.Async.call(async_success, 2, 3, stacklevel=sl)
+        _res, _exc = await tracer.Async.call(async_success, 2, 3, stacklevel=sl)
         if handler.records:
             rec = handler.records[-1]
             mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
@@ -195,7 +195,7 @@ async def calibrate_async_call_raise(handler: ListHandler) -> int:
     for sl in range(MAX_SL):
         handler.records.clear()
         try:
-            res = await tracer.Async.call_raise(async_success, 2, 3, stacklevel=sl)
+            _res = await tracer.Async.call_raise(async_success, 2, 3, stacklevel=sl)
         except Exception:
             pass
         if handler.records:
@@ -220,7 +220,7 @@ async def calibrate_async_decorated_call(handler: ListHandler) -> int:
         async def dummy_decorated() -> int:
             return await async_success(2, 3)
 
-        res, exc = await dummy_decorated()
+        _res, _exc = await dummy_decorated()
         if handler.records:
             rec = handler.records[-1]
             mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
@@ -244,7 +244,7 @@ async def calibrate_async_decorated_call_raise(handler: ListHandler) -> int:
             return await async_success(2, 3)
 
         try:
-            res = await dummy_decorated()
+            _res = await dummy_decorated()
         except Exception:
             pass
         if handler.records:

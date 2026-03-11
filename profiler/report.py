@@ -1,19 +1,22 @@
-import os
-import re
-import click
-import pstats
 import asyncio
-from pathlib import Path
-import matplotlib
+import os
+import pstats
+import re
 import shutil
+from pathlib import Path
+
+import click
+import matplotlib
 
 matplotlib.use("Agg")  # Use the Agg backend to prevent Tkinter issues
+from enum import Enum
+
+import latex
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
-import latex
-from bundle.core.data import Data, Field
+
 from bundle.core import logger
-from enum import Enum
+from bundle.core.data import Data, Field
 
 LOGGER = logger.setup_root_logger(name=__name__)
 
@@ -168,7 +171,7 @@ class ProfilerReportGenerator:
             profile_data = ProfileData(prof_path=prof_path)
             stats = pstats.Stats(str(prof_path))
             stats.strip_dirs().sort_stats("cumulative")
-            for func, (cc, nc, tt, ct, callers) in stats.stats.items():
+            for func, (cc, _nc, tt, ct, _callers) in stats.stats.items():
                 function_str = "{}:{}({})".format(*func)
                 profile_data.add(
                     ProfileFunction(

@@ -16,7 +16,7 @@ pytestmark = pytest.mark.asyncio
 
 async def test_project_pkg_path(built_example_module_pybind, built_example_module, request):
     pc_dir = built_example_module / "lib" / "pkgconfig"
-    _bindings_dir, pyproject_path = built_example_module_pybind
+    _bindings_dir, _pyproject_path = built_example_module_pybind
 
     # Get modified environment and explicitly set it in os.environ
     env = get_env_with_pkg_config_path([pc_dir])

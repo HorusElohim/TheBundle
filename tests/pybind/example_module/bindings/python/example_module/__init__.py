@@ -1,4 +1,4 @@
-# Top‑level package: just expose submodules
-from . import shape, geometry
+# Top-level package: just expose submodules
+from . import geometry, shape
 
-__all__ = ["shape", "geometry"]
+__all__ = ["geometry", "shape"]

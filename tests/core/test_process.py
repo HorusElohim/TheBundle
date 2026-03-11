@@ -17,9 +17,11 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import pytest
 from typing import Type
-from bundle.core import Process, ProcessStream, ProcessError
+
+import pytest
+
+from bundle.core import Process, ProcessError, ProcessStream
 
 SUCCESS_COMMANDS = [
     "echo validcommand",
@@ -30,7 +32,7 @@ FAILING_COMMANDS = [
 
 # List of process classes to test
 PROCESS_CLASSES = [Process, ProcessStream]
-PROCESS_CLASS_TYPE = Type[Process] | Type[ProcessStream]
+PROCESS_CLASS_TYPE = type[Process] | type[ProcessStream]
 
 
 # Mark all tests in this module as asynchronous

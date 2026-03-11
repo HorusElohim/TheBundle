@@ -95,14 +95,17 @@ class TestStore:
     def test_not_open_raises(self, tmp_h5):
         store = Store(tmp_h5)
         with pytest.raises(RuntimeError, match="Store not open"):
-            store.file
+            _ = store.file
 
     def test_structured_array(self, tmp_h5):
         dt = np.dtype([("name", "S32"), ("value", "f8")])
-        data = np.array([
-            (b"alpha", 1.5),
-            (b"beta", 2.7),
-        ], dtype=dt)
+        data = np.array(
+            [
+                (b"alpha", 1.5),
+                (b"beta", 2.7),
+            ],
+            dtype=dt,
+        )
 
         with Store(tmp_h5, mode="w") as store:
             store.write_dataset("records", data)
