@@ -62,7 +62,7 @@ class ProfileExtractor:
         stats = pstats.Stats(str(prof_path))
         stats.strip_dirs().sort_stats("cumulative")
         profile = ProfileData(prof_path=prof_path)
-        for (file, line, func_name), (cc, nc, tt, ct, callers) in stats.stats.items():  # noqa: B007
+        for (file, line, func_name), (cc, _nc, tt, ct, _callers) in stats.stats.items():
             profile.records.append(
                 ProfileRecord(
                     file=file,

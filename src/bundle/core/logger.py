@@ -99,7 +99,7 @@ class BundleLogger(logging.getLoggerClass()):
             return callable_obj.__qualname__
         elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
             return callable_obj.__class__.__qualname__
-        elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):  # noqa: B004
+        elif callable(callable_obj) and hasattr(callable_obj.__call__, "__qualname__"):
             return callable_obj.__call__.__qualname__
         return repr(callable_obj)
 
@@ -324,7 +324,7 @@ def setup_root_logger(
     if logger.hasHandlers():
         # Check if File and Console handlers are already set up
         for handler in logger.handlers:
-            if isinstance(handler, logging.FileHandler) or isinstance(handler, RichHandler):  # noqa: SIM101
+            if isinstance(handler, (logging.FileHandler, RichHandler)):
                 logger.removeHandler(handler)
                 handler.close()
 

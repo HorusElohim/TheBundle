@@ -86,11 +86,10 @@ def _internal_configuration(**kwargs):
     Raises:
         AssertionError: If `json_encoders` is provided but is not a dictionary.
     """
-    if "json_encoders" in kwargs:  # noqa: SIM102
-        if kwargs["json_encoders"] is not None:
-            assert isinstance(kwargs["json_encoders"], dict), (
-                "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
-            )
+    if "json_encoders" in kwargs and kwargs["json_encoders"] is not None:
+        assert isinstance(kwargs["json_encoders"], dict), (
+            "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
+        )
     return ConfigDict(**kwargs)
 
 

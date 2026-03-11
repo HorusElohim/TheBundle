@@ -175,7 +175,7 @@ class Downloader(Entity):
         finally:
             await tracer.Async.call_raise(self.end)
             log.debug("%s", logger.Emoji.status(status))
-            return status  # noqa: B012
+        return status
 
 
 class DownloaderTQDM(Downloader):

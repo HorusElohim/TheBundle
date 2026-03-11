@@ -71,9 +71,9 @@ class Browser(entity.Entity):
         if isinstance(v, str):
             try:
                 return BrowserType(v.lower())
-            except ValueError:
+            except ValueError as err:
                 supported = [bt.value for bt in BrowserType]
-                raise ValueError(f"Unsupported browser type: {v}. Supported types are: {supported}")  # noqa: B904
+                raise ValueError(f"Unsupported browser type: {v}. Supported types are: {supported}") from err
         if isinstance(v, BrowserType):
             return v
         raise ValueError(f"Invalid browser type: {v}")

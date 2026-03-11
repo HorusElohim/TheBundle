@@ -309,18 +309,16 @@ class MusicCog(commands.Cog, name="music"):
 
         finally:
             gs = self._get_session(guild.id)
-            if not gs:
-                return  # noqa: B012
+            if gs:
+                gs.resolve_tasks = [t for t in gs.resolve_tasks if not t.done()]
+                gs.queue.resolving = bool(gs.resolve_tasks)
 
-            gs.resolve_tasks = [t for t in gs.resolve_tasks if not t.done()]
-            gs.queue.resolving = bool(gs.resolve_tasks)
-
-            if gs.queue.waiting and not gs.queue.resolving:
-                gs.queue.waiting = False
-                vc = guild.voice_client
-                if vc:
-                    await vc.disconnect()
-                self._clear_session(guild.id)
+                if gs.queue.waiting and not gs.queue.resolving:
+                    gs.queue.waiting = False
+                    vc = guild.voice_client
+                    if vc:
+                        await vc.disconnect()
+                    self._clear_session(guild.id)
 
             elif gs.queue.current:
                 await gs.embed.refresh(status=vc_status(guild.voice_client))
