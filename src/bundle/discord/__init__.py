@@ -1,7 +1,7 @@
 """Discord bot module for TheBundle."""
 
-from bundle.core import logger
 from bundle import BUNDLE_LOGGER
+from bundle.core import logger
 
 BUNDLE_LOGGER.level = logger.Level.DEBUG
 

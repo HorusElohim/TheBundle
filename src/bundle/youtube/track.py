@@ -1,7 +1,6 @@
 import hashlib
 import re
 from pathlib import Path
-
 from typing import Literal
 
 from ..core import data

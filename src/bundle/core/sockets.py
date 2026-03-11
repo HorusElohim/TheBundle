@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import asyncio
+import builtins
 from enum import IntEnum
 from typing import ClassVar, Generic, Type, TypeVar
 
@@ -28,7 +29,6 @@ import zmq.asyncio
 
 from . import data, entity, tracer
 from .logger import get_logger
-import builtins
 
 logger = get_logger(__name__)
 

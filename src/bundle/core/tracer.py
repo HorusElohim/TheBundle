@@ -16,8 +16,9 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-import sys
 import asyncio
+import sys
+from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
 from typing import (
     Any,
@@ -25,7 +26,7 @@ from typing import (
     TypeVar,
     cast,
 )
-from collections.abc import Awaitable, Callable, Coroutine
+
 from . import logger
 
 P = ParamSpec("P")

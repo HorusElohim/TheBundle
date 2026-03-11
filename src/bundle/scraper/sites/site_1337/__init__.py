@@ -1,2 +1,2 @@
-from .data import TorrentData
 from .browser import Browser
+from .data import TorrentData

@@ -27,7 +27,6 @@ import numpy as np
 from ..hdf5 import Store
 from .extractor import ProfileData, ProfileExtractor, ProfileRecord
 
-
 # Max byte lengths for fixed-size string columns in the structured array
 _MAX_FILE_LEN = 256
 _MAX_FUNC_LEN = 128

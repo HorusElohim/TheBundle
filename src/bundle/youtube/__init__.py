@@ -1,6 +1,7 @@
 import os
-from bundle.core import platform_info
 from pathlib import Path
+
+from bundle.core import platform_info
 
 
 def get_app_data_path(app_name: str) -> Path:

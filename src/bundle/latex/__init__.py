@@ -19,4 +19,4 @@
 
 
 from .document import Document
-from .elements import Table, Figure, Section, escape
+from .elements import Figure, Section, Table, escape

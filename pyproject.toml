@@ -144,6 +144,7 @@ select = [
     "E",    # pycodestyle errors
     "W",    # pycodestyle warnings
     "F",    # pyflakes
+    "I",    # isort
     "UP",   # pyupgrade
     "B",    # flake8-bugbear
     "SIM",  # flake8-simplify
@@ -160,6 +161,9 @@ ignore = [
     "UP035",  # deprecated typing imports (typing.List etc, fix incrementally)
     "SIM105", # contextlib.suppress suggestion (style preference)
 ]
+
+[tool.ruff.lint.isort]
+known-first-party = ["bundle"]
 
 [tool.ruff.format]
 quote-style = "double"

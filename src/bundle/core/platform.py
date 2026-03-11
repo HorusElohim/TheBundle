@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+import asyncio
 import os
 import platform
-import sysconfig
 import sys
-import asyncio
-
+import sysconfig
 from pathlib import Path
+
 from . import data, tracer
 from .entity import Entity
 from .process import Process, ProcessError

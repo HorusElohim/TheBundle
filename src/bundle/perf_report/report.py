@@ -1,5 +1,5 @@
-import os
 import asyncio
+import os
 import tempfile
 from pathlib import Path
 
@@ -11,13 +11,13 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.ticker import FuncFormatter, MultipleLocator
 
+from bundle import version as bundle_version
 from bundle.core import logger
 from bundle.core.platform import platform_info
-from bundle import version as bundle_version
+from bundle.latex import Document, Figure, Section, Table, escape
+from bundle.latex.elements import Column
 from bundle.perf_report import ProfileExtractor, ProfileStorage
 from bundle.perf_report.extractor import ProfileData, ProfileRecord
-from bundle.latex import Document, Section, Table, Figure, escape
-from bundle.latex.elements import Column
 
 LOGGER = logger.setup_root_logger(name=__name__)
 

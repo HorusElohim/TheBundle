@@ -21,15 +21,15 @@ from __future__ import annotations
 
 import json
 import warnings
+from collections.abc import Callable
 from pathlib import Path
 from typing import Type, TypeVar
-from collections.abc import Callable
 
-from pydantic import HttpUrl
 from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    HttpUrl,
     PrivateAttr,
     field_serializer,
     field_validator,
@@ -38,8 +38,7 @@ from pydantic import (
 )
 from pydantic.warnings import PydanticDeprecatedSince20
 
-from . import logger
-from . import tracer
+from . import logger, tracer
 
 warnings.filterwarnings("ignore", category=PydanticDeprecatedSince20)
 

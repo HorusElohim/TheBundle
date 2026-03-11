@@ -5,12 +5,12 @@ from pathlib import Path
 
 import torch
 import torch.nn.functional as F
-from tqdm.auto import tqdm
+from ppisp import PPISP
 from torchvision.io import read_image
 from torchvision.utils import save_image
+from tqdm.auto import tqdm
 
 from bundle import core
-from ppisp import PPISP
 
 URL = "http://storage.googleapis.com/gresearch/refraw360/360_v2.zip"
 log = core.logger.setup_root_logger(name="ppisp.dataset", level=core.logger.Level.INFO)
