@@ -4,7 +4,7 @@
 [![PyPI Release 🐍](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml)
 [![auto reference update 🔄](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml)
 
-![The Bundle Dream](thebundle.gif)
+![The Bundle Dream](https://raw.githubusercontent.com/HorusElohim/TheBundle/main/thebundle.gif)
 
 # TheBundle
 
@@ -40,15 +40,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubus
 
 ## Documentation
 For more information, see the inline documentation in each module and the example projects in `tests/`.
-- [Core Modules Guide](src/bundle/core/README.md)
-- [Testing Module Guide](src/bundle/testing/README.md)
-- [Pybind Subpackage Guide](src/bundle/pybind/README.md)
-- [Website Guide](src/bundle/website/README.md)
-- [LaTeX Module Guide](src/bundle/latex/README.md)
-- [HDF5 Module Guide](src/bundle/hdf5/README.md)
-- [Performance Report Guide](src/bundle/perf_report/README.md)
+- [Core Modules Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/core/README.md)
+- [Testing Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/testing/README.md)
+- [Pybind Subpackage Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/pybind/README.md)
+- [Website Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/website/README.md)
+- [LaTeX Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/latex/README.md)
+- [HDF5 Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/hdf5/README.md)
+- [Performance Report Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/perf_report/README.md)
 
 
 ## License
 
-Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) for details.
+Licensed under the Apache License, Version 2.0. See [LICENSE](https://github.com/HorusElohim/TheBundle/blob/main/LICENSE) for details.
