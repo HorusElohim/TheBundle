@@ -44,6 +44,9 @@ For more information, see the inline documentation in each module and the exampl
 - [Testing Module Guide](src/bundle/testing/README.md)
 - [Pybind Subpackage Guide](src/bundle/pybind/README.md)
 - [Website Guide](src/bundle/website/README.md)
+- [LaTeX Module Guide](src/bundle/latex/README.md)
+- [HDF5 Module Guide](src/bundle/hdf5/README.md)
+- [Performance Report Guide](src/bundle/perf_report/README.md)
 
 
 ## License
