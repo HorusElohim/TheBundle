@@ -1,0 +1,11 @@
+services:
+  latex-report:
+    build:
+      context: ../../../../..
+      dockerfile: src/bundle/pods/pods/latex-report/Dockerfile
+    image: thebundle/latex-report:local
+    container_name: thebundle-latex-report
+    tty: true
+    volumes:
+      - ../../../../../references:/data/references:ro
+      - ../../../../../performances:/data/performances
