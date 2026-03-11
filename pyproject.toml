@@ -5,9 +5,24 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "thebundle"
 dynamic = ["version"]
-description = "Python TheBundle essential code."
+description = "A modern, extensible Python framework for robust, maintainable, and high-performance software projects."
+readme = "README.md"
+license = "Apache-2.0"
 authors = [{ name = "M. Treglia", email = "horuselohim@gmail.com" }]
 requires-python = ">=3.10"
+keywords = ["framework", "async", "testing", "pybind11", "zmq", "automation", "tracing", "logging"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
 dependencies = [
     "zmq",
     "tqdm",
@@ -89,6 +104,12 @@ all = [
     "h5py",
     "numpy",
 ]
+
+[project.urls]
+Homepage = "https://github.com/HorusElohim/TheBundle"
+Source = "https://github.com/HorusElohim/TheBundle"
+Issues = "https://github.com/HorusElohim/TheBundle/issues"
+Changelog = "https://github.com/HorusElohim/TheBundle/releases"
 
 [project.scripts]
 bundle = "bundle.cli:main"
