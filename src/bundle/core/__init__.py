@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# flake8: noqa: F401
 # isort: skip_file
 
 from . import logger

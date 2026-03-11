@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Iterator
+from collections.abc import Iterator
 
 from bleak import BleakScanner
 from bleak.backends.device import BLEDevice as BleakPeripheral

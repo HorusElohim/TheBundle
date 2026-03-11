@@ -20,7 +20,7 @@ class Browser(browser.Browser):
 
     async def set_context(self) -> Browser:
         return await self.new_context(
-            user_agent=("Mozilla/5.0 (X11; Linux x86_64; rv:101.0) " "Gecko/20100101 Firefox/101.0"),
+            user_agent=("Mozilla/5.0 (X11; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0"),
             locale="en-US",
         )
 
@@ -98,7 +98,7 @@ class Browser(browser.Browser):
         grid = tabulate(table_data, headers=headers, tablefmt="fancy_grid")
 
         links = "\n\n".join(
-            f"[{i+1}] Detail URL: {t.detail_url}\n    Magnet Link: {t.magnet_link}" for i, t in enumerate(torrents)
+            f"[{i + 1}] Detail URL: {t.detail_url}\n    Magnet Link: {t.magnet_link}" for i, t in enumerate(torrents)
         )
 
         return f"\n{grid}\n\nLinks:\n{links}"

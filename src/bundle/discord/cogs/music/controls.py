@@ -27,20 +27,22 @@ class QueuePaginator(discord.ui.View):
         self.btn_prev_page.disabled = self._page <= 0
         self.btn_next_page.disabled = self._page >= pages - 1
 
-    @discord.ui.button(label="\u25C0", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="\u25c0", style=discord.ButtonStyle.secondary)
     async def btn_prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         self._page = max(0, self._page - 1)
         self._update_buttons()
         await interaction.response.edit_message(
-            embed=self._embed.queue_embed(page=self._page), view=self,
+            embed=self._embed.queue_embed(page=self._page),
+            view=self,
         )
 
-    @discord.ui.button(label="\u25B6", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(label="\u25b6", style=discord.ButtonStyle.secondary)
     async def btn_next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         self._page = min(self._embed.queue_page_count() - 1, self._page + 1)
         self._update_buttons()
         await interaction.response.edit_message(
-            embed=self._embed.queue_embed(page=self._page), view=self,
+            embed=self._embed.queue_embed(page=self._page),
+            view=self,
         )
 
 
@@ -52,12 +54,12 @@ class PlayerControls(discord.ui.View):
         self.cog = cog
         self.guild_id = guild_id
 
-    @discord.ui.button(emoji="\u23EE\uFE0F", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="\u23ee\ufe0f", style=discord.ButtonStyle.secondary)
     async def btn_prev(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         await self.cog._advance(interaction.guild, -1)
 
-    @discord.ui.button(emoji="\u23EF\uFE0F", style=discord.ButtonStyle.primary)
+    @discord.ui.button(emoji="\u23ef\ufe0f", style=discord.ButtonStyle.primary)
     async def btn_pause(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         if not self.cog._get_session(self.guild_id):
             await interaction.response.send_message("Nothing playing.", ephemeral=True)
@@ -66,17 +68,17 @@ class PlayerControls(discord.ui.View):
         if not await self.cog._resume_guild(interaction.guild):
             await self.cog._pause_guild(interaction.guild)
 
-    @discord.ui.button(emoji="\u23ED\uFE0F", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="\u23ed\ufe0f", style=discord.ButtonStyle.secondary)
     async def btn_skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         await self.cog._advance(interaction.guild, +1)
 
-    @discord.ui.button(emoji="\u23F9\uFE0F", style=discord.ButtonStyle.danger)
+    @discord.ui.button(emoji="\u23f9\ufe0f", style=discord.ButtonStyle.danger)
     async def btn_stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         await interaction.response.defer()
         await self.cog._stop_guild(interaction.guild)
 
-    @discord.ui.button(emoji="\U0001F500", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="\U0001f500", style=discord.ButtonStyle.secondary)
     async def btn_shuffle(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         gs = self.cog._get_session(self.guild_id)
         if not gs or not gs.queue:
@@ -86,7 +88,7 @@ class PlayerControls(discord.ui.View):
         gs.queue.shuffle()
         await gs.embed.refresh(status=vc_status(interaction.guild.voice_client))
 
-    @discord.ui.button(emoji="\U0001F4CB", style=discord.ButtonStyle.secondary)
+    @discord.ui.button(emoji="\U0001f4cb", style=discord.ButtonStyle.secondary)
     async def btn_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         gs = self.cog._get_session(self.guild_id)
         if not gs or not gs.queue:
@@ -94,5 +96,7 @@ class PlayerControls(discord.ui.View):
             return
         paginator = QueuePaginator(gs.embed)
         await interaction.response.send_message(
-            embed=gs.embed.queue_embed(page=0), view=paginator, ephemeral=True,
+            embed=gs.embed.queue_embed(page=0),
+            view=paginator,
+            ephemeral=True,
         )

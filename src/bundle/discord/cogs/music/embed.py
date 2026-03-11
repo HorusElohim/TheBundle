@@ -76,14 +76,12 @@ class PlayerEmbed:
         lines: list[str] = []
         for i in range(start, end):
             track = self._queue.tracks[i]
-            marker = "\u25B6" if i == self._queue.index else f"{i + 1}."
-            lines.append(
-                f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`"
-            )
+            marker = "\u25b6" if i == self._queue.index else f"{i + 1}."
+            lines.append(f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`")
 
         description = "\n".join(lines) or "Queue is empty."
         if self._queue.resolving:
-            description += "\n*\u23F3 Still resolving...*"
+            description += "\n*\u23f3 Still resolving...*"
 
         embed = self._embeds.info(
             title=f"Queue \u2014 {total} track(s)",

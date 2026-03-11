@@ -35,14 +35,16 @@ _MAX_FUNC_LEN = 128
 
 def _profile_dtype() -> np.dtype:
     """Structured dtype for a single profile function record."""
-    return np.dtype([
-        ("file", f"S{_MAX_FILE_LEN}"),
-        ("line_number", "i4"),
-        ("function", f"S{_MAX_FUNC_LEN}"),
-        ("call_count", "i4"),
-        ("total_time", "f8"),
-        ("cumulative_time", "f8"),
-    ])
+    return np.dtype(
+        [
+            ("file", f"S{_MAX_FILE_LEN}"),
+            ("line_number", "i4"),
+            ("function", f"S{_MAX_FUNC_LEN}"),
+            ("call_count", "i4"),
+            ("total_time", "f8"),
+            ("cumulative_time", "f8"),
+        ]
+    )
 
 
 def _safe_key(text: str) -> str:
@@ -114,10 +116,13 @@ class ProfileStorage:
                 )
                 dataset_path = f"{prefix}/profiles/{profile.name}"
                 store.write_dataset(dataset_path, records)
-                store.write_attrs(dataset_path, {
-                    "prof_path": str(profile.prof_path),
-                    "total_calls": profile.total_calls,
-                })
+                store.write_attrs(
+                    dataset_path,
+                    {
+                        "prof_path": str(profile.prof_path),
+                        "total_calls": profile.total_calls,
+                    },
+                )
 
     def list_versions(self) -> list[str]:
         """List all stored version keys."""
@@ -163,10 +168,12 @@ class ProfileStorage:
                     for row in arr
                 ]
                 records.sort(key=lambda r: r.cumulative_time, reverse=True)
-                profiles.append(ProfileData(
-                    prof_path=Path(attrs.get("prof_path", name)),
-                    records=records,
-                ))
+                profiles.append(
+                    ProfileData(
+                        prof_path=Path(attrs.get("prof_path", name)),
+                        records=records,
+                    )
+                )
         return profiles
 
     @classmethod

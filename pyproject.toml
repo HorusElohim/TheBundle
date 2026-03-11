@@ -156,6 +156,9 @@ ignore = [
     "F401",   # unused imports (re-exports in __init__.py)
     "F403",   # star imports
     "RUF012", # mutable class default (pydantic models)
+    "E402",   # module-level import not at top (intentional in __init__.py)
+    "UP035",  # deprecated typing imports (typing.List etc, fix incrementally)
+    "SIM105", # contextlib.suppress suggestion (style preference)
 ]
 
 [tool.ruff.format]

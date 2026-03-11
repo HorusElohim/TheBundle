@@ -23,7 +23,7 @@ class Color:
     PROGRESS = 0xFEE75C  # yellow
     SUCCESS = 0x57F287  # green
     ERROR = 0xED4245  # red
-    MUSIC = 0x00ff00  # green
+    MUSIC = 0x00FF00  # green
 
 
 def _progress_bar(percent: int, length: int = 10) -> str:
@@ -44,7 +44,7 @@ def _seek_bar(elapsed: int, total: int, length: int = 16) -> str:
     elapsed = min(elapsed, total)
     pos = elapsed / total
     dot = round(pos * (length - 1))
-    bar = "\u2501" * dot + "\u25CF" + "\u2501" * (length - 1 - dot)
+    bar = "\u2501" * dot + "\u25cf" + "\u2501" * (length - 1 - dot)
     return f"`{_fmt_ts(elapsed)}` {bar} `{_fmt_ts(total)}`"
 
 
@@ -162,8 +162,8 @@ class EmbedFactory:
         thumbnail_url: str | None = None,
     ) -> discord.Embed:
         # Status icon
-        icons = {"Playing": "\u25B6", "Paused": "\u23F8", "Stopped": "\u23F9", "Finished": "\u2705"}
-        icon = icons.get(status, "\u25B6")
+        icons = {"Playing": "\u25b6", "Paused": "\u23f8", "Stopped": "\u23f9", "Finished": "\u2705"}
+        icon = icons.get(status, "\u25b6")
         seek = _seek_bar(elapsed_secs, duration_secs)
         desc = f"{icon} **{status}**\n{seek}" if seek else f"{icon} **{status}**"
         embed = self._base(title=title, description=desc, color=Color.MUSIC)

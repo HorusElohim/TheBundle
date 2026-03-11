@@ -63,9 +63,7 @@ class GuildPlayer:
         source = make_source(stream_url)
         vc.play(
             source,
-            after=lambda err: asyncio.run_coroutine_threadsafe(
-                self._after_track(guild_id, err), loop
-            ),
+            after=lambda err: asyncio.run_coroutine_threadsafe(self._after_track(guild_id, err), loop),
         )
         return True
 

@@ -7,8 +7,8 @@ from .threeD import GraphicThreeDComponent, GraphicThreeDComponentParams
 __all__ = [
     "GraphicBaseComponent",
     "GraphicComponentParams",
-    "GraphicTwoDComponent",
-    "GraphicTwoDComponentParams",
     "GraphicThreeDComponent",
     "GraphicThreeDComponentParams",
+    "GraphicTwoDComponent",
+    "GraphicTwoDComponentParams",
 ]

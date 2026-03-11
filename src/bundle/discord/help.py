@@ -14,9 +14,9 @@ if TYPE_CHECKING:
 
 # Cog display config: cog_name -> (emoji, display_name)
 COG_META: dict[str, tuple[str, str]] = {
-    "music": ("\U0001F3B5", "Music"),
-    "youtube": ("\U0001F3AC", "YouTube"),
-    "core": ("\U0001F527", "Utilities"),
+    "music": ("\U0001f3b5", "Music"),
+    "youtube": ("\U0001f3ac", "YouTube"),
+    "core": ("\U0001f527", "Utilities"),
 }
 
 # Cog display order (unlisted cogs appear at the end)
@@ -55,21 +55,15 @@ class BundleHelpCommand(commands.HelpCommand):
             if not cmds:
                 continue
 
-            emoji, display = COG_META.get(cog.qualified_name, ("\u2699\uFE0F", cog.qualified_name))
-            lines = [
-                f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}"
-                for cmd in cmds
-            ]
+            emoji, display = COG_META.get(cog.qualified_name, ("\u2699\ufe0f", cog.qualified_name))
+            lines = [f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}" for cmd in cmds]
             embed.add_field(name=f"{emoji} {display}", value="\n".join(lines), inline=False)
 
         # Ungrouped commands (no cog)
         ungrouped = await self.filter_commands(mapping.get(None, []), sort=True)
         if ungrouped:
-            lines = [
-                f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}"
-                for cmd in ungrouped
-            ]
-            embed.add_field(name="\u2699\uFE0F Other", value="\n".join(lines), inline=False)
+            lines = [f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}" for cmd in ungrouped]
+            embed.add_field(name="\u2699\ufe0f Other", value="\n".join(lines), inline=False)
 
         await self.get_destination().send(embed=embed)
 
@@ -77,7 +71,7 @@ class BundleHelpCommand(commands.HelpCommand):
 
     async def send_cog_help(self, cog: commands.Cog) -> None:
         prefix = self._bot.config.command_prefix
-        emoji, display = COG_META.get(cog.qualified_name, ("\u2699\uFE0F", cog.qualified_name))
+        emoji, display = COG_META.get(cog.qualified_name, ("\u2699\ufe0f", cog.qualified_name))
 
         cmds = await self.filter_commands(cog.get_commands(), sort=True)
         lines = []
@@ -114,10 +108,7 @@ class BundleHelpCommand(commands.HelpCommand):
         sig = f" {group.signature}" if group.signature else ""
 
         cmds = await self.filter_commands(group.commands, sort=True)
-        lines = [
-            f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}"
-            for cmd in cmds
-        ]
+        lines = [f"`{prefix}{cmd.qualified_name}` \u2014 {cmd.short_doc or 'No description'}" for cmd in cmds]
 
         embed = self._base_embed(
             title=f"`{prefix}{group.qualified_name}{sig}`",

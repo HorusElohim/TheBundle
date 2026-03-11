@@ -165,7 +165,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
 
             # Generate ref only if doesn't exists
             if not ref_json_path.exists():
-                logger.verbose(f"json reference will be created {str(ref_json_path)}")
+                logger.verbose(f"json reference will be created {ref_json_path!s}")
                 ref_json_path.write_text(tmp_json_path.read_text())
 
             _, class_instance_from_json = await test_pydantic_data_from_json(
@@ -181,7 +181,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
 
             # Generate jsonchema ref only if doesn't exists
             if not ref_jsonschema_path.exists():
-                logger.verbose(f"jsonschema reference will be created {str(ref_json_path)}")
+                logger.verbose(f"jsonschema reference will be created {ref_json_path!s}")
                 await test_pydantic_data_dump_jsonschema(class_instance, ref_jsonschema_path)
 
             jsonschema_dict = await class_instance.as_jsonschema()

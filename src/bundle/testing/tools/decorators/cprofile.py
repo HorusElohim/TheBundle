@@ -3,7 +3,8 @@ import cProfile
 import time
 from functools import wraps
 from pathlib import Path
-from typing import Any, Callable, Optional
+from typing import Any, Optional
+from collections.abc import Callable
 
 from .... import core
 from .. import utils
@@ -34,7 +35,7 @@ class ProfileContext:
         self,
         expected_duration: int,
         performance_threshold: int,
-        cprofile_folder: Optional[Path],
+        cprofile_folder: Path | None,
         func_name: str,
         result_identifier: Callable[[Any], str],
     ) -> None:
@@ -44,8 +45,8 @@ class ProfileContext:
         self.func_name = func_name
         self.result_identifier = result_identifier
         self.profiler = cProfile.Profile()
-        self.start_ns: Optional[int] = None
-        self.elapsed_ns: Optional[int] = None
+        self.start_ns: int | None = None
+        self.elapsed_ns: int | None = None
         self.result: Any = None
 
     def __enter__(self) -> ProfileContext:
@@ -80,7 +81,7 @@ class ProfileContext:
 def cprofile(
     expected_duration: int = EXPECTED_DURATION_NS,
     performance_threshold: int = PERFORMANCE_THRESHOLD_NS,
-    cprofile_folder: Optional[Path] = None,
+    cprofile_folder: Path | None = None,
 ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
     def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
         # Check the flag dynamically at import time.
@@ -94,7 +95,7 @@ def cprofile(
                 return await func(*args, **kwargs)
 
             log.testing(f"[{func.__name__}] profiling async function ...")
-            error: Optional[Exception] = None
+            error: Exception | None = None
             result: Any = None
 
             with ProfileContext(

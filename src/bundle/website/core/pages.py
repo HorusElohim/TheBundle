@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Iterable, Protocol
+from typing import Protocol
+from collections.abc import Iterable
 
 from fastapi import FastAPI
 from fastapi.routing import APIRouter
@@ -45,4 +46,4 @@ def initialize_pages(app: FastAPI, pages: Iterable[Page]) -> tuple[Page, ...]:
     return page_registry
 
 
-__all__ = ["Page", "mount_page", "initialize_pages"]
+__all__ = ["Page", "initialize_pages", "mount_page"]

@@ -44,7 +44,7 @@ class NestedModel(core.data.Data):
 
 class RecursiveModel(core.data.Data):
     name: str = core.data.Field(default="")
-    children: None | list["RecursiveModel"] = None
+    children: None | list[RecursiveModel] = None
     model_config = core.data.configuration(json_encoders=JSON_ENCODERS)
 
 

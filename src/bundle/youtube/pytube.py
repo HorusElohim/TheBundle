@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from functools import partial
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 from urllib.parse import parse_qs, urlparse
 
 from pytubefix import Playlist, YouTube
@@ -15,6 +15,7 @@ from .browser import PotoTokenBrowser, PotoTokenEntity
 from .track import YoutubeResolveOptions, YoutubeStreamOption, YoutubeTrackData
 
 log = logger.get_logger(__name__)
+
 
 def _playlist_id(url: str) -> str | None:
     """Return the playlist ID from any YouTube URL that contains one, or None."""
@@ -97,9 +98,9 @@ def _pick_stream_by_itag(yt: YouTube, itag: int | None):
 
 async def _collect_streams(yt: YouTube) -> tuple[list[YoutubeStreamOption], list[YoutubeStreamOption]]:
     progressive_video_streams = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
-    adaptive_video_streams = yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4").order_by(
-        "resolution"
-    ).desc()
+    adaptive_video_streams = (
+        yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4").order_by("resolution").desc()
+    )
     video_streams = [*progressive_video_streams, *adaptive_video_streams]
     audio_streams = yt.streams.filter(only_audio=True, mime_type="audio/mp4").order_by("abr").desc()
     if len(audio_streams) == 0:

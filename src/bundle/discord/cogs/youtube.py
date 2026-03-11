@@ -51,9 +51,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
     async def resolve(self, ctx: commands.Context, url: str) -> None:
         """Resolve a YouTube URL and show available streams."""
         e = self.bot.embeds
-        msg = await ctx.send(
-            embed=e.progress(title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10)
-        )
+        msg = await ctx.send(embed=e.progress(title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10))
 
         try:
             options = YoutubeResolveOptions(best=True)
@@ -71,9 +69,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
                 )
 
             if not track or not track.is_resolved():
-                await msg.edit(
-                    embed=e.error(title="YouTube Resolve", description=f"Could not resolve streams for `{url}`.")
-                )
+                await msg.edit(embed=e.error(title="YouTube Resolve", description=f"Could not resolve streams for `{url}`."))
                 return
 
             fields = {

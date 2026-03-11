@@ -4,7 +4,8 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
-from typing import Any, Iterable, Mapping
+from typing import Any
+from collections.abc import Iterable, Mapping
 
 from fastapi.templating import Jinja2Templates
 
@@ -107,9 +108,9 @@ class PageModule:
 
 __all__ = [
     "PageModule",
-    "get_template_path",
-    "get_static_path",
-    "get_logger",
-    "create_templates",
     "base_context",
+    "create_templates",
+    "get_logger",
+    "get_static_path",
+    "get_template_path",
 ]

@@ -37,12 +37,12 @@ class CompanyCatalog(data.Data):
     _mapping: dict[int, str] = data.PrivateAttr(default_factory=dict)
 
     @data.model_validator(mode="after")
-    def _initialize_mapping(self) -> "CompanyCatalog":
+    def _initialize_mapping(self) -> CompanyCatalog:
         self._mapping = {entry.identifier: entry.name for entry in self.company_identifiers}
         return self
 
     @classmethod
-    def from_resource(cls, path: Path | None = None) -> "CompanyCatalog":
+    def from_resource(cls, path: Path | None = None) -> CompanyCatalog:
         resource = path or COMPANY_FILE
         content = yaml.safe_load(resource.read_text(encoding="utf-8"))
         return cls(**content)

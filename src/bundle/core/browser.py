@@ -28,7 +28,8 @@ try:
 except ImportError:
     from typing_extensions import Self
 
-from typing import Any, AsyncIterator, Awaitable, Callable, Generic, List, Type, TypeVar
+from typing import Any, Generic, List, Type, TypeVar
+from collections.abc import AsyncIterator, Awaitable, Callable
 
 from playwright.async_api import Browser as PlaywrightBrowser
 from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
@@ -63,7 +64,7 @@ class Browser(entity.Entity):
     browser_type: BrowserType = data.Field(default=BrowserType.CHROMIUM)
     headless: bool = data.Field(default=True)
     browser: PlaywrightBrowser | None = data.Field(default=None, exclude=True)
-    contexts: List[BrowserContext] = data.Field(default_factory=list, exclude=True)
+    contexts: list[BrowserContext] = data.Field(default_factory=list, exclude=True)
 
     @data.field_validator("browser_type", mode="before")
     def validate_browser_type(cls, v: str | BrowserType) -> BrowserType:
@@ -72,14 +73,14 @@ class Browser(entity.Entity):
                 return BrowserType(v.lower())
             except ValueError:
                 supported = [bt.value for bt in BrowserType]
-                raise ValueError(f"Unsupported browser type: {v}. Supported types are: {supported}")
+                raise ValueError(f"Unsupported browser type: {v}. Supported types are: {supported}")  # noqa: B904
         if isinstance(v, BrowserType):
             return v
         raise ValueError(f"Invalid browser type: {v}")
 
     @classmethod
     @asynccontextmanager
-    async def chromium(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def chromium(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Chromium browser.
         """
@@ -92,7 +93,7 @@ class Browser(entity.Entity):
 
     @classmethod
     @asynccontextmanager
-    async def firefox(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def firefox(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Firefox browser.
         """
@@ -105,7 +106,7 @@ class Browser(entity.Entity):
 
     @classmethod
     @asynccontextmanager
-    async def webkit(cls: Type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def webkit(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a WebKit browser.
         """
@@ -228,13 +229,13 @@ class Browser(entity.Entity):
 
         row_selector: str
         columns: list[Browser.Table.Column]
-        model: Type[T]
+        model: type[T]
 
         def __init__(
             self,
             row_selector: str,
             columns: list[Browser.Table.Column],
-            model: Type[T],
+            model: type[T],
         ) -> None:
             super().__init__(
                 row_selector=row_selector,
@@ -255,14 +256,14 @@ class Browser(entity.Entity):
             One column: field name, CSS selector, parser type, and optional base_url for URL parsing.
             """
 
-            class Type(Enum):
+            class Type(Enum):  # noqa: F811
                 TEXT = "text"
                 INT = "int"
                 URL = "url"
 
             name: str
             selector: str
-            parser_type: Type
+            parser_type: type
             base_url: str | None = None
 
             # Instance methods for each parser
@@ -283,7 +284,7 @@ class Browser(entity.Entity):
                 return href
 
             # Map parser types to methods—easy to extend with new types
-            _PARSER_MAP: dict[Type, Callable[[Browser.Table.Column, ElementHandle], Awaitable[Any]]] = {
+            _PARSER_MAP: dict[type, Callable[[Browser.Table.Column, ElementHandle], Awaitable[Any]]] = {
                 Type.TEXT: parse_text,
                 Type.INT: parse_int,
                 Type.URL: parse_url,

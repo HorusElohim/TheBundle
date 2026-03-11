@@ -38,6 +38,7 @@ CLR_BASELINE = "#FF8C66"
 # Formatting helpers
 # ---------------------------------------------------------------------------
 
+
 def format_time_auto(seconds: float) -> tuple[str, str]:
     if seconds == 0:
         return "0", "ns"
@@ -137,6 +138,7 @@ def _get_platform_meta() -> dict:
 # Plot generation
 # ---------------------------------------------------------------------------
 
+
 def generate_plot(
     profile: ProfileData,
     plot_dir: Path,
@@ -162,7 +164,7 @@ def generate_plot(
 
     labels = [format_label(r) for r in top_n]
     max_label_len = 50
-    labels = [la if len(la) <= max_label_len else "..." + la[-(max_label_len - 3):] for la in labels]
+    labels = [la if len(la) <= max_label_len else "..." + la[-(max_label_len - 3) :] for la in labels]
 
     fig_height = max(3, len(top_n) * (0.7 if has_baseline else 0.5) + 1)
     fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -175,19 +177,33 @@ def generate_plot(
     if has_baseline:
         bar_height = 0.35
         bars_current = ax.barh(
-            y_pos - bar_height / 2, cumulative_times,
-            height=bar_height, color=CLR_CURRENT, edgecolor="#5BA3C7", linewidth=0.5, label="Current",
+            y_pos - bar_height / 2,
+            cumulative_times,
+            height=bar_height,
+            color=CLR_CURRENT,
+            edgecolor="#5BA3C7",
+            linewidth=0.5,
+            label="Current",
         )
         ax.barh(
-            y_pos + bar_height / 2, baseline_times,
-            height=bar_height, color=CLR_BASELINE, edgecolor="#CC7055", linewidth=0.5, label="Baseline",
+            y_pos + bar_height / 2,
+            baseline_times,
+            height=bar_height,
+            color=CLR_BASELINE,
+            edgecolor="#CC7055",
+            linewidth=0.5,
+            label="Baseline",
         )
         ax.legend(loc="lower right", fontsize=7, facecolor="#2d2d2d", edgecolor="#555555", labelcolor="#D3D3D3")
     else:
         bar_height = 0.6
         bars_current = ax.barh(
-            y_pos, cumulative_times,
-            height=bar_height, color=CLR_CURRENT, edgecolor="#5BA3C7", linewidth=0.5,
+            y_pos,
+            cumulative_times,
+            height=bar_height,
+            color=CLR_CURRENT,
+            edgecolor="#5BA3C7",
+            linewidth=0.5,
         )
 
     ax.set_yticks(y_pos)
@@ -239,6 +255,7 @@ def generate_plot(
 # ---------------------------------------------------------------------------
 # Section builders
 # ---------------------------------------------------------------------------
+
 
 def _short_file(rec: ProfileRecord) -> str:
     if "~" in rec.file or rec.file == "":
@@ -331,6 +348,7 @@ def build_section(
 # Report generation
 # ---------------------------------------------------------------------------
 
+
 async def _generate_plots(profiles, plot_dir, baseline_lookup=None):
     """Generate plots for all profiles, with optional baseline comparison."""
     semaphore = asyncio.Semaphore(MAX_PARALLEL_ASYNC)
@@ -384,7 +402,12 @@ async def generate_report(input_path: Path, output_path: Path, h5_path: Path | N
         LOGGER.info("Saving HDF5 to %s (version=%s, platform=%s)", h5_path, bundle_version, pid)
         await asyncio.to_thread(
             ProfileStorage.from_directory,
-            input_path, h5_path, machine_id, bundle_version, pid, pmeta,
+            input_path,
+            h5_path,
+            machine_id,
+            bundle_version,
+            pid,
+            pmeta,
         )
 
     # Try to find a baseline for comparison
@@ -437,6 +460,7 @@ async def generate_report(input_path: Path, output_path: Path, h5_path: Path | N
 # ---------------------------------------------------------------------------
 # CLI
 # ---------------------------------------------------------------------------
+
 
 def _safe_key(v: str) -> str:
     return v.replace("+", "_").replace("/", "_").replace("\\", "_")

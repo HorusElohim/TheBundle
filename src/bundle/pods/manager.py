@@ -143,8 +143,7 @@ class PodManager(Entity):
         path = (self.pods_root / pod.folder).resolve()
         if not path.exists():
             raise click.ClickException(
-                f"Pod '{pod.name}' was not found at '{path}'. "
-                f"Use --pods-root or set {PODS_ROOT_ENV} to the correct location."
+                f"Pod '{pod.name}' was not found at '{path}'. Use --pods-root or set {PODS_ROOT_ENV} to the correct location."
             )
         return path
 

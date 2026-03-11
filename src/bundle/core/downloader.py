@@ -85,9 +85,7 @@ class Downloader(Entity):
         client = (query.get("c", [""])[0] or "").upper()
 
         user_agent = (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/131.0.0.0 Safari/537.36"
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
         )
         if client == "ANDROID":
             user_agent = (
@@ -140,7 +138,7 @@ class Downloader(Entity):
         downloaded_bytes = 0
         self._error_message = ""
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession() as session:  # noqa: SIM117
                 async with session.get(self.url, headers=self._request_headers()) as response:
                     if response.status not in {200, 206}:
                         self._error_message = f"HTTP {response.status}"
@@ -166,9 +164,7 @@ class Downloader(Entity):
                             await asyncio.sleep(0)
                     if downloaded_bytes <= 0:
                         content_type = response.headers.get("content-type", "")
-                        self._error_message = (
-                            f"Empty response body (status={response.status}, content-type={content_type})"
-                        )
+                        self._error_message = f"Empty response body (status={response.status}, content-type={content_type})"
                         log.error(f"Error downloading {self.url}. {self._error_message}")
                         return False
                     status = True
@@ -179,7 +175,7 @@ class Downloader(Entity):
         finally:
             await tracer.Async.call_raise(self.end)
             log.debug("%s", logger.Emoji.status(status))
-            return status
+            return status  # noqa: B012
 
 
 class DownloaderTQDM(Downloader):

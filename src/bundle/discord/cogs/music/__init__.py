@@ -84,7 +84,7 @@ class MusicCog(commands.Cog, name="music"):
             if gs.queue.resolving:
                 gs.queue.waiting = True
                 await gs.embed.send_or_update(
-                    self.bot.embeds.info(title="Music", description="\u23F3 Waiting for next track..."),
+                    self.bot.embeds.info(title="Music", description="\u23f3 Waiting for next track..."),
                     gs.embed.view,
                 )
             else:
@@ -310,7 +310,7 @@ class MusicCog(commands.Cog, name="music"):
         finally:
             gs = self._get_session(guild.id)
             if not gs:
-                return
+                return  # noqa: B012
 
             gs.resolve_tasks = [t for t in gs.resolve_tasks if not t.done()]
             gs.queue.resolving = bool(gs.resolve_tasks)
@@ -378,7 +378,7 @@ class MusicCog(commands.Cog, name="music"):
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
             return
         await self._advance(ctx.guild, +1)
-        await ctx.send("\u23ED Skipped", delete_after=5)
+        await ctx.send("\u23ed Skipped", delete_after=5)
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
@@ -388,7 +388,7 @@ class MusicCog(commands.Cog, name="music"):
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
             return
         await self._advance(ctx.guild, -1)
-        await ctx.send("\u23EE Previous", delete_after=5)
+        await ctx.send("\u23ee Previous", delete_after=5)
 
     @commands.hybrid_command(name="queue")
     @tracer.Async.decorator.call_raise
@@ -413,7 +413,7 @@ class MusicCog(commands.Cog, name="music"):
     async def pause(self, ctx: commands.Context) -> None:
         """Pause playback."""
         if await self._pause_guild(ctx.guild):
-            await ctx.send("\u23F8 Paused", delete_after=5)
+            await ctx.send("\u23f8 Paused", delete_after=5)
         else:
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to pause."))
 
@@ -427,13 +427,13 @@ class MusicCog(commands.Cog, name="music"):
             return
         gs.queue.shuffle()
         await gs.embed.refresh(status=vc_status(ctx.guild.voice_client))
-        await ctx.send("\U0001F500 Queue shuffled!", delete_after=5)
+        await ctx.send("\U0001f500 Queue shuffled!", delete_after=5)
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
     async def resume(self, ctx: commands.Context) -> None:
         """Resume paused playback."""
         if await self._resume_guild(ctx.guild):
-            await ctx.send("\u25B6 Resumed", delete_after=5)
+            await ctx.send("\u25b6 Resumed", delete_after=5)
         else:
             await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to resume."))

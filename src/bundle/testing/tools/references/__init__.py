@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# flake8: noqa: F401
 
 from .data import TestComplexData, TestData
 from .entity import TestComplexEntity, TestComplexEntityMultipleInheritance, TestEntity
