@@ -24,7 +24,8 @@ import time
 from datetime import datetime, timezone
 from enum import IntEnum
 from pathlib import Path
-from typing import Any, Callable, Mapping, cast
+from typing import Any, cast
+from collections.abc import Callable, Mapping
 
 from rich.logging import RichHandler
 from rich.pretty import pretty_repr
@@ -98,7 +99,7 @@ class BundleLogger(logging.getLoggerClass()):
             return callable_obj.__qualname__
         elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
             return callable_obj.__class__.__qualname__
-        elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):
+        elif hasattr(callable_obj, "__call__") and hasattr(callable_obj.__call__, "__qualname__"):  # noqa: B004
             return callable_obj.__call__.__qualname__
         return repr(callable_obj)
 
@@ -323,7 +324,7 @@ def setup_root_logger(
     if logger.hasHandlers():
         # Check if File and Console handlers are already set up
         for handler in logger.handlers:
-            if isinstance(handler, logging.FileHandler) or isinstance(handler, RichHandler):
+            if isinstance(handler, logging.FileHandler) or isinstance(handler, RichHandler):  # noqa: SIM101
                 logger.removeHandler(handler)
                 handler.close()
 
@@ -390,5 +391,5 @@ if __name__ == "__main__":
     # Example: Log an exception.
     try:
         x = 1 / 0
-    except Exception as e:
+    except Exception:
         logger.error("This is an error with an exception.", exc_info=True)

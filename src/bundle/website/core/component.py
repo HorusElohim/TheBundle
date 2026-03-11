@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any, ClassVar, Iterable, Literal
+from typing import Any, ClassVar, Literal
+from collections.abc import Iterable
 
 from fastapi import APIRouter
 
@@ -111,7 +112,7 @@ class ComponentAssets(data.Data):
     scripts: list[ComponentAsset] = data.Field(default_factory=list)
 
     @classmethod
-    def from_components(cls, items: tuple[Component, ...]) -> "ComponentAssets":
+    def from_components(cls, items: tuple[Component, ...]) -> ComponentAssets:
         styles: list[ComponentAsset] = []
         scripts: list[ComponentAsset] = []
         seen: set[tuple[str, str, str, bool]] = set()

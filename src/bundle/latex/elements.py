@@ -68,23 +68,25 @@ class Table:
         lines.append(f"\\begin{{longtable}}{{@{{}}{col_specs}@{{}}}}\n")
         # Header
         header_line = self._render_header()
-        lines.extend([
-            "\\toprule\n",
-            "\\rowcolor{backgroundcolor}\n",
-            header_line,
-            "\\midrule\n",
-            "\\endfirsthead\n",
-            "\\toprule\n",
-            "\\rowcolor{backgroundcolor}\n",
-            header_line,
-            "\\midrule\n",
-            "\\endhead\n",
-            "\\midrule\n",
-            f"\\multicolumn{{{len(self.columns)}}}{{r}}{{\\textit{{Continued on next page}}}} \\\\\n",
-            "\\endfoot\n",
-            "\\bottomrule\n",
-            "\\endlastfoot\n",
-        ])
+        lines.extend(
+            [
+                "\\toprule\n",
+                "\\rowcolor{backgroundcolor}\n",
+                header_line,
+                "\\midrule\n",
+                "\\endfirsthead\n",
+                "\\toprule\n",
+                "\\rowcolor{backgroundcolor}\n",
+                header_line,
+                "\\midrule\n",
+                "\\endhead\n",
+                "\\midrule\n",
+                f"\\multicolumn{{{len(self.columns)}}}{{r}}{{\\textit{{Continued on next page}}}} \\\\\n",
+                "\\endfoot\n",
+                "\\bottomrule\n",
+                "\\endlastfoot\n",
+            ]
+        )
         for row in self._rows:
             lines.append(" & ".join(row) + " \\\\\n")
         lines.append("\\end{longtable}\n}\n")

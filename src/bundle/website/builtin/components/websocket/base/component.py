@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import ClassVar, Iterable
+from typing import ClassVar
+from collections.abc import Iterable
 
 from fastapi import WebSocket
 

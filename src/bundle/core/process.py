@@ -58,7 +58,7 @@ class ProcessError(Exception):
 class Process(Entity):
     """Asynchronously executes shell commands and captures their output."""
 
-    _process: Optional[asyncio.subprocess.Process] = PrivateAttr(default=None)
+    _process: asyncio.subprocess.Process | None = PrivateAttr(default=None)
 
     @tracer.Async.decorator.call_raise
     async def __call__(self, command: str, **kwargs) -> ProcessResult:

@@ -21,13 +21,11 @@ import asyncio
 from functools import wraps
 from typing import (
     Any,
-    Awaitable,
-    Callable,
-    Coroutine,
     ParamSpec,
     TypeVar,
     cast,
 )
+from collections.abc import Awaitable, Callable, Coroutine
 from . import logger
 
 P = ParamSpec("P")

@@ -93,7 +93,7 @@ def install():
             )
 
         install_node_command = (
-            f'"{winget_command}" install -e --id OpenJS.NodeJS.LTS ' "--accept-source-agreements --accept-package-agreements"
+            f'"{winget_command}" install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements'
         )
         log.info("npm not found; installing Node.js LTS via winget")
         try:

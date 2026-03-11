@@ -126,7 +126,7 @@ async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: 
 
 class MP3(MP3TrackData):
     @classmethod
-    def from_track(cls: Type[MP3], path, track: TrackData):
+    def from_track(cls: type[MP3], path, track: TrackData):
         return cls(path=path, author=track.author, title=track.title, duration=track.duration)
 
     @tracer.Async.decorator.call_raise
@@ -148,7 +148,7 @@ class MP3(MP3TrackData):
     @tracer.Async.decorator.call_raise
     async def get_thumbnail(self) -> bytes:
         mp3 = MutagenMP3(self.path, ID3=ID3)
-        thumbnail_data = bytes()
+        thumbnail_data = b""
         if mp3.tags and "APIC:Cover" in mp3.tags:
             thumbnail_data = mp3.tags["APIC:Cover"].data
         return thumbnail_data
@@ -169,7 +169,7 @@ class MP3(MP3TrackData):
 
 class MP4(MP4TrackData):
     @classmethod
-    def from_track(cls: Type[MP4], path, track: TrackData):
+    def from_track(cls: type[MP4], path, track: TrackData):
         return cls(path=path, author=track.author, title=track.title, duration=track.duration)
 
     @tracer.Async.decorator.call_raise

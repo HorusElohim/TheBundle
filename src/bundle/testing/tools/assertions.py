@@ -65,9 +65,7 @@ def compare(ref: object, tmp: object) -> None:
     diff = list(differ.compare(ref_lines, tmp_lines))
 
     diff_str = "\n".join(diff)
-    assert (
-        ref == tmp
-    ), f"""
+    assert ref == tmp, f"""
 
 REF: {ref.__class__=}:
 {ref}

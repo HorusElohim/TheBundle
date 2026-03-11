@@ -17,7 +17,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# flake8: noqa: F401
 
 from .document import Document
 from .elements import Table, Figure, Section, escape

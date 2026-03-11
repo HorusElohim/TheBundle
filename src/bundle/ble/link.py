@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Callable
+from collections.abc import Callable
 
 from bleak import BleakClient
 
@@ -35,7 +35,7 @@ class NordicLink(Entity):
         super().__init__(*args, **kwargs)
         self._scanner = scanner or Scanner(timeout=self.timeout)
 
-    async def __aenter__(self) -> "NordicLink":
+    async def __aenter__(self) -> NordicLink:
         await self.connect()
         return self
 

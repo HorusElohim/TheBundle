@@ -129,7 +129,9 @@ def main() -> None:
         novels = {name: m(v.to(d), xy, (w, h), 0, -1) for name, v in seeds.items()}
     save = Path(a.save_dir)
     save.mkdir(parents=True, exist_ok=True)
-    save_image(torch.cat([x0, y0, (y0 - x0).abs()], 1).permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input_output_diff.png")
+    save_image(
+        torch.cat([x0, y0, (y0 - x0).abs()], 1).permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input_output_diff.png"
+    )
     save_image(x0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input.png")
     save_image(y0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_output.png")
     for name, img in novels.items():

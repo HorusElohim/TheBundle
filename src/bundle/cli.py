@@ -9,7 +9,7 @@ click.rich_click.SHOW_ARGUMENTS = True
 banner = """
 ╔═════════════════════════════════╗
 ║       T H E   B U N D L E       ║
-╚═════════════════════════════════╝                                                                                                                                                     
+╚═════════════════════════════════╝
 """
 
 click.echo(click.style(banner, fg="green"))

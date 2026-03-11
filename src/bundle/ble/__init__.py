@@ -9,8 +9,8 @@ from .manager import Manager
 from .scanner import DEFAULT_SCAN_TIMEOUT, Scanner, ScanResult
 
 __all__ = [
-    "Advertisement",
     "DEFAULT_SCAN_TIMEOUT",
+    "Advertisement",
     "Device",
     "FrameCodec",
     "Manager",

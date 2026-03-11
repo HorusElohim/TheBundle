@@ -56,7 +56,7 @@ class NestedModel(TestEntity):
 
 
 class RecursiveModel(TestEntity):
-    children: None | list["RecursiveModel"] = None
+    children: None | list[RecursiveModel] = None
     model_config = core.data.configuration(json_encoders=JSON_ENCODERS)
 
 

@@ -16,16 +16,16 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-# flake8: noqa: F401
 
 from __future__ import annotations
 
 import json
 import warnings
 from pathlib import Path
-from typing import Callable, Type, TypeVar
+from typing import Type, TypeVar
+from collections.abc import Callable
 
-from pydantic import HttpUrl  # noqa
+from pydantic import HttpUrl
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -86,11 +86,11 @@ def _internal_configuration(**kwargs):
     Raises:
         AssertionError: If `json_encoders` is provided but is not a dictionary.
     """
-    if "json_encoders" in kwargs:
+    if "json_encoders" in kwargs:  # noqa: SIM102
         if kwargs["json_encoders"] is not None:
-            assert isinstance(
-                kwargs["json_encoders"], dict
-            ), "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
+            assert isinstance(kwargs["json_encoders"], dict), (
+                "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
+            )
     return ConfigDict(**kwargs)
 
 
@@ -136,7 +136,7 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise(log_level=logger.Level.VERBOSE)
-    async def from_dict(cls: Type[D], data: dict) -> D:
+    async def from_dict(cls: type[D], data: dict) -> D:
         """
         Create an instance of the model from a dictionary.
 
@@ -169,13 +169,13 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def _from_json_path(cls: Type[D], json_path: Path) -> D:
+    async def _from_json_path(cls: type[D], json_path: Path) -> D:
         json_str = await tracer.Async.call_raise(json_path.read_text)
         return await cls._from_json_str(json_str)
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def _from_json_str(cls: Type[D], json_str: str) -> D:
+    async def _from_json_str(cls: type[D], json_str: str) -> D:
         """
         Create an instance of the model from a JSON string.
 
@@ -192,7 +192,7 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def from_json(cls: Type[D], json_source: str | Path) -> D:
+    async def from_json(cls: type[D], json_source: str | Path) -> D:
         """
         Create an instance of the model from either a JSON string or a path to a JSON file.
 

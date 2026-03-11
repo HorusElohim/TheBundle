@@ -75,7 +75,7 @@ class Store:
         """Read a dataset and return as numpy array."""
         return self.file[name][()]
 
-    def write_attrs(self, path: str, attrs: "dict | Data"):
+    def write_attrs(self, path: str, attrs: dict | Data):
         """Write attributes to a group or dataset (creating a group if path doesn't exist).
 
         Accepts a plain dict or a ``bundle.core.data.Data`` instance (uses ``model_dump()``).
@@ -94,6 +94,7 @@ class Store:
                 obj.attrs[key] = value
             else:
                 import json
+
                 obj.attrs[key] = json.dumps(value, default=str)
 
     def read_attrs(self, path: str) -> dict:

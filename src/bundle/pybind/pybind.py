@@ -135,7 +135,7 @@ class Pybind:
         Shell out to `python setup.py build_ext` with optional parallel.
         """
         module_path = Path(path).resolve()
-        cmd = f"python {module_path/'setup.py'} build_ext"
+        cmd = f"python {module_path / 'setup.py'} build_ext"
         if parallel:
             cmd += f" --parallel {parallel}"
 

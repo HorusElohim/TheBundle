@@ -58,7 +58,7 @@ async def youtube():
 @youtube.command("new-token")
 @tracer.Sync.decorator.call_raise
 async def new_token():
-    log.info(f"generating poto token")
+    log.info("generating poto token")
     await pytube.generate_token()
 
 
@@ -75,7 +75,7 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
     directory = Path(directory)
     db = Database(path=directory)
     await db.load()
-    semaphore = asyncio.Semaphore(1)
+    semaphore = asyncio.Semaphore(1)  # noqa: F841
 
     selected_video_itag = None
     selected_audio_itag = None
@@ -139,7 +139,6 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
             sleep_time = 2 + randint(10, 5200) / 1000
             log.info(f"sleeping {sleep_time:.2f} seconds")
             time.sleep(sleep_time)
-
 
 
 @youtube.command()
