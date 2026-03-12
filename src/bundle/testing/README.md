@@ -8,6 +8,7 @@ This document an overview of the `bundle.testing` module, focusing on its advanc
 
 - **Decorator-first design**: Powerful decorators for profiling, data validation, and test orchestration, minimizing boilerplate and maximizing clarity.
 - **Integrated profiling with cProfile**: The `@cprofile` decorator enables per-test performance profiling, automatic stats dumping, and threshold-based warnings.
+- **Tracy profiler integration**: Run tests with `--tracy` for nanosecond-resolution, real-time profiling via Tracy. Use `--tracy --report` to auto-generate PDF performance reports from captured data.
 - **Automated data validation**: The `@data` decorator orchestrates round-trip serialization, schema validation, and reference management for Pydantic models.
 - **Async-first support**: All decorators and test flows are designed for asynchronous code, with seamless integration into `pytest-asyncio`.
 - **Reference and artifact management**: Automatic creation and management of reference data, temporary directories, and profiling outputs.

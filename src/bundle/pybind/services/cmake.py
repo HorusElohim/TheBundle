@@ -5,7 +5,7 @@ from enum import Enum
 from pathlib import Path
 
 from bundle.core import platform_info
-from bundle.core.process import Process
+from bundle.core.process import ProcessStream
 
 
 def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
@@ -58,7 +58,7 @@ class CMakeService:
         if extra_args:
             cmd.extend(extra_args)
 
-        proc = Process(name="CMakeService.configure")
+        proc = ProcessStream(name="CMakeService.configure")
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)
 
     @staticmethod
@@ -89,5 +89,5 @@ class CMakeService:
 
         _platform_args, env = _get_platform_specific_cmake_args_env()
 
-        proc = Process(name="CMakeService.build")
+        proc = ProcessStream(name="CMakeService.build")
         await proc(" ".join(cmd), cwd=str(source_dir), env=env)

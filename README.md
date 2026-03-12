@@ -46,6 +46,7 @@ For more information, see the inline documentation in each module and the exampl
 - [Website Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/website/README.md)
 - [LaTeX Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/latex/README.md)
 - [HDF5 Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/hdf5/README.md)
+- [Tracy Profiler Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/tracy/README.md)
 - [Performance Report Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/perf_report/README.md)
 
 

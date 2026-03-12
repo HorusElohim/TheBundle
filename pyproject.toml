@@ -140,6 +140,7 @@ line-length = 128
 src = ["src"]
 exclude = [
     "src/bundle/pods/pods/comfyui/data/custom_nodes",
+    "src/bundle/tracy/vendor",
     "src/bundle/_version.py",
 ]
 
