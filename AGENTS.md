@@ -57,8 +57,8 @@
 
 ## Coding Style & Naming Conventions
 - Use 4-space indentation and target Python 3.10+.
-- Format with Black (line length 128) and sort imports with isort (line length 120, `__init__.py` skipped).
-- Flake8 max line length is 128; keep lint warnings to zero.
+- Format and lint with ruff (line length 128, target Python 3.10+); keep lint warnings to zero.
+- Import order is enforced by ruff's isort rules; `__init__.py` files are excluded from import sorting.
 - Naming: modules `snake_case.py`, classes `CamelCase`, constants `UPPER_SNAKE_CASE`, tests `test_*.py`.
 - For frontend static assets, treat `.ts` as source of truth: never edit built `.js` files directly; make changes in `.ts` and rebuild outputs.
 
