@@ -15,5 +15,6 @@ class ModuleSpec(data.Data):
     language: str = "c++"
     cpp_std: str = "20"
     pkgconfig: PkgConfigSpec = data.Field(default_factory=PkgConfigSpec)
+    include_dirs: list[str] = data.Field(default_factory=list)
     extra_compile_args: list[str] = data.Field(default_factory=list)
     extra_link_args: list[str] = data.Field(default_factory=list)

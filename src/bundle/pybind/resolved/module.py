@@ -37,9 +37,9 @@ class ModuleResolved(data.Data):
     @property
     def include_dirs(self) -> list[str]:
         """
-        pybind11 include first, then any pkg-config includes.
+        pybind11 include first, then spec-level dirs, then any pkg-config includes.
         """
-        dirs: list[str] = [pybind11.get_include()]
+        dirs: list[str] = [pybind11.get_include(), *self.spec.include_dirs]
         for pkg in self.pkgconfig.resolved:
             dirs.extend(pkg.include_dirs)
         return dirs
@@ -67,9 +67,9 @@ class ModuleResolved(data.Data):
     @property
     def extra_compile_args(self) -> list[str]:
         """
-        Compile flags from pkg-config, plus the std-flag if not already present.
+        std flag, then spec-level args, then pkg-config compile flags.
         """
-        args: list[str] = [self.std_flag]
+        args: list[str] = [self.std_flag, *self.spec.extra_compile_args]
         for pkg in self.pkgconfig.resolved:
             args.extend(pkg.compile_flags)
         return args
@@ -77,9 +77,9 @@ class ModuleResolved(data.Data):
     @property
     def extra_link_args(self) -> list[str]:
         """
-        Linker flags from pkg-config.
+        Spec-level link args, then pkg-config linker flags.
         """
-        args: list[str] = []
+        args: list[str] = [*self.spec.extra_link_args]
         for pkg in self.pkgconfig.resolved:
             args.extend(pkg.link_flags)
         return args
