@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools", "wheel", "pybind11", "thebundle"]
+build-backend = "setuptools.build_meta"
+
+[tool.pybind11]
+
+[[tool.pybind11.modules]]
+name = "_tracy_ext"
+sources = [
+    "binding/_tracy_ext.cpp",
+    "vendor/tracy/public/TracyClient.cpp",
+]
+include_dirs = ["vendor/tracy/public"]
+extra_compile_args = []
+extra_link_args = []

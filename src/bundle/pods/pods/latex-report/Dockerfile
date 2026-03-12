@@ -39,5 +39,5 @@ WORKDIR /app
 
 COPY --from=builder /opt/venv /opt/venv
 
-ENTRYPOINT ["python", "-m", "bundle.perf_report.report"]
+ENTRYPOINT ["bundle", "perf-report", "generate"]
 CMD ["--input-path", "/data/references", "--output-dir", "/data/performances"]

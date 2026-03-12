@@ -17,70 +17,76 @@
 # specific language governing permissions and limitations
 # under the License.
 
-import cProfile
 from pathlib import Path
 
 import pytest
 
 from bundle.perf_report import ProfileExtractor
 
-
-@pytest.fixture
-def sample_prof(tmp_path) -> Path:
-    """Create a real .prof file by profiling a simple function."""
-    prof_path = tmp_path / "sample.prof"
-    profiler = cProfile.Profile()
-    profiler.enable()
-    # Profile some actual work
-    _ = sum(range(1000))
-    _ = [x**2 for x in range(100)]
-    profiler.disable()
-    profiler.dump_stats(str(prof_path))
-    return prof_path
+_CSV_HEADER = "name,src_file,src_line,total_ns,total_perc,counts,mean_ns,min_ns,max_ns,std_ns\n"
+_CSV_ROWS = (
+    "my_func,/src/bundle/foo.py,10,1000000,50.0,10,100000,80000,150000,20000.0\n"
+    "other_func,/src/bundle/bar.py,20,500000,25.0,5,100000,90000,120000,10000.0\n"
+)
 
 
 @pytest.fixture
-def sample_prof_dir(tmp_path) -> Path:
-    """Create a directory with multiple .prof files."""
+def sample_csv(tmp_path) -> Path:
+    """Write a minimal Tracy CSV file."""
+    csv_path = tmp_path / "sample.csv"
+    csv_path.write_text(_CSV_HEADER + _CSV_ROWS, encoding="utf-8")
+    return csv_path
+
+
+@pytest.fixture
+def sample_csv_dir(tmp_path) -> Path:
+    """Write two Tracy CSV files into a directory."""
     for name in ("func_a", "func_b"):
-        prof_path = tmp_path / f"{name}.prof"
-        profiler = cProfile.Profile()
-        profiler.enable()
-        _ = sum(range(500))
-        profiler.disable()
-        profiler.dump_stats(str(prof_path))
+        (tmp_path / f"{name}.csv").write_text(
+            _CSV_HEADER + f"{name},/src/bundle/{name}.py,1,800000,40.0,8,100000,90000,110000,5000.0\n",
+            encoding="utf-8",
+        )
     return tmp_path
 
 
 class TestProfileExtractor:
-    def test_extract_single(self, sample_prof):
-        profile = ProfileExtractor.extract(sample_prof)
-        assert profile.prof_path == sample_prof
+    def test_extract_single(self, sample_csv):
+        profile = ProfileExtractor.extract(sample_csv)
+        assert profile.csv_path == sample_csv
         assert profile.name == "sample"
-        assert len(profile.records) > 0
-        assert profile.total_calls > 0
+        assert len(profile.records) == 2
+        assert profile.total_calls == 15
 
-    def test_records_sorted_by_cumulative_time(self, sample_prof):
-        profile = ProfileExtractor.extract(sample_prof)
-        times = [r.cumulative_time for r in profile.records]
+    def test_records_sorted_by_total_ns(self, sample_csv):
+        profile = ProfileExtractor.extract(sample_csv)
+        times = [r.total_ns for r in profile.records]
         assert times == sorted(times, reverse=True)
 
-    def test_record_fields(self, sample_prof):
-        profile = ProfileExtractor.extract(sample_prof)
+    def test_record_fields(self, sample_csv):
+        profile = ProfileExtractor.extract(sample_csv)
         rec = profile.records[0]
-        assert isinstance(rec.file, str)
-        assert isinstance(rec.line_number, int)
-        assert isinstance(rec.function, str)
-        assert isinstance(rec.call_count, int)
-        assert isinstance(rec.total_time, float)
-        assert isinstance(rec.cumulative_time, float)
+        assert isinstance(rec.name, str)
+        assert isinstance(rec.src_file, str)
+        assert isinstance(rec.src_line, int)
+        assert isinstance(rec.total_ns, int)
+        assert isinstance(rec.total_perc, float)
+        assert isinstance(rec.counts, int)
+        assert isinstance(rec.mean_ns, int)
+        assert isinstance(rec.min_ns, int)
+        assert isinstance(rec.max_ns, int)
+        assert isinstance(rec.std_ns, float)
 
-    def test_extract_all(self, sample_prof_dir):
-        profiles = ProfileExtractor.extract_all(sample_prof_dir)
+    def test_extract_all_from_directory(self, sample_csv_dir):
+        profiles = ProfileExtractor.extract_all(sample_csv_dir)
         assert len(profiles) == 2
         names = {p.name for p in profiles}
         assert "func_a" in names
         assert "func_b" in names
+
+    def test_extract_all_from_single_file(self, sample_csv):
+        profiles = ProfileExtractor.extract_all(sample_csv)
+        assert len(profiles) == 1
+        assert profiles[0].name == "sample"
 
     def test_extract_all_empty_dir(self, tmp_path):
         profiles = ProfileExtractor.extract_all(tmp_path)

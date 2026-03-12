@@ -10,6 +10,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.pyd
 
 # Distribution / packaging
 .Python
@@ -207,3 +208,6 @@ src/bundle/pods/pods/ppisp/workspace/data/
 
 # Discord-Music 
 .discord.env
+
+# Tracy CMake build directories (inside vendor tree)
+build-bundle-*/

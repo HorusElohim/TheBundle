@@ -26,11 +26,18 @@ import bundle
 
 NO_LOGS = os.getenv("NO_LOGS", "false").lower() in {"1", "true"}
 PERF_MODE = os.getenv("PERF_MODE", "false").lower() in {"1", "true"}
+CPROFILE_MODE = os.getenv("CPROFILE_MODE", "false").lower() in {"1", "true"}
 
 if NO_LOGS:
     LOG_LEVEL = bundle.core.logger.Level.FATAL
 elif PERF_MODE:
     LOG_LEVEL = bundle.core.logger.Level.CRITICAL
+    import bundle.tracy
+
+    bundle.tracy.start(bundle_only=True)
+elif CPROFILE_MODE:
+    LOG_LEVEL = bundle.core.logger.Level.CRITICAL
+    bundle.testing.decorators.set_cprofile_enabled(True)
 else:
     LOG_LEVEL = bundle.core.logger.Level.TESTING
 
@@ -101,12 +108,10 @@ def assets_folder(bundle_folder):
 
 
 def pytest_configure(config):
-    # CPROFILE
     config.addinivalue_line(
         "markers",
         "bundle_cprofile(expected_duration=0, performance_threshold=10000000, cprofile_folder): Apply cprofile decorator with specified parameters",
     )
-    # DATA
     config.addinivalue_line(
         "markers",
         "bundle_data(ref_dir=None, tmp_dir=None, cprofile_folder=None): Apply data decorator with specified parameters",
@@ -137,7 +142,6 @@ def pytest_collection_modifyitems(session, config, items):
             expected_duration = cprofile_marker.kwargs.get("expected_duration", 0)
             performance_threshold = cprofile_marker.kwargs.get("performance_threshold", 10_000_000)  # Default 10 ms
 
-            # Apply the cprofile_decorator with parameters, excluding cprofile_folder
             item.obj = bundle.testing.decorators.cprofile(
                 expected_duration=expected_duration,
                 performance_threshold=performance_threshold,
@@ -163,6 +167,11 @@ def pytest_collection_modifyitems(session, config, items):
 
 
 def pytest_sessionfinish(session, exitstatus):
+    if PERF_MODE:
+        import bundle.tracy
+
+        bundle.tracy.stop()
+
     # Cleanup all temp dirs
     log.testing("Cleaning up temporary directories.")
     temp_dirs = getattr(session, "collected_temp_dirs", [])

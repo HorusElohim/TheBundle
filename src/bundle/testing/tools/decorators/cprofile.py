@@ -12,7 +12,7 @@ from .. import utils
 
 log = core.logger.get_logger(__name__)
 
-ENABLED: bool = True
+ENABLED: bool = False
 EXPECTED_DURATION_NS: int = 100_000_000  # 100 ms
 PERFORMANCE_THRESHOLD_NS: int = 100_000_000  # 100 ms
 

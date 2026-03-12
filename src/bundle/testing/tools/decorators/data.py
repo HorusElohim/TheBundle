@@ -30,7 +30,7 @@ from .cprofile import cprofile
 logger = core.logger.get_logger("bundle.testing")
 
 
-def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
+def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None = None):
     """
     Decorator for testing bundle Data model serialization and schema validation.
 
@@ -41,7 +41,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
     Args:
         tmp_dir (Path): Temporary directory for test outputs.
         ref_dir (str | Path): Reference directory for baseline data.
-        cprofile_folder (str | Path): Directory for cprofile output.
+        cprofile_folder (str | Path | None): Directory for cprofile output.
 
     Returns:
         Decorator: A decorator that wraps test functions to extend their functionality
@@ -49,7 +49,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path):
     """
     ref_dir = utils.ensure_path(ref_dir)
     tmp_dir = utils.ensure_path(tmp_dir)
-    cprofile_dir = utils.ensure_path(cprofile_folder)
+    cprofile_dir = utils.ensure_path(cprofile_folder) if cprofile_folder else None
 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
