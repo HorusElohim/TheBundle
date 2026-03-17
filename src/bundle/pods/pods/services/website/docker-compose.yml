@@ -1,0 +1,13 @@
+services:
+  website:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_TAG: latest
+    image: thebundle/services/website:latest
+    container_name: thebundle.services.website
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "8000:8000"

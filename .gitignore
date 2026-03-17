@@ -200,11 +200,11 @@ src/bundle/website/pages/*/static/*.js.map
 src/bundle/website/static/js/*.js.map
 
 # Pod runtime data (local/dev artifacts)
-src/bundle/pods/pods/comfyui/data/
+src/bundle/pods/pods/ai/comfyui/data/
 
 # PPISP local workspace datasets/artifacts
-src/bundle/pods/pods/ppisp/.env
-src/bundle/pods/pods/ppisp/workspace/data/
+src/bundle/pods/pods/recon3d/ppisp/.env
+src/bundle/pods/pods/recon3d/ppisp/workspace/data/
 
 # Discord-Music 
 .discord.env

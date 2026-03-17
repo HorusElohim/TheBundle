@@ -1,4 +1,4 @@
-﻿services:
+services:
   comfyui:
     build:
       context: .
@@ -6,8 +6,8 @@
       target: nvidia
       args:
         COMFYUI_VERSION: ${COMFYUI_VERSION:-master}
-    image: thebundle/comfyui:local
-    container_name: thebundle-comfyui
+    image: thebundle/ai/comfyui:latest
+    container_name: thebundle.ai.comfyui
     restart: unless-stopped
     tty: true
     ports:

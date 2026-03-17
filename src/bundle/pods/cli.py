@@ -54,7 +54,7 @@ def pods(ctx: click.Context, pods_root: Path | None) -> None:
 @click.pass_context
 @tracer.Sync.decorator.call_raise
 async def list_pods(ctx: click.Context) -> None:
-    """List known pods and their resolved path status."""
+    """List known pods grouped by category."""
     mgr = _get_manager(ctx)
     if not mgr.specs:
         log.info("No pods discovered in %s", mgr.pods_root)
@@ -64,30 +64,42 @@ async def list_pods(ctx: click.Context) -> None:
 
     table = Table(title=f"Pods  [{mgr.pods_root}]", title_style="bold cyan")
     table.add_column("Pod", style="bold white")
+    table.add_column("Category", style="cyan")
     table.add_column("Status", justify="center")
     table.add_column("Containers")
     table.add_column("Path", style="dim")
 
-    for pod in mgr.specs.values():
-        pod_path = (mgr.pods_root / pod.folder).resolve()
-        if not pod_path.exists():
-            status_text = "[red]missing[/red]"
-        elif pod.containers and all(c in running for c in pod.containers):
-            status_text = "[green]running[/green]"
-        elif pod.containers and any(c in running for c in pod.containers):
-            status_text = "[yellow]partial[/yellow]"
-        else:
-            status_text = "[dim]stopped[/dim]"
+    # Group by category, then sort within each group
+    by_category: dict[str, list[tuple[str, object]]] = {}
+    for full_path, pod in mgr.specs.items():
+        cat = pod.category or "(root)"
+        by_category.setdefault(cat, []).append((full_path, pod))
 
-        container_parts = []
-        for c in pod.containers:
-            if c in running:
-                container_parts.append(f"[green]{c}[/green]")
+    first_category = True
+    for cat in sorted(by_category.keys()):
+        if not first_category:
+            table.add_row("", "", "", "", "")  # visual separator
+        first_category = False
+        for full_path, pod in sorted(by_category[cat], key=lambda x: x[0]):
+            pod_path = (mgr.pods_root / pod.folder).resolve()
+            if not pod_path.exists():
+                status_text = "[red]missing[/red]"
+            elif pod.containers and all(c in running for c in pod.containers):
+                status_text = "[green]running[/green]"
+            elif pod.containers and any(c in running for c in pod.containers):
+                status_text = "[yellow]partial[/yellow]"
             else:
-                container_parts.append(f"[dim]{c}[/dim]")
-        containers_text = "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
+                status_text = "[dim]stopped[/dim]"
 
-        table.add_row(pod.name, status_text, containers_text, str(pod_path))
+            container_parts = []
+            for c in pod.containers:
+                if c in running:
+                    container_parts.append(f"[green]{c}[/green]")
+                else:
+                    container_parts.append(f"[dim]{c}[/dim]")
+            containers_text = "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
+
+            table.add_row(full_path, pod.category or "-", status_text, containers_text, str(pod_path))
 
     Console().print(table)
 
@@ -106,15 +118,29 @@ async def status(ctx: click.Context, pod_name: str) -> None:
 
 
 @pods.command("build")
-@click.argument("pod_name", type=str)
+@click.argument("target", type=str)
 @click.pass_context
 @tracer.Sync.decorator.call_raise
-async def build(ctx: click.Context, pod_name: str) -> None:
-    """Build a pod docker image."""
+async def build(ctx: click.Context, target: str) -> None:
+    """Build a pod or an entire category.
+
+    If TARGET matches a category name, builds all pods in that category
+    in dependency order.  Otherwise resolves TARGET as a pod (full path
+    or short name) and builds it.
+
+    Examples:
+        bundle pods build bases          # whole category
+        bundle pods build services/website   # single pod
+        bundle pods build website        # short name
+    """
     mgr = _get_manager(ctx)
-    pod = mgr.get(pod_name)
-    await mgr.build(pod)
-    log.info("Build completed for pod '%s'.", pod.name)
+    if target.lower() in mgr.categories():
+        await mgr.build_category(target.lower())
+        log.info("Category '%s' fully built.", target)
+    else:
+        pod = mgr.get(target)
+        await mgr.build(pod)
+        log.info("Build completed for pod '%s'.", pod.full_path)
 
 
 @pods.command("run")
@@ -126,7 +152,7 @@ async def run_pod(ctx: click.Context, pod_name: str) -> None:
     mgr = _get_manager(ctx)
     pod = mgr.get(pod_name)
     await mgr.run(pod)
-    log.info("Pod '%s' is up.", pod.name)
+    log.info("Pod '%s' is up.", pod.full_path)
 
 
 @pods.command("up")
@@ -138,7 +164,7 @@ async def up(ctx: click.Context, pod_name: str) -> None:
     mgr = _get_manager(ctx)
     pod = mgr.get(pod_name)
     await mgr.run(pod)
-    log.info("Pod '%s' is up. Streaming logs...", pod.name)
+    log.info("Pod '%s' is up. Streaming logs...", pod.full_path)
     await mgr.logs(pod, follow=True, tail=200)
 
 
@@ -151,7 +177,7 @@ async def down_pod(ctx: click.Context, pod_name: str) -> None:
     mgr = _get_manager(ctx)
     pod = mgr.get(pod_name)
     await mgr.down(pod)
-    log.info("Pod '%s' is down.", pod.name)
+    log.info("Pod '%s' is down.", pod.full_path)
 
 
 @pods.command("logs")

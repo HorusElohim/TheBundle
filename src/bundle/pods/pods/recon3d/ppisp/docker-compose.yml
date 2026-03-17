@@ -4,10 +4,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
-        TORCH_PACKAGES: ${TORCH_PACKAGES:-torch torchvision torchaudio}
-    image: thebundle/ppisp:local
-    container_name: thebundle-ppisp
+        BASE_TAG: latest
+    image: thebundle/recon3d/ppisp:latest
+    container_name: thebundle.recon3d.ppisp
     restart: unless-stopped
     gpus: all
     tty: true
@@ -21,7 +20,7 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
     volumes:
-      - ../../../../../tmp/ppisp:/opt/ppisp-src
-      - ../../../../../:/opt/thebundle
+      - ../../../../../../tmp/ppisp:/opt/ppisp-src
+      - ../../../../../../:/opt/thebundle
       - ./workspace:/workspace
     command: ["sleep", "infinity"]
