@@ -6,18 +6,26 @@ This pod starts the Bundle website with:
 bundle website site start bundle --host 0.0.0.0 --port 8000
 ```
 
-It uses a multi-stage `python:3.12-slim` image to keep the runtime small while still installing the package and its `website` dependencies from local source.
+It uses `thebundle/bases/cpu` as its base image.
 
 ## Usage
 
 ```bash
-bundle pods build website
-bundle pods run website
-bundle pods logs website
-bundle pods status website
+bundle pods build services/website
+bundle pods run services/website
+bundle pods logs services/website
+bundle pods status services/website
 ```
 
 Open `http://localhost:8000`.
+
+### Dev mode
+
+Mounts local source for fast iteration — no rebuild needed:
+
+```bash
+docker compose --profile dev up website-dev
+```
 
 ## Notes
 

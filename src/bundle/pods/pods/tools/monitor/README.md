@@ -11,10 +11,9 @@ Monitoring stack bundle with:
 ## Usage
 
 ```bash
-bundle pods build monitor
-bundle pods run monitor
-bundle pods logs monitor
-bundle pods status monitor
+bundle pods run tools/monitor
+bundle pods logs tools/monitor
+bundle pods status tools/monitor
 ```
 
 Endpoints:
@@ -27,3 +26,4 @@ Endpoints:
 
 - Update `.env.grafana` before first run (`GF_SECURITY_ADMIN_PASSWORD`).
 - `gpu-exporter` requires NVIDIA runtime/driver support.
+- This pod uses prebuilt images only — no build step needed.

@@ -1,8 +1,8 @@
 # PPISP Pod (CUDA + Torch)
 
-This pod runs PPISP from local source baggage at `tmp/ppisp` and compiles its CUDA extension with Torch available.
+This pod runs PPISP from local source at `tmp/ppisp` and compiles its CUDA extension with Torch available.
 
-It follows PPISP's README guidance:
+It uses `thebundle/bases/torch` as its base image and follows PPISP's README guidance:
 - install from source
 - use `--no-build-isolation`
 - build against the same Torch installed in the environment
@@ -10,55 +10,63 @@ It follows PPISP's README guidance:
 ## Quick Start
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 cp .env.example .env
-bundle pods build ppisp
-bundle pods run ppisp
-bundle pods logs ppisp
+bundle pods build recon3d/ppisp
+bundle pods run recon3d/ppisp
+bundle pods logs recon3d/ppisp
 ```
 
 The startup flow:
-1. container boots with CUDA toolkit + Torch preinstalled
+1. container boots with CUDA toolkit + Torch preinstalled (via `thebundle/bases/torch`)
 2. mounts `tmp/ppisp` at `/opt/ppisp-src`
 3. runs `pip install -e /opt/ppisp-src --no-build-isolation`
 4. installs local `thebundle` from `/opt/thebundle` (configurable)
 5. performs a basic import sanity check for `torch` and `ppisp`
 
+### Dev mode
+
+Mounts local source for fast iteration — no rebuild needed:
+
+```bash
+cd src/bundle/pods/pods/recon3d/ppisp
+docker compose --profile dev up ppisp-dev
+```
+
 ## Notes
 
 - GPU is enabled via `gpus: all`.
 - If you need specific architectures, set `TORCH_CUDA_ARCH_LIST` in `.env` (for example `8.9;9.0`).
-- The mounted source path is `../../../../../tmp/ppisp` relative to this compose file.
-- If you changed pod env/build settings, run `bundle pods build ppisp` again.
+- If you changed pod env/build settings, run `bundle pods build recon3d/ppisp` again.
 
 ## Useful Commands
 
 ```bash
-bundle pods status ppisp
-bundle pods logs ppisp --no-follow
-bundle pods down ppisp
+bundle pods status recon3d/ppisp
+bundle pods logs recon3d/ppisp --no-follow
+bundle pods down recon3d/ppisp
 ```
 
 Enter the container shell (`zsh`):
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp zsh
 ```
 
 Fallback (`bash`):
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp bash
 ```
 
 ## Exec Smoke Test
 
-After `bundle pods run ppisp`, run:
+After `bundle pods run recon3d/ppisp`, run:
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp python /workspace/smoke_test.py
 ```
 
@@ -70,7 +78,7 @@ Expected output includes:
 Ad-hoc checks:
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp python -c "import torch; print(torch.__version__, torch.version.cuda, torch.cuda.is_available())"
 docker compose exec ppisp python -c "import ppisp; print('PPISP class:', hasattr(ppisp, 'PPISP'))"
 ```
@@ -80,7 +88,7 @@ docker compose exec ppisp python -c "import ppisp; print('PPISP class:', hasattr
 You can run PPISP on a public NeRF-style dataset using **Mip-NeRF 360**:
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp python /workspace/run_dataset.py --scene garden --samples 64 --steps 25 --image-size 256
 ```
 
@@ -107,13 +115,13 @@ See results from host:
 
 ```bash
 # Host path:
-src/bundle/pods/pods/ppisp/workspace/results
+src/bundle/pods/pods/recon3d/ppisp/workspace/results
 ```
 
 Optional lightweight viewer in container:
 
 ```bash
-cd src/bundle/pods/pods/ppisp
+cd src/bundle/pods/pods/recon3d/ppisp
 docker compose exec ppisp python -m http.server 8000 -d /workspace
 ```
 

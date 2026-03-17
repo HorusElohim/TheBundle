@@ -13,14 +13,23 @@ Goal: predictable builds, fast restarts, and persistent local data.
 ## Quick Start
 
 ```bash
-cd pods/comfyui
+cd src/bundle/pods/pods/ai/comfyui
 cp .env.example .env
-docker compose build
-docker compose up -d
-docker compose logs -f comfyui
+bundle pods build ai/comfyui
+bundle pods run ai/comfyui
+bundle pods logs ai/comfyui
 ```
 
 Open `http://localhost:8188`.
+
+### Dev mode
+
+Mounts local source for fast iteration — no rebuild needed:
+
+```bash
+cd src/bundle/pods/pods/ai/comfyui
+docker compose --profile dev up comfyui-dev
+```
 
 ## Automation on First Startup
 
@@ -36,7 +45,7 @@ Default node list:
 
 ## Data Layout
 
-Persistent runtime data lives under `pods/comfyui/data`:
+Persistent runtime data lives under `src/bundle/pods/pods/ai/comfyui/data`:
 - `models`
 - `input`
 - `output`
@@ -63,11 +72,11 @@ Set in `.env`:
 Rebuild image:
 
 ```bash
-docker compose build --pull
-docker compose up -d
+bundle pods build ai/comfyui
+bundle pods run ai/comfyui
 ```
 
 Update custom nodes only:
 1. Set `CUSTOM_NODES_UPDATE=1` in `.env`.
-2. Restart with `docker compose up -d`.
+2. Restart with `bundle pods run ai/comfyui`.
 3. Optionally set `CUSTOM_NODES_UPDATE=0` again.

@@ -1,0 +1,10 @@
+services:
+  cpu:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: prod
+      args:
+        BUNDLE_VERSION: ${BUNDLE_VERSION:-latest}
+    image: thebundle/bases/cpu:latest
+    container_name: thebundle.bases.cpu

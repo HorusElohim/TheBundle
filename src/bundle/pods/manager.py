@@ -35,13 +35,17 @@ log = logger.get_logger(__name__)
 
 PODS_ROOT_ENV = "BUNDLE_PODS_ROOT"
 
+IMAGE_PREFIX = "thebundle"
+
 
 class PodSpec(data.Data):
     """Declarative specification for a single pod.
 
     Attributes:
-        name: Pod identifier (e.g. "comfyui", "discord-bot").
-        folder: Subdirectory name under the pods root.
+        name: Leaf folder name for display (e.g. "website", "colmap").
+        folder: Subdirectory name under the pods root (legacy compat, same as full_path).
+        full_path: Relative path from pods root using ``/`` separators (e.g. "services/website").
+        category: First path segment (e.g. "services", "bases", "recon3d").
         service: Docker Compose service name, if the compose file defines one matching the pod name.
         buildable: Whether the compose file contains a ``build:`` section.
         containers: Explicit ``container_name`` values parsed from the compose file.
@@ -49,6 +53,8 @@ class PodSpec(data.Data):
 
     name: str
     folder: str
+    full_path: str = ""
+    category: str = ""
     service: str | None = None
     buildable: bool = True
     containers: list[str] = data.Field(default_factory=list)
@@ -83,12 +89,47 @@ def _resolve_compose_command() -> str:
     raise click.ClickException("Docker compose is not available. Install Docker and ensure it is on PATH.")
 
 
+def _parse_from_image(dockerfile: Path) -> str | None:
+    """Extract the primary external base image name (without tag) from a Dockerfile.
+
+    Collects all ``FROM`` directives, builds a set of internal stage aliases
+    (names after ``AS``), then returns the first ``FROM`` target that is *not*
+    an internal alias.  The tag portion (``:latest``, ``:${BASE_TAG}``, etc.)
+    is stripped so callers can match on image name alone.
+    """
+    if not dockerfile.exists():
+        return None
+    content = dockerfile.read_text(encoding="utf-8", errors="replace")
+    froms: list[str] = []
+    aliases: set[str] = set()
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.upper().startswith("FROM "):
+            parts = stripped.split()
+            if len(parts) >= 2:
+                froms.append(parts[1])
+            # Collect AS alias
+            upper = stripped.upper()
+            if " AS " in upper:
+                alias = stripped.split()[-1]
+                aliases.add(alias.lower())
+    # Return the first FROM that is not a reference to an internal stage
+    for image in froms:
+        if image.lower() not in aliases:
+            return image.split(":")[0]
+    return None
+
+
 class PodManager(Entity):
     """Manages discovery and orchestration of local AI pods.
 
     On construction the manager resolves the Docker Compose CLI, scans the
-    ``pods_root`` directory for pod folders (each containing a
+    ``pods_root`` directory recursively for pod folders (each containing a
     ``docker-compose.yml``), and caches the resulting :class:`PodSpec` objects.
+
+    Pods are identified by their relative path from ``pods_root`` using slash
+    notation (e.g. ``services/website``, ``bases/cpu``).  Short names are
+    supported when unambiguous.
 
     All compose operations (build, run, down, status, logs) are async and
     delegate to :class:`~bundle.core.process.ProcessStream` for streamed output
@@ -118,21 +159,23 @@ class PodManager(Entity):
     # -- Discovery --
 
     def _discover(self) -> dict[str, PodSpec]:
-        """Scan ``pods_root`` for subdirectories containing a docker-compose.yml."""
+        """Recursively scan ``pods_root`` for directories containing a docker-compose.yml."""
         specs: dict[str, PodSpec] = {}
         if not self.pods_root.exists():
             return specs
-        for child in sorted(self.pods_root.iterdir(), key=lambda p: p.name.lower()):
-            if not child.is_dir():
-                continue
-            if not (child / "docker-compose.yml").exists():
-                continue
-            pod_name = child.name.lower()
-            specs[pod_name] = self._inspect(pod_name, child)
+        for compose_file in sorted(self.pods_root.rglob("docker-compose.yml")):
+            pod_dir = compose_file.parent
+            rel = pod_dir.relative_to(self.pods_root)
+            # Use forward-slash notation regardless of OS
+            full_path = rel.as_posix()
+            parts = full_path.split("/")
+            category = parts[0] if len(parts) > 1 else ""
+            leaf_name = parts[-1]
+            specs[full_path] = self._inspect(leaf_name, pod_dir, full_path, category)
         return specs
 
     @staticmethod
-    def _inspect(pod_name: str, pod_path: Path) -> PodSpec:
+    def _inspect(pod_name: str, pod_path: Path, full_path: str, category: str) -> PodSpec:
         """Parse a pod's docker-compose.yml to extract service, build, and container metadata."""
         content = (pod_path / "docker-compose.yml").read_text(encoding="utf-8", errors="replace")
         buildable = "build:" in content
@@ -145,7 +188,9 @@ class PodManager(Entity):
         containers = re.findall(r"container_name:\s*(\S+)", content)
         return PodSpec(
             name=pod_name,
-            folder=pod_name,
+            folder=full_path,
+            full_path=full_path,
+            category=category,
             service=service,
             buildable=buildable,
             containers=containers,
@@ -156,12 +201,27 @@ class PodManager(Entity):
         return self._specs
 
     def get(self, name: str) -> PodSpec:
-        """Look up a pod by name (case-insensitive). Raises ``ClickException`` if not found."""
-        pod = self._specs.get(name.lower())
-        if pod is None:
-            available = ", ".join(sorted(self._specs.keys())) if self._specs else "none"
-            raise click.ClickException(f"Unknown pod '{name}'. Available pods: {available}")
-        return pod
+        """Look up a pod by full path or short name (case-insensitive).
+
+        Resolution order:
+        1. Exact full_path match (e.g. ``services/website``)
+        2. Unique leaf-name match (e.g. ``website`` if unambiguous)
+
+        Raises ``ClickException`` if not found or ambiguous.
+        """
+        key = name.lower().strip("/")
+        # Exact full_path match
+        if key in self._specs:
+            return self._specs[key]
+        # Short name: search by leaf name
+        matches = [spec for spec in self._specs.values() if spec.name.lower() == key]
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            paths = ", ".join(sorted(m.full_path for m in matches))
+            raise click.ClickException(f"Ambiguous pod name '{name}'. Matches: {paths}. Use the full path.")
+        available = ", ".join(sorted(self._specs.keys())) if self._specs else "none"
+        raise click.ClickException(f"Unknown pod '{name}'. Available pods: {available}")
 
     def pod_path(self, pod: PodSpec) -> Path:
         """Resolve and validate the filesystem path for a pod."""
@@ -180,6 +240,84 @@ class PodManager(Entity):
         except Exception:
             return set()
 
+    # -- Category & dependency helpers --
+
+    @staticmethod
+    def image_tag(spec: PodSpec) -> str:
+        """Derive the Docker image tag for a pod: ``thebundle/<full_path>:latest``."""
+        return f"{IMAGE_PREFIX}/{spec.full_path}:latest"
+
+    @staticmethod
+    def image_name(spec: PodSpec) -> str:
+        """Derive the Docker image name (without tag) for a pod: ``thebundle/<full_path>``."""
+        return f"{IMAGE_PREFIX}/{spec.full_path}"
+
+    def categories(self) -> list[str]:
+        """Return the sorted list of discovered categories."""
+        return sorted({s.category for s in self._specs.values() if s.category})
+
+    def by_category(self, category: str) -> list[PodSpec]:
+        """Return all pods belonging to *category*."""
+        return [s for s in self._specs.values() if s.category == category]
+
+    def build_order(self, category: str) -> list[PodSpec]:
+        """Return pods in *category* sorted by dependency order (topological sort on FROM lines).
+
+        Parses each pod's Dockerfile to determine which sibling it depends on,
+        then sorts so parents are built before children.
+        """
+        pods = {s.full_path: s for s in self._specs.values() if s.category == category}
+        if not pods:
+            return []
+
+        # Map full_path → FROM image
+        depends_on: dict[str, str | None] = {}
+        for fp, spec in pods.items():
+            dockerfile = self.pods_root / spec.folder / "Dockerfile"
+            depends_on[fp] = _parse_from_image(dockerfile)
+
+        # Map image name (tagless) → full_path so we can resolve FROM → sibling pod
+        name_to_fp: dict[str, str] = {}
+        for fp, spec in pods.items():
+            name_to_fp[self.image_name(spec)] = fp
+
+        # Topological sort (Kahn's algorithm)
+        graph: dict[str, list[str]] = {fp: [] for fp in pods}
+        in_degree: dict[str, int] = {fp: 0 for fp in pods}
+        for fp, from_image in depends_on.items():
+            if from_image and from_image in name_to_fp:
+                parent_fp = name_to_fp[from_image]
+                graph[parent_fp].append(fp)
+                in_degree[fp] += 1
+
+        queue = sorted(fp for fp, deg in in_degree.items() if deg == 0)
+        ordered: list[str] = []
+        while queue:
+            node = queue.pop(0)
+            ordered.append(node)
+            for child in sorted(graph[node]):
+                in_degree[child] -= 1
+                if in_degree[child] == 0:
+                    queue.append(child)
+
+        return [pods[fp] for fp in ordered]
+
+    @tracer.Async.decorator.call_raise
+    async def build_category(self, category: str) -> None:
+        """Build all buildable pods in *category* respecting dependency order."""
+        order = self.build_order(category)
+        if not order:
+            available = ", ".join(self.categories()) if self.categories() else "none"
+            raise click.ClickException(f"No pods found in category '{category}'. Available categories: {available}")
+        buildable = [s for s in order if s.buildable]
+        if not buildable:
+            log.info("No buildable pods in category '%s'.", category)
+            return
+        log.info("Building %d pods in '%s': %s", len(buildable), category, " → ".join(s.name for s in buildable))
+        for spec in buildable:
+            log.info("Building: %s (%s)", spec.full_path, self.image_tag(spec))
+            await self.compose(spec, "build", stream=True)
+
     # -- Compose execution --
 
     async def compose(self, pod: PodSpec, subcommand: str, stream: bool = False) -> process.ProcessResult:
@@ -194,7 +332,47 @@ class PodManager(Entity):
             cmd = f"{cmd} {pod.service}"
         runner: process.Process | process.ProcessStream
         runner = process.ProcessStream(name="Pods.compose.stream") if stream else process.Process(name="Pods.compose")
-        return await runner(cmd, cwd=str(cwd))
+        try:
+            return await runner(cmd, cwd=str(cwd))
+        except process.ProcessError as exc:
+            # Convert to a clean ClickException so the tracer doesn't re-log
+            # the full stdout/stderr at every layer of the call stack.
+            stderr = exc.result.stderr if exc.result else ""
+            hint = self._check_missing_image_error(stderr)
+            if hint:
+                raise click.ClickException(hint) from None
+            # Generic failure: show just the stderr (Docker's error), not the full dump
+            error_lines = stderr.strip().splitlines() if stderr else []
+            # Find the most relevant error line (usually "failed to solve: ...")
+            summary = next((line for line in error_lines if "failed to" in line.lower() or "error" in line.lower()), None)
+            if not summary and error_lines:
+                summary = error_lines[-1]
+            msg = f"Pod '{pod.full_path}' compose {subcommand} failed."
+            if summary:
+                msg += f"\n{summary.strip()}"
+            raise click.ClickException(msg) from None
+
+    @staticmethod
+    def _check_missing_image_error(stderr: str) -> str | None:
+        """If stderr indicates a missing thebundle image, return a helpful hint string."""
+        # Only match thebundle/ images in lines that indicate a pull/resolve failure
+        match = re.search(
+            r"(?:pull access denied|failed to resolve source metadata)\S*\s+\S*?(thebundle/[\w/.-]+(?::[\w.-]+)?)",
+            stderr,
+        )
+        if not match:
+            # Fallback: "failed to solve: thebundle/X:tag:"
+            match = re.search(r"failed to solve:\s*(thebundle/[\w/.-]+(?::[\w.-]+)?)", stderr)
+        if not match:
+            return None
+        image = match.group(1)
+        name_no_tag = image.split(":")[0]
+        pod_path = name_no_tag.replace(f"{IMAGE_PREFIX}/", "")
+        category = pod_path.split("/")[0] if "/" in pod_path else None
+        hint = f"Image '{image}' not found locally. Run 'bundle pods build {pod_path}' first."
+        if category:
+            hint += f"\nOr 'bundle pods build {category}' to build the whole category."
+        return hint
 
     # -- High-level operations --
 

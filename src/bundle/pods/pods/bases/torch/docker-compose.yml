@@ -1,0 +1,11 @@
+services:
+  torch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_TAG: latest
+        TORCH_INDEX_URL: ${TORCH_INDEX_URL:-https://download.pytorch.org/whl/cu128}
+        TORCH_PACKAGES: ${TORCH_PACKAGES:-torch torchvision torchaudio}
+    image: thebundle/bases/torch:latest
+    container_name: thebundle.bases.torch

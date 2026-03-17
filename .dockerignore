@@ -1,3 +1,4 @@
+# CI / IDE / tools
 .github
 .claude
 .pytest_cache/
@@ -5,13 +6,27 @@
 .venv_*/
 venv/
 node_modules/
+
+# Large data / artifacts
 tmp/
 performances/
 profiler/
-tests/
 references/
+build/
+
+# Vendor submodules (large C++ trees not needed for Python builds)
+vendor/
+
+# Test suite
+tests/
+
+# Python cache
 **/__pycache__/
 **/*.py[cod]
-src/bundle/pods/pods/comfyui/data/
-src/bundle/pods/pods/ppisp/workspace/data/
+
+# Pod runtime data
+src/bundle/pods/pods/ai/comfyui/data/
+src/bundle/pods/pods/recon3d/ppisp/workspace/data/
+
+# Website frontend build artifacts
 src/bundle/website/sites/thebundle/node_modules/
