@@ -1,8 +1,9 @@
 services:
   nvidia:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ..
+      dockerfile: nvidia/Dockerfile
+      network: host
       args:
         BASE_TAG: latest
     image: thebundle/bases/nvidia:latest

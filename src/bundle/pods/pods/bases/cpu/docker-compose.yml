@@ -1,9 +1,9 @@
 services:
   cpu:
     build:
-      context: .
-      dockerfile: Dockerfile
-      target: prod
+      context: ..
+      dockerfile: cpu/Dockerfile
+      network: host
       args:
         BUNDLE_VERSION: ${BUNDLE_VERSION:-latest}
     image: thebundle/bases/cpu:latest

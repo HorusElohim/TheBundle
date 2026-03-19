@@ -1,10 +1,11 @@
-FROM python:3.12-slim AS base
+FROM python:3.12-slim
 
 ENV PIP_NO_CACHE_DIR=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     VIRTUAL_ENV=/opt/venv \
-    PATH=/opt/venv/bin:$PATH
+    PATH=/opt/venv/bin:$PATH \
+    BUNDLE_SOURCE=/opt/thebundle
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
@@ -13,13 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv && \
     pip install --upgrade pip setuptools wheel
 
-WORKDIR /app
+COPY install_bundle.sh /usr/local/bin/install_bundle.sh
+RUN chmod +x /usr/local/bin/install_bundle.sh
 
-# -- prod: install from PyPI, no build context needed -------------------------
-FROM base AS prod
 ARG BUNDLE_VERSION=latest
-RUN if [ "$BUNDLE_VERSION" = "latest" ]; then \
-        pip install thebundle; \
-    else \
-        pip install "thebundle==${BUNDLE_VERSION}"; \
-    fi
+RUN BUNDLE_VERSION=${BUNDLE_VERSION} install_bundle.sh
+
+WORKDIR /app

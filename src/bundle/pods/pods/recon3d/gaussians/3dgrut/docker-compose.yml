@@ -1,0 +1,26 @@
+services:
+  3dgrut:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        BASE_TAG: latest
+        GRUT_VERSION: main
+    image: thebundle/recon3d/gaussians/3dgrut:latest
+    container_name: thebundle.recon3d.gaussians.3dgrut
+    restart: unless-stopped
+    gpus: all
+    tty: true
+    stdin_open: true
+    shm_size: "16gb"
+    ports:
+      - "8890:8890"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+      - GRUT_DIR=/opt/3dgrut
+    volumes:
+      - ../../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+    command: ["sleep", "infinity"]

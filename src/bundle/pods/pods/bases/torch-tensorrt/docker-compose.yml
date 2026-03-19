@@ -1,9 +1,0 @@
-services:
-  torch-tensorrt:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        BASE_TAG: latest
-    image: thebundle/bases/torch-tensorrt:latest
-    container_name: thebundle.bases.torch-tensorrt
