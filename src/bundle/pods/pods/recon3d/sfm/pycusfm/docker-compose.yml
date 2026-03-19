@@ -17,7 +17,9 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
       - PYCUSFM_DIR=/opt/pycusfm
+      - RECON3D_DATA_ROOT=/workspace/data
     volumes:
       - ../../../../../../../:/opt/thebundle
       - ./workspace:/workspace
+      - ../../data:/workspace/data
     command: ["sleep", "infinity"]

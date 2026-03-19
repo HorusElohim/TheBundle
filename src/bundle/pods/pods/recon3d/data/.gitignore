@@ -1,0 +1,4 @@
+# Ignore downloaded datasets (large files), keep the directory itself
+*
+!.gitignore
+!.gitkeep
