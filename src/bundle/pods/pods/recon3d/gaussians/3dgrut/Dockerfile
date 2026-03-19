@@ -6,6 +6,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     gcc-11 \
     g++-11 \
+    libgl1-mesa-dev \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/* \
     && update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-11 100 \
     && update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-11 100
@@ -18,7 +20,16 @@ RUN git clone --recursive --depth 1 --branch ${GRUT_VERSION} \
     https://github.com/nv-tlabs/3dgrut.git /opt/3dgrut
 
 WORKDIR /opt/3dgrut
-RUN pip install -e ".[dev]" --no-build-isolation
+
+# Match their Dockerfile: force CUDA compilation at build time
+ENV FORCE_CUDA=1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+ENV TORCH_CUDA_ARCH_LIST="7.5;8.0;8.6;9.0+PTX"
+
+RUN pip install ninja
+RUN pip install --no-build-isolation -r requirements.txt
+RUN pip install --no-build-isolation -e ".[dev]"
 
 WORKDIR /workspace
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh

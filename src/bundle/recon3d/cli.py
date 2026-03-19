@@ -9,7 +9,9 @@ import rich_click as click
 
 from bundle.core import logger, tracer
 
-from .contracts import GaussiansInput, SfmBackend, SfmInput, Workspace
+from .stages.gaussians.base import GaussiansInput
+from .stages.sfm.base import SfmBackend, SfmInput
+from .workspace import Workspace
 
 log = logger.get_logger(__name__)
 
@@ -137,11 +139,11 @@ async def run(workspace: Path, sfm_backend: str, renderer: str, export_usdz: boo
 @tracer.Sync.decorator.call_raise
 async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
     """Run only the Structure-from-Motion stage."""
-    from .stages.sfm import SfmStage
+    from .stages.sfm import create_sfm_stage
 
     ws = Workspace(root=workspace)
     ws.ensure_dirs()
-    stage = SfmStage(backend=SfmBackend(backend), use_gpu=use_gpu, matcher=matcher)
+    stage = create_sfm_stage(backend=SfmBackend(backend), use_gpu=use_gpu, matcher=matcher)
 
     if not await stage.check_deps():
         raise click.ClickException(f"SfM backend '{backend}' is not available on this system.")
@@ -158,15 +160,15 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 
 @recon3d.command()
 @click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
-@click.option("--config", "config_name", default="apps/colmap_3dgut.yaml", help="Hydra config name.")
+@click.option("--config", "config_name", default="auto", help="Hydra config name (auto selects from backend + renderer).")
 @click.option("--experiment", default="default", help="Experiment name for output directory.")
 @click.option("--renderer", type=click.Choice(["3dgut", "3dgrt"]), default="3dgut", help="Gaussian renderer.")
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
 @tracer.Sync.decorator.call_raise
 async def gaussians(workspace: Path, config_name: str, experiment: str, renderer: str, export_usdz: bool):
     """Run only the Gaussian splatting training stage."""
-    from .contracts import SfmOutput
-    from .stages.gaussians import GaussiansStage
+    from .stages.gaussians import create_gaussians_stage
+    from .stages.sfm.base import SfmOutput
 
     ws = Workspace(root=workspace)
     # Require SfM output to already exist
@@ -178,7 +180,12 @@ async def gaussians(workspace: Path, config_name: str, experiment: str, renderer
     if not sfm_out.validate_exists():
         raise click.ClickException("SfM output not found — run 'bundle recon3d sfm' first.")
 
-    stage = GaussiansStage(renderer=renderer, export_usdz=export_usdz)
+    stage = create_gaussians_stage(
+        renderer=renderer,
+        export_usdz=export_usdz,
+        config_name=config_name,
+        experiment_name=experiment,
+    )
 
     if not await stage.check_deps():
         raise click.ClickException("3DGRUT is not available on this system.")
@@ -186,8 +193,6 @@ async def gaussians(workspace: Path, config_name: str, experiment: str, renderer
     input_contract = GaussiansInput(
         sfm_output=sfm_out,
         images_dir=ws.images_dir,
-        config_name=config_name,
-        experiment_name=experiment,
     )
     output = await stage.run(input_contract)
     log.info("Gaussians output: %s", output)

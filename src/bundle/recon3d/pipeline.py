@@ -10,10 +10,12 @@ from bundle.core import logger
 from bundle.core.data import Data
 from bundle.core.entity import Entity
 
-from .contracts import GaussiansInput, SfmBackend, SfmInput, Workspace
-from .stages.base import Stage
-from .stages.gaussians import GaussiansStage
-from .stages.sfm import SfmStage
+from .stages import Stage
+from .stages.gaussians import GaussiansStage, create_gaussians_stage
+from .stages.gaussians.base import GaussiansInput
+from .stages.sfm import SfmStage, create_sfm_stage
+from .stages.sfm.base import SfmBackend, SfmInput
+from .workspace import Workspace
 
 log = logger.get_logger(__name__)
 
@@ -48,8 +50,8 @@ class Pipeline(Entity):
         return cls(
             workspace=workspace,
             stages=[
-                SfmStage(backend=sfm_backend),
-                GaussiansStage(renderer=renderer, export_usdz=export_usdz),
+                create_sfm_stage(backend=sfm_backend),
+                create_gaussians_stage(renderer=renderer, export_usdz=export_usdz),
             ],
         )
 
@@ -96,15 +98,14 @@ class Pipeline(Entity):
             raise RuntimeError("GaussiansStage requires SfM output — it cannot be the first stage")
         raise RuntimeError(f"Unknown stage type: {type(stage)}")
 
-    @staticmethod
-    def _adapt(prev_stage: Stage, output: Data) -> Data:
+    def _adapt(self, _prev_stage: Stage, output: Data) -> Data:
         """Convert one stage's output into the next stage's input."""
-        from .contracts import SfmOutput
+        from .stages.sfm.base import SfmOutput
 
         if isinstance(output, SfmOutput):
             return GaussiansInput(
                 sfm_output=output,
-                images_dir=output.sparse_dir.parent.parent / "images",
+                images_dir=self.workspace.images_dir,
             )
         # Terminal stage — no further adaptation needed
         return output
