@@ -1,0 +1,21 @@
+# Core runtime dependencies for thebundle.
+# Kept in sync with pyproject.toml [project.dependencies].
+# Installed at Docker build time so dev-mode .pth linking works instantly.
+zmq
+tqdm
+rich
+toml
+wheel
+click
+aiohttp
+pybind11
+tabulate
+rich_click
+requests
+colorama
+aiofiles
+pydantic
+jsonschema
+asyncclick
+setuptools
+typing-extensions
