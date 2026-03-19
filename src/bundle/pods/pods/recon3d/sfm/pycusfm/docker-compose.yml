@@ -1,0 +1,23 @@
+services:
+  pycusfm:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        BASE_TAG: latest
+        PYCUSFM_VERSION: main
+    image: thebundle/recon3d/sfm/pycusfm:latest
+    container_name: thebundle.recon3d.sfm.pycusfm
+    restart: unless-stopped
+    gpus: all
+    tty: true
+    stdin_open: true
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - PYCUSFM_DIR=/opt/pycusfm
+    volumes:
+      - ../../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+    command: ["sleep", "infinity"]

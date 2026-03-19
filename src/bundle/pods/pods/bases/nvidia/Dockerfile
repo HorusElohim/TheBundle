@@ -1,22 +1,36 @@
-ARG BASE_TAG=latest
-FROM thebundle/bases/cpu:${BASE_TAG}
+ARG CUDA_IMAGE=nvidia/cuda:12.8.1-devel-ubuntu24.04
+FROM ${CUDA_IMAGE}
 
-# Install CUDA toolkit from NVIDIA repos.
-# Debian Trixie uses Sequoia PGP (sqv) which rejects SHA1 signatures since 2026-02-01.
-# NVIDIA's repo signing keys still use SHA1, so we mark the repo as trusted to bypass
-# signature verification. This is safe in a controlled Docker build context.
+# Re-apply Python + venv setup (can't inherit from base-cpu because
+# CUDA must come from the official NVIDIA image).
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    VIRTUAL_ENV=/opt/venv \
+    PATH=/opt/venv/bin:/usr/local/cuda/bin:$PATH \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:${LD_LIBRARY_PATH:-} \
+    CUDA_HOME=/usr/local/cuda \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    BUNDLE_SOURCE=/opt/thebundle
+
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    wget ca-certificates \
-    && wget -qO /tmp/cuda-keyring.deb https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb \
-    && dpkg -i /tmp/cuda-keyring.deb \
-    && rm /tmp/cuda-keyring.deb \
-    && sed -i 's|\[signed-by=[^]]*\]|[trusted=yes]|' /etc/apt/sources.list.d/cuda-ubuntu2404-x86_64.list \
-    && apt-get update && apt-get install -y --no-install-recommends \
-    cuda-toolkit-12-8 \
+    python3 \
+    python3-dev \
+    python3-venv \
+    python3-pip \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
-ENV PATH=/usr/local/cuda-12.8/bin:$PATH \
-    LD_LIBRARY_PATH=/usr/local/cuda-12.8/lib64:${LD_LIBRARY_PATH:-} \
-    CUDA_HOME=/usr/local/cuda-12.8 \
-    NVIDIA_VISIBLE_DEVICES=all \
-    NVIDIA_DRIVER_CAPABILITIES=compute,utility
+RUN python3 -m venv /opt/venv && \
+    pip install --upgrade pip setuptools wheel
+
+COPY install_bundle.sh /usr/local/bin/install_bundle.sh
+RUN chmod +x /usr/local/bin/install_bundle.sh
+
+ARG BUNDLE_VERSION=latest
+RUN BUNDLE_VERSION=${BUNDLE_VERSION} install_bundle.sh
+
+WORKDIR /app

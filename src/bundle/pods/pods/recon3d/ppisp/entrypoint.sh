@@ -31,12 +31,8 @@ else
     pip install "${INSTALL_TARGET}" --no-build-isolation
 fi
 
-if [[ "${INSTALL_BUNDLE}" == "1" && -f "${BUNDLE_SOURCE}/pyproject.toml" ]]; then
-    if ! python -c "import bundle" >/dev/null 2>&1; then
-        echo "Installing TheBundle from ${BUNDLE_SOURCE}"
-        pip install -e "${BUNDLE_SOURCE}" --no-build-isolation
-    fi
-fi
+# Use shared install_bundle.sh from base image
+install_bundle.sh
 
 python -c "import torch; import ppisp; print('torch', torch.__version__, 'cuda', torch.version.cuda, 'available', torch.cuda.is_available()); print('ppisp ok', hasattr(ppisp, 'PPISP'))"
 
