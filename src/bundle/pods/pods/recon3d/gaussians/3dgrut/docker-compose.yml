@@ -20,7 +20,9 @@ services:
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
       - GRUT_DIR=/opt/3dgrut
+      - RECON3D_DATA_ROOT=/workspace/data
     volumes:
       - ../../../../../../../:/opt/thebundle
       - ./workspace:/workspace
+      - ../../data:/workspace/data
     command: ["sleep", "infinity"]

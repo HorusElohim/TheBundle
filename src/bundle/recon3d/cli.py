@@ -22,6 +22,82 @@ async def recon3d():
 
 
 # ---------------------------------------------------------------------------
+# bundle recon3d data
+# ---------------------------------------------------------------------------
+
+
+@click.group(name="data")
+@tracer.Sync.decorator.call_raise
+async def data_group():
+    """Manage datasets for the reconstruction pipeline."""
+    pass
+
+
+recon3d.add_command(data_group)
+
+
+@data_group.command(name="fetch")
+@click.option("--dataset", type=click.Choice(["360_v2"]), default="360_v2", help="Dataset to download.")
+@click.option(
+    "--data-root",
+    type=click.Path(path_type=Path),
+    default="/workspace/data",
+    envvar="RECON3D_DATA_ROOT",
+    help="Root directory for dataset storage (or set RECON3D_DATA_ROOT).",
+)
+@tracer.Sync.decorator.call_raise
+async def data_fetch(dataset: str, data_root: Path):
+    """Download and extract a benchmark dataset."""
+    from .datasets import DatasetId, fetch
+
+    info = await fetch(DatasetId(dataset), data_root)
+    log.info("Dataset '%s' ready at %s", info.dataset_id.value, info.root)
+    log.info("Available scenes: %s", ", ".join(info.scenes))
+
+
+@data_group.command(name="list")
+@click.option(
+    "--data-root",
+    type=click.Path(path_type=Path),
+    default="/workspace/data",
+    envvar="RECON3D_DATA_ROOT",
+    help="Root directory for dataset storage.",
+)
+@tracer.Sync.decorator.call_raise
+async def data_list(data_root: Path):
+    """List downloaded datasets and available scenes."""
+    from .datasets import DATASET_REGISTRY, DatasetId, _is_scene
+
+    data_root = data_root.resolve()
+    for ds_id in DatasetId:
+        _, _, known_scenes = DATASET_REGISTRY[ds_id]
+        found = [s for s in known_scenes if (data_root / s).is_dir()]
+        if found:
+            all_scenes = sorted(p.name for p in data_root.iterdir() if p.is_dir() and _is_scene(p))
+            log.info("%s — %s (%d scenes: %s)", ds_id.value, data_root, len(all_scenes), ", ".join(all_scenes))
+        else:
+            log.info("%s — not downloaded", ds_id.value)
+
+
+@data_group.command(name="locate")
+@click.argument("scene", type=str)
+@click.option(
+    "--data-root",
+    type=click.Path(path_type=Path),
+    default="/workspace/data",
+    envvar="RECON3D_DATA_ROOT",
+    help="Root directory for dataset storage.",
+)
+@tracer.Sync.decorator.call_raise
+async def data_locate(scene: str, data_root: Path):
+    """Print the images directory for a specific scene."""
+    from .datasets import locate_scene
+
+    images_dir = locate_scene(data_root.resolve(), scene)
+    log.info("%s", images_dir)
+
+
+# ---------------------------------------------------------------------------
 # bundle recon3d run
 # ---------------------------------------------------------------------------
 
@@ -57,14 +133,15 @@ async def run(workspace: Path, sfm_backend: str, renderer: str, export_usdz: boo
 @click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
 @click.option("--backend", type=click.Choice(["colmap", "pycusfm"]), default="colmap", help="SfM backend.")
 @click.option("--use-gpu/--no-gpu", default=True, help="Enable GPU acceleration.")
+@click.option("--matcher", type=click.Choice(["exhaustive", "sequential"]), default="exhaustive", help="Matching strategy.")
 @tracer.Sync.decorator.call_raise
-async def sfm(workspace: Path, backend: str, use_gpu: bool):
+async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
     """Run only the Structure-from-Motion stage."""
     from .stages.sfm import SfmStage
 
     ws = Workspace(root=workspace)
     ws.ensure_dirs()
-    stage = SfmStage(backend=SfmBackend(backend), use_gpu=use_gpu)
+    stage = SfmStage(backend=SfmBackend(backend), use_gpu=use_gpu, matcher=matcher)
 
     if not await stage.check_deps():
         raise click.ClickException(f"SfM backend '{backend}' is not available on this system.")

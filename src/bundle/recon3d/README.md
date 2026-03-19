@@ -14,6 +14,11 @@ via **data contracts** — Pydantic models describing filesystem layouts.
 ## CLI
 
 ```bash
+# Download benchmark datasets (shared across all recon3d pods)
+bundle recon3d data fetch --dataset 360_v2
+bundle recon3d data list
+bundle recon3d data locate bicycle
+
 # Full pipeline
 bundle recon3d run --workspace ./my_scene --sfm-backend colmap --renderer 3dgut
 
@@ -44,18 +49,39 @@ workspace/
 └── manifest.json               # Pipeline state
 ```
 
+## Shared Data Volume
+
+All recon3d pods mount a shared data directory at `/workspace/data`
+(host: `src/bundle/pods/pods/recon3d/data/`). Download once, use everywhere:
+
+```bash
+# Inside any recon3d pod:
+bundle recon3d data fetch --dataset 360_v2
+
+# The dataset is immediately available in all other pods
+# RECON3D_DATA_ROOT env var points to /workspace/data
+```
+
 ## Usage
 
 ### Inside Docker pods
 
 ```bash
-docker compose exec colmap bundle recon3d sfm --workspace /workspace
-docker compose exec 3dgrut bundle recon3d gaussians --workspace /workspace
+# Download dataset + run SfM
+docker compose exec colmap bundle recon3d data fetch --dataset 360_v2
+docker compose exec colmap bash -c "\
+    mkdir -p /workspace/bicycle && \
+    ln -sf /workspace/data/360_v2/bicycle/images /workspace/bicycle/images"
+docker compose exec colmap bundle recon3d sfm --workspace /workspace/bicycle
+
+# Run Gaussians (different pod, same shared data)
+docker compose exec 3dgrut bundle recon3d gaussians --workspace /workspace/bicycle
 ```
 
 ### Locally (if dependencies are installed)
 
 ```bash
+bundle recon3d data fetch --dataset 360_v2 --data-root src/bundle/pods/pods/recon3d/data
 bundle recon3d run --workspace ./my_scene
 ```
 

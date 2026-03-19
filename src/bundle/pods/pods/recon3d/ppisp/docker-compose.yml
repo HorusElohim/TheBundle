@@ -19,8 +19,10 @@ services:
       - TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-}
       - NVIDIA_VISIBLE_DEVICES=all
       - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - RECON3D_DATA_ROOT=/workspace/data
     volumes:
       - ../../../../../../tmp/ppisp:/opt/ppisp-src
       - ../../../../../../:/opt/thebundle
       - ./workspace:/workspace
+      - ../data:/workspace/data
     command: ["sleep", "infinity"]
