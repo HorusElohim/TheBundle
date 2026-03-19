@@ -1,4 +1,4 @@
-"""Structure-from-Motion stage — wraps COLMAP and pyCuSFM."""
+"""COLMAP Structure-from-Motion backend."""
 
 from __future__ import annotations
 
@@ -6,56 +6,26 @@ import shutil
 from pathlib import Path
 
 from bundle.core import logger
-from bundle.core.data import Data
 from bundle.core.process import ProcessStream
 
-from ..contracts import SfmBackend, SfmInput, SfmOutput
-from .base import Stage
+from .base import SfmBackend, SfmInput, SfmOutput, SfmStage
 
 log = logger.get_logger(__name__)
 
 
-class SfmStage(Stage):
-    """Thin wrapper around SfM backends (COLMAP / pyCuSFM).
+class ColmapSfm(SfmStage):
+    """COLMAP sparse reconstruction pipeline.
 
-    Constructs CLI arguments, runs the tool via subprocess, and validates
-    the output contract.
-
-    COLMAP pipeline:
+    Runs three sequential steps via the ``colmap`` CLI:
         1. feature_extractor  — GPU-accelerated SIFT
         2. exhaustive_matcher  — pairwise feature matching
         3. mapper              — incremental sparse reconstruction
     """
 
-    name: str = "sfm"
+    name: str = "sfm.colmap"
     backend: SfmBackend = SfmBackend.COLMAP
-    use_gpu: bool = True
-    matcher: str = "exhaustive"  # "exhaustive" | "sequential"
 
-    async def run(self, input: Data) -> Data:
-        assert isinstance(input, SfmInput)
-
-        if self.backend == SfmBackend.COLMAP:
-            return await self._run_colmap(input)
-
-        raise NotImplementedError(f"Backend '{self.backend}' not yet implemented")
-
-    async def check_deps(self) -> bool:
-        if self.backend == SfmBackend.COLMAP:
-            return shutil.which("colmap") is not None
-        try:
-            import pycusfm
-
-            return True
-        except ImportError:
-            return False
-
-    # ------------------------------------------------------------------
-    # COLMAP implementation
-    # ------------------------------------------------------------------
-
-    async def _run_colmap(self, input: SfmInput) -> SfmOutput:
-        """Run the COLMAP sparse reconstruction pipeline step-by-step."""
+    async def _run(self, input: SfmInput) -> SfmOutput:
         output_dir = input.images_dir.parent / "sfm_output"
         output_dir.mkdir(parents=True, exist_ok=True)
 
@@ -84,16 +54,34 @@ class SfmStage(Stage):
         log.info("COLMAP: running mapper")
         await proc(f"colmap mapper --database_path {database_path} --image_path {input.images_dir} --output_path {sparse_dir}")
 
-        # Build output contract
         # COLMAP mapper creates numbered subdirectories (0, 1, ...) for each model.
         # Pick the first one (largest/default reconstruction).
         model_dirs = sorted(p for p in sparse_dir.iterdir() if p.is_dir())
         if not model_dirs:
             raise RuntimeError(f"COLMAP mapper produced no models in {sparse_dir}")
 
+        best_model = model_dirs[0]
+        undistorted_images: Path | None = None
+
+        # Step 4 (optional): Undistort images → converts SIMPLE_RADIAL etc. to PINHOLE
+        if self.undistort:
+            undistorted_dir = output_dir / "undistorted"
+            log.info("COLMAP: undistorting images → %s", undistorted_dir)
+            await proc(
+                f"colmap image_undistorter"
+                f" --image_path {input.images_dir}"
+                f" --input_path {best_model}"
+                f" --output_path {undistorted_dir}"
+                f" --output_type COLMAP"
+            )
+            # image_undistorter writes sparse/ and images/ into undistorted_dir
+            best_model = undistorted_dir / "sparse"
+            undistorted_images = undistorted_dir / "images"
+
         result = SfmOutput(
-            sparse_dir=model_dirs[0],
+            sparse_dir=best_model,
             database_path=database_path,
+            images_dir=undistorted_images,
             backend=SfmBackend.COLMAP,
         )
 
@@ -102,3 +90,6 @@ class SfmStage(Stage):
 
         log.info("COLMAP: sparse reconstruction complete — %s", result.sparse_dir)
         return result
+
+    async def check_deps(self) -> bool:
+        return shutil.which("colmap") is not None

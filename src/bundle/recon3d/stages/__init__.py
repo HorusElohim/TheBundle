@@ -1,7 +1,15 @@
 """Recon3D pipeline stages."""
 
 from .base import Stage
-from .gaussians import GaussiansStage
-from .sfm import SfmStage
+from .export import ExportStage
+from .gaussians import GaussiansStage, create_gaussians_stage
+from .sfm import SfmStage, create_sfm_stage
 
-__all__ = ["GaussiansStage", "SfmStage", "Stage"]
+__all__ = [
+    "ExportStage",
+    "GaussiansStage",
+    "SfmStage",
+    "Stage",
+    "create_gaussians_stage",
+    "create_sfm_stage",
+]
