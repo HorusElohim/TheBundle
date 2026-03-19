@@ -27,10 +27,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python3 -m venv /opt/venv && \
     pip install --upgrade pip setuptools wheel
 
+# Install thebundle runtime dependencies so they're baked into the image.
+# At runtime, install_bundle.sh links the mounted source via .pth —
+# deps are already here, no pip install -e needed.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
+
 COPY install_bundle.sh /usr/local/bin/install_bundle.sh
 RUN chmod +x /usr/local/bin/install_bundle.sh
-
-ARG BUNDLE_VERSION=latest
-RUN BUNDLE_VERSION=${BUNDLE_VERSION} install_bundle.sh
 
 WORKDIR /app

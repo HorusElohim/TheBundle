@@ -14,10 +14,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 RUN python -m venv /opt/venv && \
     pip install --upgrade pip setuptools wheel
 
+# Install thebundle runtime dependencies so they're baked into the image.
+COPY requirements.txt /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
+
 COPY install_bundle.sh /usr/local/bin/install_bundle.sh
 RUN chmod +x /usr/local/bin/install_bundle.sh
-
-ARG BUNDLE_VERSION=latest
-RUN BUNDLE_VERSION=${BUNDLE_VERSION} install_bundle.sh
 
 WORKDIR /app
