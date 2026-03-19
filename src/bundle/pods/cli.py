@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 
+import shlex
 from pathlib import Path
 
 import rich_click as click
@@ -178,6 +179,27 @@ async def down_pod(ctx: click.Context, pod_name: str) -> None:
     pod = mgr.get(pod_name)
     await mgr.down(pod)
     log.info("Pod '%s' is down.", pod.full_path)
+
+
+@pods.command("exec", context_settings={"ignore_unknown_options": True, "allow_extra_args": True})
+@click.argument("pod_name", type=str)
+@click.argument("command", nargs=-1, type=click.UNPROCESSED, required=True)
+@click.pass_context
+@tracer.Sync.decorator.call_raise
+async def exec_cmd(ctx: click.Context, pod_name: str, command: tuple[str, ...]) -> None:
+    """Execute a command inside a running pod container.
+
+    Examples:
+        bundle pods exec colmap -- colmap --version
+        bundle pods exec recon3d/sfm/colmap -- bundle recon3d sfm --workspace /workspace/bicycle
+        bundle pods exec colmap -- bash -c "echo hello"
+    """
+    if not command:
+        raise click.ClickException("No command provided. Usage: bundle pods exec <pod> -- <command>")
+    mgr = _get_manager(ctx)
+    pod = mgr.get(pod_name)
+    cmd_str = " ".join(shlex.quote(c) for c in command)
+    await mgr.exec(pod, cmd_str)
 
 
 @pods.command("logs")
