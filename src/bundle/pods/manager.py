@@ -404,3 +404,35 @@ class PodManager(Entity):
         """Stream or show pod container logs."""
         follow_flag = "-f " if follow else ""
         return await self.compose(pod, f"logs {follow_flag}--tail {tail}", stream=True)
+
+    @tracer.Async.decorator.call_raise
+    async def exec(self, pod: PodSpec, command: str, service: str | None = None) -> process.ProcessResult:
+        """Execute a command inside a running pod container.
+
+        Args:
+            pod: The pod to exec into.
+            command: The command string to run inside the container.
+            service: Override the service name (defaults to pod.service or pod.name).
+        """
+        cwd = self.pod_path(pod)
+        compose_file = cwd / "docker-compose.yml"
+        if not compose_file.exists():
+            raise click.ClickException(f"docker-compose.yml not found for pod at '{cwd}'.")
+
+        svc = service or pod.service or pod.name
+        ansi_flag = " --ansi always" if sys.platform != "win32" else ""
+        cmd = f'{self._compose_cmd}{ansi_flag} -f "{compose_file}" exec {svc} {command}'
+
+        runner = process.ProcessStream(name="Pods.exec")
+        try:
+            return await runner(cmd, cwd=str(cwd))
+        except process.ProcessError as exc:
+            stderr = exc.result.stderr if exc.result else ""
+            error_lines = stderr.strip().splitlines() if stderr else []
+            summary = next((line for line in error_lines if "error" in line.lower()), None)
+            if not summary and error_lines:
+                summary = error_lines[-1]
+            msg = f"Pod '{pod.full_path}' exec failed."
+            if summary:
+                msg += f"\n{summary.strip()}"
+            raise click.ClickException(msg) from None
