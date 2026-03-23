@@ -3,6 +3,7 @@
 [![windows 🪟](https://github.com/HorusElohim/TheBundle/actions/workflows/python-windows.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/python-windows.yml)
 [![PyPI Release 🐍](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/publish-pypi.yml)
 [![auto reference update 🔄](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml/badge.svg)](https://github.com/HorusElohim/TheBundle/actions/workflows/auto-reference-update.yml)
+[![docs 📖](https://github.com/HorusElohim/TheBundle/actions/workflows/deploy-docs.yml/badge.svg)](https://HorusElohim.github.io/TheBundle/)
 
 ![The Bundle Dream](https://raw.githubusercontent.com/HorusElohim/TheBundle/main/thebundle.gif)
 
@@ -39,7 +40,19 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command "irm https://raw.githubus
 | 🪟 Windows | 3.10, 3.11, 3.12 |
 
 ## Documentation
-For more information, see the inline documentation in each module and the example projects in `tests/`.
+
+Full API reference and module guides are published on **GitHub Pages**:
+👉 **https://HorusElohim.github.io/TheBundle/**
+
+The documentation is auto-generated with Sphinx from docstrings and module READMEs, and deployed on every push to `main` via the [Deploy Docs](https://github.com/HorusElohim/TheBundle/actions/workflows/deploy-docs.yml) workflow. To build locally:
+
+```sh
+pip install thebundle[docs]
+bundle docs build
+bundle docs serve
+```
+
+Module guides:
 - [Core Modules Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/core/README.md)
 - [Testing Module Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/testing/README.md)
 - [Pybind Subpackage Guide](https://github.com/HorusElohim/TheBundle/blob/main/src/bundle/pybind/README.md)
