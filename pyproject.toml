@@ -94,6 +94,7 @@ website = [
     "python-multipart",
 ]
 hdf5 = ["h5py", "numpy"]
+docs = ["sphinx>=7.0", "furo", "myst-parser>=2.0", "sphinx-autoapi>=3.0"]
 all = [
     "pytest",
     "pytest-asyncio",
@@ -116,6 +117,10 @@ all = [
     "matplotlib",
     "h5py",
     "numpy",
+    "sphinx>=7.0",
+    "furo",
+    "myst-parser>=2.0",
+    "sphinx-autoapi>=3.0",
 ]
 
 [project.urls]
