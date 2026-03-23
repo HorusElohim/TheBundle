@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -73,7 +73,10 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_as_json(
-        class_instance: core.Data, tmp_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
+        class_instance: core.Data,
+        tmp_json_path: Path,
+        failed_json_path: Path,
+        failed_error_log_path: Path,
     ):
         logger.testing(f"test_pydantic_data_as_json: {utils.class_instance_name(class_instance)}")
         try:
@@ -88,7 +91,10 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_dump_json(
-        class_instance: core.Data, tmp_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
+        class_instance: core.Data,
+        tmp_json_path: Path,
+        failed_json_path: Path,
+        failed_error_log_path: Path,
     ):
         logger.testing(f"test_pydantic_data_dump_json: {utils.class_instance_name(class_instance)}")
         try:
@@ -103,7 +109,10 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_from_json(
-        class_instance: core.Data, ref_json_path: Path, failed_json_path: Path, failed_error_log_path: Path
+        class_instance: core.Data,
+        ref_json_path: Path,
+        failed_json_path: Path,
+        failed_error_log_path: Path,
     ):
         logger.testing(f"test_pydantic_data_from_json: {utils.class_instance_name(class_instance)}")
         try:
@@ -169,14 +178,21 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
                 ref_json_path.write_text(tmp_json_path.read_text())
 
             _, class_instance_from_json = await test_pydantic_data_from_json(
-                class_instance, ref_json_path, failed_error_log_path, failed_error_log_path
+                class_instance,
+                ref_json_path,
+                failed_error_log_path,
+                failed_error_log_path,
             )
 
             await test_pydantic_data_compare(class_instance, class_instance_from_json)
 
             # Jsonschema tests path
             ref_jsonschema_path, _, failed_jsonschema_path, failed_error_log_path = utils.retrieves_tests_paths(
-                "data/jsonschema", ref_dir, tmp_dir, class_instance, "pydantic_jsonschema"
+                "data/jsonschema",
+                ref_dir,
+                tmp_dir,
+                class_instance,
+                "pydantic_jsonschema",
             )
 
             # Generate jsonchema ref only if doesn't exists

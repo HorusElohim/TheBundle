@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -77,7 +77,13 @@ async def extract_mp3(mp4: MP4) -> MP3:
     mp3_path = mp4.path.with_suffix(".mp3")
     (
         ffmpeg.input(str(mp4.path))
-        .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
+        .output(
+            str(mp3_path),
+            format="mp3",
+            acodec="libmp3lame",
+            **{"qscale:a": 1},
+            loglevel="quiet",
+        )
         .run(overwrite_output=True)
     )
     log.debug("extraction completed - %s", mp4.filename)
@@ -116,7 +122,13 @@ async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: 
     mp3_path = source_path.with_suffix(".mp3")
     (
         ffmpeg.input(str(source_path))
-        .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
+        .output(
+            str(mp3_path),
+            format="mp3",
+            acodec="libmp3lame",
+            **{"qscale:a": 1},
+            loglevel="quiet",
+        )
         .run(overwrite_output=True)
     )
     mp3 = MP3.from_track(path=mp3_path, track=track)

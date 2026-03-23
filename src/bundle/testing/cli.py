@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import asyncio
 import os
 import shutil
@@ -27,16 +46,45 @@ async def python():
 @python.command("pytest")
 @tracer.Sync.decorator.call_raise
 @click.option("--show-exc", is_flag=True, default=False, help="Show expected trace Exceptions")
-@click.option("--no-logs", is_flag=True, default=False, help="Set log to FATAL avoiding log overhead")
-@click.option("-s", "--capture", is_flag=True, default=False, help="Capture stdout")
-@click.option("--perf", is_flag=True, default=False, help="Profile with cProfile and generate .prof files")
-@click.option("--report", is_flag=True, default=False, help="Generate PDF perf report (implies --perf)")
-@click.option("--tracy", is_flag=True, default=False, help="Profile with Tracy for real-time viewing (alternative to --perf)")
 @click.option(
-    "--perf-output", default=None, type=click.Path(), help="Output directory for perf data (default: <repo>/performances)"
+    "--no-logs",
+    is_flag=True,
+    default=False,
+    help="Set log to FATAL avoiding log overhead",
+)
+@click.option("-s", "--capture", is_flag=True, default=False, help="Capture stdout")
+@click.option(
+    "--perf",
+    is_flag=True,
+    default=False,
+    help="Profile with cProfile and generate .prof files",
+)
+@click.option(
+    "--report",
+    is_flag=True,
+    default=False,
+    help="Generate PDF perf report (implies --perf)",
+)
+@click.option(
+    "--tracy",
+    is_flag=True,
+    default=False,
+    help="Profile with Tracy for real-time viewing (alternative to --perf)",
+)
+@click.option(
+    "--perf-output",
+    default=None,
+    type=click.Path(),
+    help="Output directory for perf data (default: <repo>/performances)",
 )
 async def pytest_cmd(
-    show_exc: bool, no_logs: bool, capture: bool, perf: bool, report: bool, tracy: bool, perf_output: str | None
+    show_exc: bool,
+    no_logs: bool,
+    capture: bool,
+    perf: bool,
+    report: bool,
+    tracy: bool,
+    perf_output: str | None,
 ):
     """
     Run the bundle test suite.
@@ -72,7 +120,10 @@ async def pytest_cmd(
 
 
 async def _run_cprofile(
-    tests_folder: bundle.Path, extra_args: list[str], perf_output: str | None, report: bool = False
+    tests_folder: bundle.Path,
+    extra_args: list[str],
+    perf_output: str | None,
+    report: bool = False,
 ) -> None:
     """Pipeline: pytest with CPROFILE_MODE → collect .prof files → (optional) PDF report."""
     from bundle import version as bundle_version
@@ -118,7 +169,12 @@ async def _run_cprofile(
         exit(test_result)
 
 
-async def _run_tracy(tests_folder: bundle.Path, extra_args: list[str], perf_output: str | None, report: bool = False) -> None:
+async def _run_tracy(
+    tests_folder: bundle.Path,
+    extra_args: list[str],
+    perf_output: str | None,
+    report: bool = False,
+) -> None:
     """Full pipeline: tracy-capture → pytest (subprocess) → csvexport → (optional) perf report."""
     from bundle import version as bundle_version
     from bundle.perf_report import ProfileExtractor

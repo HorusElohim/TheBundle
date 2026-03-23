@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -51,7 +51,12 @@ class TestProfileStorage:
     def test_save_and_load_meta(self, csv_dir, h5_path):
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
-        storage.save(profiles, machine_id="test-machine-001", bundle_version=VERSION, platform_id=PLATFORM)
+        storage.save(
+            profiles,
+            machine_id="test-machine-001",
+            bundle_version=VERSION,
+            platform_id=PLATFORM,
+        )
 
         meta = storage.load_meta(VERSION, PLATFORM)
         assert meta["machine_id"] == "test-machine-001"
@@ -78,7 +83,13 @@ class TestProfileStorage:
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
         pmeta = {"system": "linux", "arch": "x86_64", "python_compiler": "GCC 12.2"}
-        storage.save(profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM, platform_meta=pmeta)
+        storage.save(
+            profiles,
+            machine_id="m1",
+            bundle_version=VERSION,
+            platform_id=PLATFORM,
+            platform_meta=pmeta,
+        )
 
         meta = storage.load_meta(VERSION, PLATFORM)
         assert meta["system"] == "linux"

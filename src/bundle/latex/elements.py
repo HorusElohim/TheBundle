@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -100,7 +100,12 @@ class Table:
 class Figure:
     """Render a LaTeX figure with includegraphics."""
 
-    def __init__(self, image_path: Path | str, width: str = "0.85\\linewidth", caption: str | None = None):
+    def __init__(
+        self,
+        image_path: Path | str,
+        width: str = "0.85\\linewidth",
+        caption: str | None = None,
+    ):
         self.image_path = escape(str(image_path).replace("\\", "/"))
         self.width = width
         self.caption = caption

@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -32,7 +32,13 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Generic, List, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
-from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
+from playwright.async_api import (
+    BrowserContext,
+    ElementHandle,
+    Page,
+    Playwright,
+    async_playwright,
+)
 
 from . import data, entity, tracer
 from .logger import get_logger
@@ -208,7 +214,11 @@ class Browser(entity.Entity):
                     await context.close()
                     logger.debug("%s Browser context closed.", logger.Emoji.success)
                 except Exception as e:
-                    logger.warning("%s Failed to close a browser context: %s", logger.Emoji.warning, e)
+                    logger.warning(
+                        "%s Failed to close a browser context: %s",
+                        logger.Emoji.warning,
+                        e,
+                    )
             self.contexts.clear()
 
         if self.browser:

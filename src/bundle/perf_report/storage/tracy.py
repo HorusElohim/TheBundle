@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -27,7 +27,15 @@ import numpy as np
 
 from ...hdf5 import Store
 from ..extractor import ProfileData, ProfileExtractor, ProfileRecord
-from .base import MAX_FILE_LEN, MAX_NAME_LEN, list_platforms, list_versions, load_meta, run_prefix, write_meta
+from .base import (
+    MAX_FILE_LEN,
+    MAX_NAME_LEN,
+    list_platforms,
+    list_versions,
+    load_meta,
+    run_prefix,
+    write_meta,
+)
 
 
 def _zone_dtype() -> np.dtype:

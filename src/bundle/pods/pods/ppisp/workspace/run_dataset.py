@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import argparse
 import asyncio
 import zipfile
@@ -19,7 +38,11 @@ log = core.logger.setup_root_logger(name="ppisp.dataset", level=core.logger.Leve
 def args() -> argparse.Namespace:
     p = argparse.ArgumentParser(description="PPISP + Mip-NeRF 360 smoke test")
     p.add_argument("--data-dir", default="/workspace/data")
-    p.add_argument("--images-dir", default="", help="Direct image folder (overrides --scene download/layout)")
+    p.add_argument(
+        "--images-dir",
+        default="",
+        help="Direct image folder (overrides --scene download/layout)",
+    )
     p.add_argument("--save-dir", default="/workspace/results")
     p.add_argument("--scene", default="garden")
     p.add_argument("--image-size", type=int, default=256)
@@ -76,7 +99,9 @@ def load(paths: list[Path], size: int) -> list[torch.Tensor]:
     return out
 
 
-def novel_inputs(images: list[torch.Tensor]) -> tuple[dict[str, torch.Tensor], dict[str, int]]:
+def novel_inputs(
+    images: list[torch.Tensor],
+) -> tuple[dict[str, torch.Tensor], dict[str, int]]:
     n = len(images)
     c = n // 2
     q = max(1, n // 4)
@@ -100,7 +125,10 @@ def main() -> None:
     imgs = load([files[i] for i in idx], a.image_size)
     h, w, _ = imgs[0].shape
     d = torch.device("cuda")
-    xy = torch.stack(torch.meshgrid(torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij")[::-1], -1).float()
+    xy = torch.stack(
+        torch.meshgrid(torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij")[::-1],
+        -1,
+    ).float()
     m = PPISP(num_cameras=1, num_frames=n).to(d).train()
     opts = m.create_optimizers()
     sch = m.create_schedulers(opts, max(1, a.steps))
@@ -130,7 +158,8 @@ def main() -> None:
     save = Path(a.save_dir)
     save.mkdir(parents=True, exist_ok=True)
     save_image(
-        torch.cat([x0, y0, (y0 - x0).abs()], 1).permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input_output_diff.png"
+        torch.cat([x0, y0, (y0 - x0).abs()], 1).permute(2, 0, 1).cpu().clamp(0, 1),
+        save / "frame0_input_output_diff.png",
     )
     save_image(x0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input.png")
     save_image(y0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_output.png")

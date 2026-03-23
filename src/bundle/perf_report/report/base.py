@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """Shared utilities for performance report generation (cProfile and Tracy)."""
 
 from __future__ import annotations
@@ -182,7 +201,13 @@ def draw_baseline_bars(ax: plt.Axes, y_pos: np.ndarray, baseline_times: list[flo
         linewidth=0.5,
         label="Baseline",
     )
-    ax.legend(loc="lower right", fontsize=7, facecolor="#2d2d2d", edgecolor="#555555", labelcolor="#D3D3D3")
+    ax.legend(
+        loc="lower right",
+        fontsize=7,
+        facecolor="#2d2d2d",
+        edgecolor="#555555",
+        labelcolor="#D3D3D3",
+    )
 
 
 def finalize_plot(
@@ -223,13 +248,28 @@ def finalize_plot(
             ha, lx, color = "left", width + xlim_max * 0.01, "#D3D3D3"
         else:
             ha, lx, color = "right", width - xlim_max * 0.01, "#1E1E1E"
-        ax.text(lx, bar.get_y() + bar.get_height() / 2, label, ha=ha, va="center", color=color, weight="bold", fontsize=7)
+        ax.text(
+            lx,
+            bar.get_y() + bar.get_height() / 2,
+            label,
+            ha=ha,
+            va="center",
+            color=color,
+            weight="bold",
+            fontsize=7,
+        )
 
     ax.invert_yaxis()
     for spine in ax.spines.values():
         spine.set_color("#333333")
 
-    fig.savefig(plot_path, facecolor=fig.get_facecolor(), bbox_inches="tight", pad_inches=0.2, dpi=200)
+    fig.savefig(
+        plot_path,
+        facecolor=fig.get_facecolor(),
+        bbox_inches="tight",
+        pad_inches=0.2,
+        dpi=200,
+    )
     plt.close(fig)
     LOGGER.info("Plot saved: %s", plot_path)
     return plot_path

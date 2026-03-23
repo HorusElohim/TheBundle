@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -55,7 +74,10 @@ def load_poto_token():
         tracer.Sync.call_raise(generate_token)
     if POTO_TOKEN_PATH.exists():
         poto_entity = tracer.Sync.call_raise(PotoTokenEntity.from_json, POTO_TOKEN_PATH)
-        return {"po_token": poto_entity.potoken, "visitor_data": poto_entity.visitor_data}
+        return {
+            "po_token": poto_entity.potoken,
+            "visitor_data": poto_entity.visitor_data,
+        }
 
 
 async def _stream_filesize(stream) -> int:
@@ -96,7 +118,9 @@ def _pick_stream_by_itag(yt: YouTube, itag: int | None):
     return yt.streams.get_by_itag(int(itag))
 
 
-async def _collect_streams(yt: YouTube) -> tuple[list[YoutubeStreamOption], list[YoutubeStreamOption]]:
+async def _collect_streams(
+    yt: YouTube,
+) -> tuple[list[YoutubeStreamOption], list[YoutubeStreamOption]]:
     progressive_video_streams = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
     adaptive_video_streams = (
         yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4").order_by("resolution").desc()

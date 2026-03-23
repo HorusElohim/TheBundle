@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """cProfile-based performance report: per-test .prof files with call trees."""
 
 from pathlib import Path
@@ -21,9 +40,7 @@ from .base import (
     shorten_path,
     truncate_labels,
 )
-from .base import (
-    generate_report as _generate_report,
-)
+from .base import generate_report as _generate_report
 
 # ---------------------------------------------------------------------------
 # cProfile-specific helpers
@@ -40,7 +57,9 @@ def func_key(rec: CProfileRecord) -> str:
     return f"{rec.file}:{rec.line_number}:{rec.function}"
 
 
-def build_func_map(profiles: list[CProfileData]) -> dict[str, dict[str, CProfileRecord]]:
+def build_func_map(
+    profiles: list[CProfileData],
+) -> dict[str, dict[str, CProfileRecord]]:
     lookup = {}
     for profile in profiles:
         lookup[profile.name] = {func_key(r): r for r in profile.records}
@@ -105,7 +124,14 @@ def generate_plot(
     ax.set_yticklabels(labels)
     max_val = max(cumulative_times + (baseline_times if has_baseline else [])) if cumulative_times else 1
 
-    return finalize_plot(fig, ax, bars, max_val, f"Cumulative Time ({unit_label})", plot_dir / f"{profile.name}.png")
+    return finalize_plot(
+        fig,
+        ax,
+        bars,
+        max_val,
+        f"Cumulative Time ({unit_label})",
+        plot_dir / f"{profile.name}.png",
+    )
 
 
 # ---------------------------------------------------------------------------

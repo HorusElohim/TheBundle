@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -154,7 +154,11 @@ class Downloader(Entity):
                             async for chunk in response.content.iter_chunked(self.chunk_size):
                                 await tracer.Async.call_raise(fd.write, chunk, log_level=logger.Level.VERBOSE)
                                 downloaded_bytes += len(chunk)
-                                await tracer.Async.call_raise(self.update, len(chunk), log_level=logger.Level.VERBOSE)
+                                await tracer.Async.call_raise(
+                                    self.update,
+                                    len(chunk),
+                                    log_level=logger.Level.VERBOSE,
+                                )
                                 await asyncio.sleep(0)
                     else:
                         async for chunk in response.content.iter_chunked(self.chunk_size):

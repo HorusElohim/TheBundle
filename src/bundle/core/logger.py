@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -170,7 +170,14 @@ class BundleLogger(logging.getLoggerClass()):
             self._log(
                 level,
                 "%s  %s.%s(%s, %s). Exception: %s",
-                (Emoji.failed, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, exception),
+                (
+                    Emoji.failed,
+                    func.__module__,
+                    BundleLogger.get_callable_name(func),
+                    args,
+                    kwargs,
+                    exception,
+                ),
                 exc_info=True,
                 stacklevel=stacklevel,
             )
@@ -199,7 +206,14 @@ class BundleLogger(logging.getLoggerClass()):
             self._log(
                 level,
                 "%s  %s.%s(%s, %s) -> async cancel exception: %s",
-                (Emoji.warning, func.__module__, BundleLogger.get_callable_name(func), args, kwargs, exception),
+                (
+                    Emoji.warning,
+                    func.__module__,
+                    BundleLogger.get_callable_name(func),
+                    args,
+                    kwargs,
+                    exception,
+                ),
                 exc_info=True,
                 stacklevel=stacklevel - 1,
             )

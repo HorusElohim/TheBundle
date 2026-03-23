@@ -159,9 +159,7 @@ async def init(source: str):
 
     index_path = docs_dir / "index.md"
     if not index_path.exists():
-        index_path.write_text(
-            f"# {config.project_name}\n\nWelcome to the {config.project_name} documentation.\n"
-        )
+        index_path.write_text(f"# {config.project_name}\n\nWelcome to the {config.project_name} documentation.\n")
         log.info("Written %s", index_path)
 
     log.info("Sphinx configuration initialized in %s", docs_dir)

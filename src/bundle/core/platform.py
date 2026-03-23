@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -150,7 +169,8 @@ class Darwin(PlatformSpecific):
                 ProcessCommand(name="kernel_version", command="uname -r"),
                 ProcessCommand(name="hardware_model", command="sysctl -n hw.model"),
                 ProcessCommand(
-                    name="hardware_uuid", command="ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/ { print $3; }'"
+                    name="hardware_uuid",
+                    command="ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/ { print $3; }'",
                 ),
                 ProcessCommand(name="xcode_version", command="xcodebuild -version 2>/dev/null"),
                 ProcessCommand(
@@ -191,7 +211,10 @@ class Platform(Entity):
     release: str = data.Field(default=platform.release(), frozen=True)
     version: str = data.Field(default=platform.version(), frozen=True)
     arch: str = data.Field(default=platform.machine(), frozen=True)
-    processor: str = data.Field(default=platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", ""), frozen=True)
+    processor: str = data.Field(
+        default=platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", ""),
+        frozen=True,
+    )
     python_version: str = data.Field(default=platform.python_version(), frozen=True)
     python_implementation: str = data.Field(default=platform.python_implementation(), frozen=True)
     python_executable: str = data.Field(default=sys.executable, frozen=True)

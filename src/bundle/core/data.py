@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -63,7 +63,7 @@ flexible serialization/deserialization capabilities. It is particularly useful i
 data processing pipelines, and configuration management systems where data integrity and easy
 interoperability are paramount.
 
-Copyright 2024 HorusElohim
+Copyright 2026 HorusElohim
 
 Licensed under the Apache License, Version 2.0. See LICENSE file for terms.
 """

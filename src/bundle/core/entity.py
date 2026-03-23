@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -116,4 +116,10 @@ class Entity(Data):
             # Avoid logging if no handlers are attached.
             # This can happen on the last entity when the program is exiting.
             return
-        LOGGER.debug("%s  %s[%s] age=%s", logger.Emoji.end, self.class_name, self.name, utils.format_duration_ns(self.age))
+        LOGGER.debug(
+            "%s  %s[%s] age=%s",
+            logger.Emoji.end,
+            self.class_name,
+            self.name,
+            utils.format_duration_ns(self.age),
+        )

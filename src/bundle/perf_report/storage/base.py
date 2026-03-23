@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -42,7 +42,12 @@ def run_prefix(version: str, platform_id: str) -> str:
 
 
 def write_meta(
-    store: Store, prefix: str, machine_id: str, bundle_version: str, platform_id: str, platform_meta: dict | None = None
+    store: Store,
+    prefix: str,
+    machine_id: str,
+    bundle_version: str,
+    platform_id: str,
+    platform_meta: dict | None = None,
 ):
     """Write metadata attributes under the given prefix."""
     meta = {
