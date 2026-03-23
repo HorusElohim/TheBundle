@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -63,7 +63,7 @@ flexible serialization/deserialization capabilities. It is particularly useful i
 data processing pipelines, and configuration management systems where data integrity and easy
 interoperability are paramount.
 
-Copyright 2024 HorusElohim
+Copyright 2026 HorusElohim
 
 Licensed under the Apache License, Version 2.0. See LICENSE file for terms.
 """
@@ -86,9 +86,9 @@ def _internal_configuration(**kwargs):
         AssertionError: If `json_encoders` is provided but is not a dictionary.
     """
     if "json_encoders" in kwargs and kwargs["json_encoders"] is not None:
-        assert isinstance(kwargs["json_encoders"], dict), (
-            "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
-        )
+        assert isinstance(
+            kwargs["json_encoders"], dict
+        ), "json_encoder must be dict[type, Callable[value]] where the callable defines the serialization function"
     return ConfigDict(**kwargs)
 
 
@@ -240,7 +240,9 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def as_jsonschema(cls, mode: json_schema.JsonSchemaMode = "serialization") -> dict:
+    async def as_jsonschema(
+        cls, mode: json_schema.JsonSchemaMode = "serialization"
+    ) -> dict:
         """
         Generate the JSON Schema of the model.
 
@@ -257,7 +259,9 @@ class Data(BaseModel):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def as_jsonschema_str(cls, mode: json_schema.JsonSchemaMode = "serialization") -> str:
+    async def as_jsonschema_str(
+        cls, mode: json_schema.JsonSchemaMode = "serialization"
+    ) -> str:
         """
         Serialize the JSON Schema of the model to a JSON string.
 
@@ -274,7 +278,9 @@ class Data(BaseModel):
         return await tracer.Async.call_raise(json.dumps, schema, indent=4)
 
     @tracer.Async.decorator.call_raise
-    async def dump_jsonschema(self, path: Path, mode: json_schema.JsonSchemaMode = "serialization") -> None:
+    async def dump_jsonschema(
+        self, path: Path, mode: json_schema.JsonSchemaMode = "serialization"
+    ) -> None:
         """
         Write the JSON Schema of the model to a file.
 

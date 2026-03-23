@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from pathlib import Path
 
 import rich_click as click
@@ -66,7 +85,9 @@ async def list_pods(ctx: click.Context) -> None:
                 container_parts.append(f"[green]{c}[/green]")
             else:
                 container_parts.append(f"[dim]{c}[/dim]")
-        containers_text = "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
+        containers_text = (
+            "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
+        )
 
         table.add_row(pod.name, status_text, containers_text, str(pod_path))
 
@@ -82,7 +103,9 @@ async def status(ctx: click.Context, pod_name: str) -> None:
     mgr = _get_manager(ctx)
     pod = mgr.get(pod_name)
     result = await mgr.status(pod)
-    output = result.stdout.strip() if result.stdout.strip() else "No compose status output."
+    output = (
+        result.stdout.strip() if result.stdout.strip() else "No compose status output."
+    )
     log.info("%s", output)
 
 
@@ -137,8 +160,19 @@ async def down_pod(ctx: click.Context, pod_name: str) -> None:
 
 @pods.command("logs")
 @click.argument("pod_name", type=str)
-@click.option("--follow/--no-follow", default=True, show_default=True, help="Stream logs continuously.")
-@click.option("--tail", default=200, show_default=True, type=int, help="Number of log lines to show.")
+@click.option(
+    "--follow/--no-follow",
+    default=True,
+    show_default=True,
+    help="Stream logs continuously.",
+)
+@click.option(
+    "--tail",
+    default=200,
+    show_default=True,
+    type=int,
+    help="Number of log lines to show.",
+)
 @click.pass_context
 @tracer.Sync.decorator.call_raise
 async def logs(ctx: click.Context, pod_name: str, follow: bool, tail: int) -> None:

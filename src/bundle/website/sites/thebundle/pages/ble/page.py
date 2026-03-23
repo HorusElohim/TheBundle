@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """BLE dashboard routes and websocket scan streaming."""
 
 from __future__ import annotations
@@ -75,7 +94,9 @@ async def ble_scan_stream(websocket: WebSocket):
             except Exception as exc:  # pragma: no cover - defensive logging for BLE hw
                 page.logger.error("BLE scan failed during websocket stream: %s", exc)
                 try:
-                    await websocket.send_json({"type": "error", "message": "BLE scan unavailable"})
+                    await websocket.send_json(
+                        {"type": "error", "message": "BLE scan unavailable"}
+                    )
                 except (RuntimeError, WebSocketDisconnect):
                     stop_event.set()
                     break
@@ -122,7 +143,9 @@ async def _collect_scan(timeout: float) -> ble.ScanResult:
     """Wrap manager scan to convert hardware/runtime failures into HTTP 503."""
     try:
         return await _get_manager().scan(timeout=timeout)
-    except Exception as exc:  # pragma: no cover - BLE hardware errors logged for UI feedback
+    except (
+        Exception
+    ) as exc:  # pragma: no cover - BLE hardware errors logged for UI feedback
         page.logger.error("BLE scan failed: %s", exc)
         raise HTTPException(status_code=503, detail="BLE scan unavailable") from exc
 

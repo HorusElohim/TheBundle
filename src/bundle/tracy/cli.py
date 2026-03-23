@@ -1,4 +1,4 @@
-# Copyright 2025 HorusElohim
+# Copyright 2026 HorusElohim
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -86,14 +86,21 @@ async def _build_ext(jobs: int) -> None:
             shutil.copy2(src, dst)
             log.info("Installed %s → %s", src.name, dst)
         except PermissionError:
-            log.warning("Cannot overwrite %s (file in use) — restart Python to pick up the new build", dst)
+            log.warning(
+                "Cannot overwrite %s (file in use) — restart Python to pick up the new build",
+                dst,
+            )
 
 
-async def _build_tool(name: str, jobs: int, extra_cmake_args: list[str] | None = None) -> None:
+async def _build_tool(
+    name: str, jobs: int, extra_cmake_args: list[str] | None = None
+) -> None:
     """Build a Tracy CLI tool and install it to the active venv prefix."""
     source_dir = _TRACY_VENDOR / name
     if not source_dir.exists():
-        log.warning("Tracy tool source not found: %s (submodule initialised?)", source_dir)
+        log.warning(
+            "Tracy tool source not found: %s (submodule initialised?)", source_dir
+        )
         return
 
     log.info("Building tracy-%s ...", name)
@@ -131,8 +138,17 @@ _VALID_TARGETS = ("extension", "profiler", "capture", "csvexport")
 
 
 @tracy.command()
-@click.argument("targets", nargs=-1, type=click.Choice(_VALID_TARGETS, case_sensitive=False))
-@click.option("--jobs", "-j", type=int, default=multiprocessing.cpu_count(), show_default=True, help="Parallel build jobs.")
+@click.argument(
+    "targets", nargs=-1, type=click.Choice(_VALID_TARGETS, case_sensitive=False)
+)
+@click.option(
+    "--jobs",
+    "-j",
+    type=int,
+    default=multiprocessing.cpu_count(),
+    show_default=True,
+    help="Parallel build jobs.",
+)
 @tracer.Sync.decorator.call_raise
 async def build(targets: tuple[str, ...], jobs: int) -> None:
     """

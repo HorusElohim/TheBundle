@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -64,7 +64,9 @@ class Table:
         col_specs = " ".join(c.spec() for c in self.columns)
         lines = ["{\\small\n"]
         if self.row_color_alt:
-            lines.append(f"\\rowcolors{{2}}{{{self.row_color_alt}}}{{backgroundcolor}}\n")
+            lines.append(
+                f"\\rowcolors{{2}}{{{self.row_color_alt}}}{{backgroundcolor}}\n"
+            )
         lines.append(f"\\begin{{longtable}}{{@{{}}{col_specs}@{{}}}}\n")
         # Header
         header_line = self._render_header()
@@ -100,7 +102,12 @@ class Table:
 class Figure:
     """Render a LaTeX figure with includegraphics."""
 
-    def __init__(self, image_path: Path | str, width: str = "0.85\\linewidth", caption: str | None = None):
+    def __init__(
+        self,
+        image_path: Path | str,
+        width: str = "0.85\\linewidth",
+        caption: str | None = None,
+    ):
         self.image_path = escape(str(image_path).replace("\\", "/"))
         self.width = width
         self.caption = caption
@@ -137,7 +144,9 @@ class Section:
         self._blocks.append(latex_str)
 
     def render(self) -> str:
-        cmd = {1: "section", 2: "subsection", 3: "subsubsection"}.get(self.level, "section")
+        cmd = {1: "section", 2: "subsection", 3: "subsubsection"}.get(
+            self.level, "section"
+        )
         lines = [f"\\{cmd}{{ {escape(self.title)} }}\n"]
         lines.extend(self._blocks)
         lines.append("\\clearpage\n")

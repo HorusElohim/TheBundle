@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import asyncio
 from pathlib import Path
 
@@ -375,7 +394,9 @@ async def test_stream():
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
+@pytest.mark.skipif(
+    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
+)
 async def test_server_client(protocol, tmp_path):
     """
     Test SERVER/CLIENT pattern with parameterized protocols.
@@ -409,7 +430,9 @@ async def test_server_client(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
+@pytest.mark.skipif(
+    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
+)
 async def test_radio_dish(protocol, tmp_path):
     """
     Test RADIO/DISH pattern with parameterized protocols.
@@ -437,7 +460,9 @@ async def test_radio_dish(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
+@pytest.mark.skipif(
+    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
+)
 async def test_gather_scatter(protocol, tmp_path):
     """
     Test GATHER/SCATTER pattern with parameterized protocols.
@@ -465,7 +490,9 @@ async def test_gather_scatter(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
+@pytest.mark.skipif(
+    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
+)
 async def test_peer(protocol, tmp_path):
     """
     Test PEER socket with parameterized protocols.
@@ -495,7 +522,9 @@ async def test_peer(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
+@pytest.mark.skipif(
+    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
+)
 async def test_channel(protocol, tmp_path):
     """
     Test CHANNEL socket with parameterized protocols.

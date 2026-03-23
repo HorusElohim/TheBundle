@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -38,8 +38,12 @@ def instance_identity(instance, class_type):
     Raises:
         AssertionError: If `instance` is a class or not an instance of `class_type` or its subclasses.
     """
-    assert not isinstance(instance, type), f"{instance} must be an Instance, not a Class"
-    assert issubclass(type(instance), class_type), f"The class {type(instance)=} must be a subclass of {class_type=}"
+    assert not isinstance(
+        instance, type
+    ), f"{instance} must be an Instance, not a Class"
+    assert issubclass(
+        type(instance), class_type
+    ), f"The class {type(instance)=} must be a subclass of {class_type=}"
 
 
 def compare(ref: object, tmp: object) -> None:
@@ -65,7 +69,9 @@ def compare(ref: object, tmp: object) -> None:
     diff = list(differ.compare(ref_lines, tmp_lines))
 
     diff_str = "\n".join(diff)
-    assert ref == tmp, f"""
+    assert (
+        ref == tmp
+    ), f"""
 
 REF: {ref.__class__=}:
 {ref}

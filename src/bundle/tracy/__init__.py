@@ -1,4 +1,4 @@
-# Copyright 2025 HorusElohim
+# Copyright 2026 HorusElohim
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -139,7 +139,9 @@ class zone:
             key = ("python", 0, self._name)
             srcloc = _srcloc_cache.get(key)
             if srcloc is None:
-                srcloc = _ext.alloc_srcloc(0, "python", "python", self._name, self._color)
+                srcloc = _ext.alloc_srcloc(
+                    0, "python", "python", self._name, self._color
+                )
                 _srcloc_cache[key] = srcloc
             self._ctx = _ext.zone_begin(srcloc)
         return self
@@ -214,7 +216,9 @@ def _hook(frame, event, arg):
     ext = _ext  # capture locally — _ext may become None during interpreter shutdown
     if ext is None:
         return
-    if _bundle_only and not os.path.normcase(frame.f_code.co_filename).startswith(_BUNDLE_SRC):
+    if _bundle_only and not os.path.normcase(frame.f_code.co_filename).startswith(
+        _BUNDLE_SRC
+    ):
         return
     # Per-thread zone map — zone_begin/zone_end must pair on the same thread.
     zones = _get_zones()

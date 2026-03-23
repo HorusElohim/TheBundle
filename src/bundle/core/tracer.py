@@ -1,4 +1,4 @@
-# Copyright 2025 HorusElohim
+# Copyright 2026 HorusElohim
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,12 +20,7 @@ import asyncio
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
-from typing import (
-    Any,
-    ParamSpec,
-    TypeVar,
-    cast,
-)
+from typing import Any, ParamSpec, TypeVar, cast
 
 from . import logger
 
@@ -84,15 +79,21 @@ class Sync:
 
         try:
             if asyncio.iscoroutinefunction(func):
-                result = asyncio.run(cast(Coroutine[Any, Any, R], func(*args, **kwargs)))
+                result = asyncio.run(
+                    cast(Coroutine[Any, Any, R], func(*args, **kwargs))
+                )
             else:
                 result = cast(R, func(*args, **kwargs))
             log.callable_success(func, args, kwargs, result, stacklevel, log_level)
         except Exception as exception:
             if isinstance(exception, asyncio.CancelledError):
-                log.callable_exception(func, args, kwargs, exception, stacklevel, exc_log_level)
+                log.callable_exception(
+                    func, args, kwargs, exception, stacklevel, exc_log_level
+                )
             else:
-                log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
+                log.callable_cancel(
+                    func, args, kwargs, exception, stacklevel, exc_log_level
+                )
             return None, exception
 
         return result, None
@@ -107,7 +108,12 @@ class Sync:
         **kwargs: P.kwargs,
     ) -> R:
         result, exception = Sync.call(
-            func, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+            func,
+            *args,
+            stacklevel=stacklevel,
+            log_level=log_level,
+            exc_log_level=exc_log_level,
+            **kwargs,
         )
         if exception is not None:
             raise exception
@@ -131,9 +137,16 @@ class Sync:
                 f: Callable[P, R] | Callable[P, Awaitable[R]],
             ) -> Callable[P, tuple[R | None, Exception | None]]:
                 @wraps(f)
-                def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
+                def wrapper(
+                    *args: P.args, **kwargs: P.kwargs
+                ) -> tuple[R | None, Exception | None]:
                     return Sync.call(
-                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                        f,
+                        *args,
+                        stacklevel=stacklevel,
+                        log_level=log_level,
+                        exc_log_level=exc_log_level,
+                        **kwargs,
                     )
 
                 return wrapper
@@ -157,16 +170,26 @@ class Sync:
             Can be used with or without parameters.
             """
 
-            def actual_decorator(f: Callable[P, R] | Callable[P, Awaitable[R]]) -> Callable[P, R]:
+            def actual_decorator(
+                f: Callable[P, R] | Callable[P, Awaitable[R]],
+            ) -> Callable[P, R]:
                 @wraps(f)
                 def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     return Sync.call_raise(
-                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                        f,
+                        *args,
+                        stacklevel=stacklevel,
+                        log_level=log_level,
+                        exc_log_level=exc_log_level,
+                        **kwargs,
                     )
 
                 return wrapper
 
-            return cast(Callable[P, R], actual_decorator if func is None else actual_decorator(func))
+            return cast(
+                Callable[P, R],
+                actual_decorator if func is None else actual_decorator(func),
+            )
 
 
 # --- Asynchronous Implementation ---
@@ -191,10 +214,14 @@ class Async:
             log.callable_success(func, args, kwargs, result, stacklevel, log_level)
             return cast(R, result), None
         except asyncio.CancelledError as cancel_exception:
-            log.callable_exception(func, args, kwargs, cancel_exception, stacklevel, exc_log_level)
+            log.callable_exception(
+                func, args, kwargs, cancel_exception, stacklevel, exc_log_level
+            )
             return None, cancel_exception
         except Exception as exception:
-            log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
+            log.callable_cancel(
+                func, args, kwargs, exception, stacklevel, exc_log_level
+            )
             return None, exception
 
     @staticmethod
@@ -207,7 +234,12 @@ class Async:
         **kwargs: P.kwargs,
     ) -> R:
         result, exception = await Async.call(
-            func, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+            func,
+            *args,
+            stacklevel=stacklevel,
+            log_level=log_level,
+            exc_log_level=exc_log_level,
+            **kwargs,
         )
         if exception is not None:
             raise exception
@@ -231,9 +263,16 @@ class Async:
                 f: Callable[P, R] | Callable[P, Awaitable[R]],
             ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
                 @wraps(f)
-                async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
+                async def wrapper(
+                    *args: P.args, **kwargs: P.kwargs
+                ) -> tuple[R | None, BaseException | None]:
                     return await Async.call(
-                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                        f,
+                        *args,
+                        stacklevel=stacklevel,
+                        log_level=log_level,
+                        exc_log_level=exc_log_level,
+                        **kwargs,
                     )
 
                 return wrapper
@@ -257,11 +296,18 @@ class Async:
             Can be used with or without parameters.
             """
 
-            def actual_decorator(f: Callable[P, R] | Callable[P, Awaitable[R]]) -> Callable[P, Awaitable[R]]:
+            def actual_decorator(
+                f: Callable[P, R] | Callable[P, Awaitable[R]],
+            ) -> Callable[P, Awaitable[R]]:
                 @wraps(f)
                 async def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
                     return await Async.call_raise(
-                        f, *args, stacklevel=stacklevel, log_level=log_level, exc_log_level=exc_log_level, **kwargs
+                        f,
+                        *args,
+                        stacklevel=stacklevel,
+                        log_level=log_level,
+                        exc_log_level=exc_log_level,
+                        **kwargs,
                     )
 
                 return wrapper

@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """BLE device snapshot models shared across the scanner."""
 
 from __future__ import annotations
@@ -99,7 +118,9 @@ class Device(Entity):
     _advertisement: Advertisement | None = data.PrivateAttr(default=None)
 
     @classmethod
-    def from_backend(cls, device: BleakPeripheral, advertisement: AdvertisementData | None) -> Device:
+    def from_backend(
+        cls, device: BleakPeripheral, advertisement: AdvertisementData | None
+    ) -> Device:
         adv = Advertisement(raw=advertisement)
         name, alias = cls._names(device, adv)
         services = adv.service_labels
@@ -145,7 +166,11 @@ class Device(Entity):
         if not query:
             return False
         query = query.lower()
-        candidates = (candidate.lower() for candidate in (self.name, self.alias, self.local_name) if candidate)
+        candidates = (
+            candidate.lower()
+            for candidate in (self.name, self.alias, self.local_name)
+            if candidate
+        )
         return any(query in candidate for candidate in candidates)
 
     def __str__(self) -> str:  # pragma: no cover - convenience for printing

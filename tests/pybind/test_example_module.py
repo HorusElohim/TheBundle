@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import os
 from pathlib import Path
 
@@ -14,7 +33,9 @@ pytestmark = pytest.mark.asyncio
 # Remove the built fixture and use built_example_module from conftest.py
 
 
-async def test_project_pkg_path(built_example_module_pybind, built_example_module, request):
+async def test_project_pkg_path(
+    built_example_module_pybind, built_example_module, request
+):
     pc_dir = built_example_module / "lib" / "pkgconfig"
     _bindings_dir, _pyproject_path = built_example_module_pybind
 
@@ -30,8 +51,12 @@ async def test_project_pkg_path(built_example_module_pybind, built_example_modul
 
 
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
-async def test_project_resolved(built_example_module_pybind, built_example_module, request):
+@pytest.mark.bundle_cprofile(
+    expected_duration=5_000_000, performance_threshold=3_000_000
+)
+async def test_project_resolved(
+    built_example_module_pybind, built_example_module, request
+):
     pc_dir = built_example_module / "lib" / "pkgconfig"
     _bindings_dir, pyproject_path = built_example_module_pybind
 
@@ -49,17 +74,28 @@ async def test_project_resolved(built_example_module_pybind, built_example_modul
     for module in project_resolved.modules:
         spec = module.spec
         # sources
-        spec.sources = [str(Path(s).relative_to(project_root)) if Path(s).is_absolute() else s for s in spec.sources]
+        spec.sources = [
+            str(Path(s).relative_to(project_root)) if Path(s).is_absolute() else s
+            for s in spec.sources
+        ]
         # extra_compile_args and extra_link_args are usually flags, not paths, so skip
         # pkgconfig resolved paths
         pkg = module.pkgconfig
         for pkg_result in pkg.resolved:
             pkg_result.include_dirs = [
-                str(Path(d).relative_to(project_root)) if Path(d).is_relative_to(str(project_root)) else d
+                (
+                    str(Path(d).relative_to(project_root))
+                    if Path(d).is_relative_to(str(project_root))
+                    else d
+                )
                 for d in pkg_result.include_dirs
             ]
             pkg_result.library_dirs = [
-                str(Path(d).relative_to(project_root)) if Path(d).is_relative_to(str(project_root)) else d
+                (
+                    str(Path(d).relative_to(project_root))
+                    if Path(d).is_relative_to(str(project_root))
+                    else d
+                )
                 for d in pkg_result.library_dirs
             ]
 
@@ -99,7 +135,9 @@ async def test_geometry_module(built_example_module_pybind):
     assert pytest.approx(comp.area()) == (3.141592653589793 + 1.0)
 
 
-@pytest.mark.xfail(reason="std::variant/pybind11 support may not be available on all platforms or Python/C++/OSX combinations")
+@pytest.mark.xfail(
+    reason="std::variant/pybind11 support may not be available on all platforms or Python/C++/OSX combinations"
+)
 async def test_geometry_module_variant(built_example_module_pybind):
     import example_module.geometry as gm
     from example_module.shape import Square

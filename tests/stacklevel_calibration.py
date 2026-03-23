@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 #!/usr/bin/env python3
 import asyncio
 import logging
@@ -42,7 +61,11 @@ def print_mapping(title: str, mapping: dict[int, tuple[str, str, bool]]) -> None
 
 
 def iterate_stacklevels(
-    scenario: str, maker: Callable[[int], Callable[[], Any]], is_async: bool, expected: str, handler: ListHandler
+    scenario: str,
+    maker: Callable[[int], Callable[[], Any]],
+    is_async: bool,
+    expected: str,
+    handler: ListHandler,
 ) -> dict[int, tuple[str, str, bool]]:
     mapping = {}
     for sl in range(0, MAX_SL):
@@ -57,7 +80,11 @@ def iterate_stacklevels(
         if not handler.records:
             continue
         rec = handler.records[-1]
-        mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+        mapping[sl] = (
+            rec.funcName,
+            os.path.basename(rec.pathname),
+            rec.funcName == expected,
+        )
         if rec.funcName == expected:
             break
     print_mapping(f"Scenario {scenario}", mapping)
@@ -88,7 +115,11 @@ def calibrate_sync_call(handler: ListHandler) -> int:
         _result, _exc = tracer.Sync.call(sync_success, 2, 3, stacklevel=sl)
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -109,7 +140,11 @@ def calibrate_sync_call_raise(handler: ListHandler) -> int:
             pass
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -132,7 +167,11 @@ def calibrate_sync_decorated_call(handler: ListHandler) -> int:
         _result, _exc = dummy_decorated()
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -158,7 +197,11 @@ def calibrate_sync_decorated_call_raise(handler: ListHandler) -> int:
             pass
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -179,7 +222,11 @@ async def calibrate_async_call(handler: ListHandler) -> int:
         _res, _exc = await tracer.Async.call(async_success, 2, 3, stacklevel=sl)
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -200,7 +247,11 @@ async def calibrate_async_call_raise(handler: ListHandler) -> int:
             pass
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -223,7 +274,11 @@ async def calibrate_async_decorated_call(handler: ListHandler) -> int:
         _res, _exc = await dummy_decorated()
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -249,7 +304,11 @@ async def calibrate_async_decorated_call_raise(handler: ListHandler) -> int:
             pass
         if handler.records:
             rec = handler.records[-1]
-            mapping[sl] = (rec.funcName, os.path.basename(rec.pathname), rec.funcName == expected)
+            mapping[sl] = (
+                rec.funcName,
+                os.path.basename(rec.pathname),
+                rec.funcName == expected,
+            )
             if rec.funcName == expected:
                 candidate = sl
                 break
@@ -278,11 +337,15 @@ async def main() -> None:
     print(f"DEFAULT_SYNC_CALL_STACKLEVEL              = {sync_call}")
     print(f"DEFAULT_SYNC_CALL_RAISE_STACKLEVEL        = {sync_call_raise}")
     print(f"DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL      = {sync_decorated_call}")
-    print(f"DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL  = {sync_decorated_call_raise}")
+    print(
+        f"DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL  = {sync_decorated_call_raise}"
+    )
     print(f"DEFAULT_ASYNC_CALL_STACKLEVEL               = {async_call}")
     print(f"DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL         = {async_call_raise}")
     print(f"DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL       = {async_decorated_call}")
-    print(f"DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL   = {async_decorated_call_raise}")
+    print(
+        f"DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL   = {async_decorated_call_raise}"
+    )
 
 
 if __name__ == "__main__":

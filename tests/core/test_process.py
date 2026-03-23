@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -42,7 +42,9 @@ pytestmark = pytest.mark.asyncio
 @pytest.mark.parametrize("process_class", PROCESS_CLASSES)
 @pytest.mark.parametrize("command", SUCCESS_COMMANDS)
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)  # 5ms + ~3ms
+@pytest.mark.bundle_cprofile(
+    expected_duration=5_000_000, performance_threshold=3_000_000
+)  # 5ms + ~3ms
 async def test_process_success(process_class: PROCESS_CLASS_TYPE, command, request):
     process = process_class(name="Success")
     process_return = await process(command)
@@ -53,7 +55,9 @@ async def test_process_success(process_class: PROCESS_CLASS_TYPE, command, reque
 @pytest.mark.parametrize("process_class", PROCESS_CLASSES)
 @pytest.mark.parametrize("command", FAILING_COMMANDS)
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)  # 5ms + ~3ms
+@pytest.mark.bundle_cprofile(
+    expected_duration=5_000_000, performance_threshold=3_000_000
+)  # 5ms + ~3ms
 async def test_process_failure(process_class, command, request):
     process = process_class(name="ExpectedFail")
     with pytest.raises(ProcessError) as exc_info:

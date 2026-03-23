@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """Player control buttons -- discord.ui.View delegating to GuildPlayer."""
 
 from __future__ import annotations
@@ -28,7 +47,9 @@ class QueuePaginator(discord.ui.View):
         self.btn_next_page.disabled = self._page >= pages - 1
 
     @discord.ui.button(label="\u25c0", style=discord.ButtonStyle.secondary)
-    async def btn_prev_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_prev_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         self._page = max(0, self._page - 1)
         self._update_buttons()
         await interaction.response.edit_message(
@@ -37,7 +58,9 @@ class QueuePaginator(discord.ui.View):
         )
 
     @discord.ui.button(label="\u25b6", style=discord.ButtonStyle.secondary)
-    async def btn_next_page(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_next_page(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         self._page = min(self._embed.queue_page_count() - 1, self._page + 1)
         self._update_buttons()
         await interaction.response.edit_message(
@@ -55,12 +78,16 @@ class PlayerControls(discord.ui.View):
         self.guild_id = guild_id
 
     @discord.ui.button(emoji="\u23ee\ufe0f", style=discord.ButtonStyle.secondary)
-    async def btn_prev(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_prev(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await interaction.response.defer()
         await self.cog._advance(interaction.guild, -1)
 
     @discord.ui.button(emoji="\u23ef\ufe0f", style=discord.ButtonStyle.primary)
-    async def btn_pause(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_pause(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         if not self.cog._get_session(self.guild_id):
             await interaction.response.send_message("Nothing playing.", ephemeral=True)
             return
@@ -69,17 +96,23 @@ class PlayerControls(discord.ui.View):
             await self.cog._pause_guild(interaction.guild)
 
     @discord.ui.button(emoji="\u23ed\ufe0f", style=discord.ButtonStyle.secondary)
-    async def btn_skip(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_skip(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await interaction.response.defer()
         await self.cog._advance(interaction.guild, +1)
 
     @discord.ui.button(emoji="\u23f9\ufe0f", style=discord.ButtonStyle.danger)
-    async def btn_stop(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_stop(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         await interaction.response.defer()
         await self.cog._stop_guild(interaction.guild)
 
     @discord.ui.button(emoji="\U0001f500", style=discord.ButtonStyle.secondary)
-    async def btn_shuffle(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_shuffle(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         gs = self.cog._get_session(self.guild_id)
         if not gs or not gs.queue:
             await interaction.response.send_message("Queue is empty.", ephemeral=True)
@@ -89,7 +122,9 @@ class PlayerControls(discord.ui.View):
         await gs.embed.refresh(status=vc_status(interaction.guild.voice_client))
 
     @discord.ui.button(emoji="\U0001f4cb", style=discord.ButtonStyle.secondary)
-    async def btn_queue(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
+    async def btn_queue(
+        self, interaction: discord.Interaction, button: discord.ui.Button
+    ) -> None:
         gs = self.cog._get_session(self.guild_id)
         if not gs or not gs.queue:
             await interaction.response.send_message("Queue is empty.", ephemeral=True)

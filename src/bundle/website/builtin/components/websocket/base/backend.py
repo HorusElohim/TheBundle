@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -67,7 +86,9 @@ async def run_websocket(websocket: WebSocket, *task_factories: TaskFactory) -> N
         for task in tasks:
             task.cancel()
         for task in tasks:
-            with contextlib.suppress(asyncio.CancelledError, WebSocketDisconnect, RuntimeError):
+            with contextlib.suppress(
+                asyncio.CancelledError, WebSocketDisconnect, RuntimeError
+            ):
                 await task
 
 
@@ -116,7 +137,9 @@ async def keepalive_loop(websocket: WebSocket) -> None:
     server_tx_bytes = 0
 
     @tracer.Async.decorator.call_raise(log_level=logger.Level.VERBOSE)
-    async def _on_keepalive(ws: WebSocket, message: KeepAliveMessage, request_frame_bytes: int) -> None:
+    async def _on_keepalive(
+        ws: WebSocket, message: KeepAliveMessage, request_frame_bytes: int
+    ) -> None:
         nonlocal server_rx_packets, server_tx_packets, server_rx_bytes, server_tx_bytes
         request_payload_bytes = len((message.payload or "").encode("utf-8"))
 

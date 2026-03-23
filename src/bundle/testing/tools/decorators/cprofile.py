@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import cProfile
@@ -63,7 +82,11 @@ class ProfileContext:
         log.testing(f"[{self.func_name}] executed in {formatted_elapsed}")
 
         if self.cprofile_folder:
-            identifier = self.result_identifier(self.result) if self.result is not None else "result"
+            identifier = (
+                self.result_identifier(self.result)
+                if self.result is not None
+                else "result"
+            )
             dump_file = self.cprofile_folder / f"{self.func_name}.{identifier}.prof"
             log.testing(f"[{self.func_name}] dumping cProfile stats to: {dump_file}")
             self.profiler.dump_stats(str(dump_file))

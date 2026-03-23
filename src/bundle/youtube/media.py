@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -50,14 +50,18 @@ def is_mp4_container(path: Path) -> bool:
 
 
 @tracer.Async.decorator.call_raise
-async def download_mp4(youtube_track: YoutubeTrackData, destination_folder: Path) -> MP4:
+async def download_mp4(
+    youtube_track: YoutubeTrackData, destination_folder: Path
+) -> MP4:
     """
     Download an MP4 file from video_url to destination.
     This wraps your existing DownloaderTQDM logic.
     """
 
     target_path = destination_folder / f"{youtube_track.filename}.mp4"
-    audio_downloader = downloader.DownloaderTQDM(url=youtube_track.video_url, destination=target_path)
+    audio_downloader = downloader.DownloaderTQDM(
+        url=youtube_track.video_url, destination=target_path
+    )
     thumbnail_downloader = downloader.Downloader(url=youtube_track.thumbnail_url)
 
     await asyncio.gather(audio_downloader.download(), thumbnail_downloader.download())
@@ -77,7 +81,13 @@ async def extract_mp3(mp4: MP4) -> MP3:
     mp3_path = mp4.path.with_suffix(".mp3")
     (
         ffmpeg.input(str(mp4.path))
-        .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
+        .output(
+            str(mp3_path),
+            format="mp3",
+            acodec="libmp3lame",
+            **{"qscale:a": 1},
+            loglevel="quiet",
+        )
         .run(overwrite_output=True)
     )
     log.debug("extraction completed - %s", mp4.filename)
@@ -96,27 +106,41 @@ def _extension_from_mime(mime_type: str, default: str) -> str:
     return default
 
 
-def audio_target_path(youtube_track: YoutubeTrackData, destination_folder: Path) -> Path:
+def audio_target_path(
+    youtube_track: YoutubeTrackData, destination_folder: Path
+) -> Path:
     extension = _extension_from_mime(youtube_track.audio_mime_type, ".m4a")
     return destination_folder / f"{youtube_track.filename}{extension}"
 
 
 @tracer.Async.decorator.call_raise
-async def download_audio(youtube_track: YoutubeTrackData, destination_folder: Path) -> Path:
+async def download_audio(
+    youtube_track: YoutubeTrackData, destination_folder: Path
+) -> Path:
     if not youtube_track.audio_url:
         raise ValueError("Missing audio URL for download")
     target_path = audio_target_path(youtube_track, destination_folder)
-    audio_downloader = downloader.DownloaderTQDM(url=youtube_track.audio_url, destination=target_path)
+    audio_downloader = downloader.DownloaderTQDM(
+        url=youtube_track.audio_url, destination=target_path
+    )
     await audio_downloader.download()
     return target_path
 
 
 @tracer.Async.decorator.call_raise
-async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: None | bytes = None) -> MP3:
+async def extract_mp3_from_path(
+    source_path: Path, track: TrackData, thumbnail: None | bytes = None
+) -> MP3:
     mp3_path = source_path.with_suffix(".mp3")
     (
         ffmpeg.input(str(source_path))
-        .output(str(mp3_path), format="mp3", acodec="libmp3lame", **{"qscale:a": 1}, loglevel="quiet")
+        .output(
+            str(mp3_path),
+            format="mp3",
+            acodec="libmp3lame",
+            **{"qscale:a": 1},
+            loglevel="quiet",
+        )
         .run(overwrite_output=True)
     )
     mp3 = MP3.from_track(path=mp3_path, track=track)
@@ -127,7 +151,9 @@ async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: 
 class MP3(MP3TrackData):
     @classmethod
     def from_track(cls: type[MP3], path, track: TrackData):
-        return cls(path=path, author=track.author, title=track.title, duration=track.duration)
+        return cls(
+            path=path, author=track.author, title=track.title, duration=track.duration
+        )
 
     @tracer.Async.decorator.call_raise
     async def save(self, thumbnail: None | bytes = None) -> None:
@@ -142,7 +168,9 @@ class MP3(MP3TrackData):
         mp3.tags.add(TPE1(encoding=3, text=self.author))
 
         if thumbnail and len(thumbnail) > 0:
-            mp3.tags.add(APIC(encoding=3, mime="image/png", type=3, desc="Cover", data=thumbnail))
+            mp3.tags.add(
+                APIC(encoding=3, mime="image/png", type=3, desc="Cover", data=thumbnail)
+            )
         mp3.save()
 
     @tracer.Async.decorator.call_raise
@@ -170,7 +198,9 @@ class MP3(MP3TrackData):
 class MP4(MP4TrackData):
     @classmethod
     def from_track(cls: type[MP4], path, track: TrackData):
-        return cls(path=path, author=track.author, title=track.title, duration=track.duration)
+        return cls(
+            path=path, author=track.author, title=track.title, duration=track.duration
+        )
 
     @tracer.Async.decorator.call_raise
     async def save(self, thumbnail: None | bytes = None) -> None:
@@ -181,7 +211,11 @@ class MP4(MP4TrackData):
         if thumbnail and len(thumbnail) > 0:
             # For the cover, MP4Cover expects the image data, and the second argument is the image format
             # MP4Cover.FORMAT_JPEG or MP4Cover.FORMAT_PNG depending on your thumbnail's format
-            cover_format = MP4Cover.FORMAT_PNG if thumbnail.startswith(b"\x89PNG") else MP4Cover.FORMAT_JPEG
+            cover_format = (
+                MP4Cover.FORMAT_PNG
+                if thumbnail.startswith(b"\x89PNG")
+                else MP4Cover.FORMAT_JPEG
+            )
             mp4["covr"] = [MP4Cover(thumbnail, imageformat=cover_format)]
         mp4.save()
 
@@ -212,7 +246,9 @@ class MP4(MP4TrackData):
 
     @classmethod
     @tracer.Async.decorator.call_raise
-    async def download(cls, youtube_track: YoutubeTrackData, destination_folder: Path) -> MP4:
+    async def download(
+        cls, youtube_track: YoutubeTrackData, destination_folder: Path
+    ) -> MP4:
         return await download_mp4(youtube_track, destination_folder)
 
     @tracer.Async.decorator.call_raise

@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -27,7 +27,15 @@ import numpy as np
 
 from ...hdf5 import Store
 from ..extractor import CProfileData, CProfileExtractor, CProfileRecord
-from .base import MAX_FILE_LEN, MAX_FUNC_LEN, list_platforms, list_versions, load_meta, run_prefix, write_meta
+from .base import (
+    MAX_FILE_LEN,
+    MAX_FUNC_LEN,
+    list_platforms,
+    list_versions,
+    load_meta,
+    run_prefix,
+    write_meta,
+)
 
 
 def _cprofile_dtype() -> np.dtype:
@@ -72,7 +80,9 @@ class CProfileStorage:
             if store.has(prefix):
                 del store.file[prefix]
 
-            write_meta(store, prefix, machine_id, bundle_version, platform_id, platform_meta)
+            write_meta(
+                store, prefix, machine_id, bundle_version, platform_id, platform_meta
+            )
 
             dt = _cprofile_dtype()
             for profile in profiles:

@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -20,7 +39,9 @@ class Browser(browser.Browser):
 
     async def set_context(self) -> Browser:
         return await self.new_context(
-            user_agent=("Mozilla/5.0 (X11; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0"),
+            user_agent=(
+                "Mozilla/5.0 (X11; Linux x86_64; rv:101.0) Gecko/20100101 Firefox/101.0"
+            ),
             locale="en-US",
         )
 
@@ -34,7 +55,9 @@ class Browser(browser.Browser):
             row_selector="table.table-list tbody tr",
             columns=[
                 self.Table.Column(
-                    name="name", selector="td.coll-1.name a:nth-of-type(2)", parser_type=self.Table.Column.Type.TEXT
+                    name="name",
+                    selector="td.coll-1.name a:nth-of-type(2)",
+                    parser_type=self.Table.Column.Type.TEXT,
                 ),
                 self.Table.Column(
                     name="detail_url",
@@ -42,11 +65,31 @@ class Browser(browser.Browser):
                     parser_type=self.Table.Column.Type.URL,
                     base_url=self.url_suffix,
                 ),
-                self.Table.Column(name="seeds", selector="td.coll-2.seeds", parser_type=self.Table.Column.Type.INT),
-                self.Table.Column(name="leeches", selector="td.coll-3.leeches", parser_type=self.Table.Column.Type.INT),
-                self.Table.Column(name="uploaded_at", selector="td.coll-date", parser_type=self.Table.Column.Type.TEXT),
-                self.Table.Column(name="size", selector="td.coll-4", parser_type=self.Table.Column.Type.TEXT),
-                self.Table.Column(name="uploader", selector="td.coll-5 a", parser_type=self.Table.Column.Type.TEXT),
+                self.Table.Column(
+                    name="seeds",
+                    selector="td.coll-2.seeds",
+                    parser_type=self.Table.Column.Type.INT,
+                ),
+                self.Table.Column(
+                    name="leeches",
+                    selector="td.coll-3.leeches",
+                    parser_type=self.Table.Column.Type.INT,
+                ),
+                self.Table.Column(
+                    name="uploaded_at",
+                    selector="td.coll-date",
+                    parser_type=self.Table.Column.Type.TEXT,
+                ),
+                self.Table.Column(
+                    name="size",
+                    selector="td.coll-4",
+                    parser_type=self.Table.Column.Type.TEXT,
+                ),
+                self.Table.Column(
+                    name="uploader",
+                    selector="td.coll-5 a",
+                    parser_type=self.Table.Column.Type.TEXT,
+                ),
             ],
             model=TorrentData,
         )
@@ -57,7 +100,13 @@ class Browser(browser.Browser):
             t.magnet_link = ""
 
         if torrents:
-            await asyncio.gather(*(self._fetch_magnet_link_for_torrent(t) for t in torrents if t.detail_url))
+            await asyncio.gather(
+                *(
+                    self._fetch_magnet_link_for_torrent(t)
+                    for t in torrents
+                    if t.detail_url
+                )
+            )
 
         log.debug("Total parsed torrents with magnet links: %d", len(torrents))
         return torrents
@@ -70,9 +119,15 @@ class Browser(browser.Browser):
         torrent.magnet_link = (await page.get_attribute("a#openPopup", "href")) or ""
         await page.close()
 
-    async def tabulate_torrents(self, torrents: list[TorrentData], truncate_width: int = 30) -> str:
+    async def tabulate_torrents(
+        self, torrents: list[TorrentData], truncate_width: int = 30
+    ) -> str:
         def _truncate(text: str) -> str:
-            return text if len(text) <= truncate_width else text[: truncate_width - 3] + "..."
+            return (
+                text
+                if len(text) <= truncate_width
+                else text[: truncate_width - 3] + "..."
+            )
 
         table_data = [
             [
@@ -98,7 +153,8 @@ class Browser(browser.Browser):
         grid = tabulate(table_data, headers=headers, tablefmt="fancy_grid")
 
         links = "\n\n".join(
-            f"[{i + 1}] Detail URL: {t.detail_url}\n    Magnet Link: {t.magnet_link}" for i, t in enumerate(torrents)
+            f"[{i + 1}] Detail URL: {t.detail_url}\n    Magnet Link: {t.magnet_link}"
+            for i, t in enumerate(torrents)
         )
 
         return f"\n{grid}\n\nLinks:\n{links}"

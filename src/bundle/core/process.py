@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -90,13 +90,20 @@ class Process(Entity):
 
         stdout, stderr = await self._process.communicate()
 
-        returncode = -1 if self._process.returncode is None else self._process.returncode
+        returncode = (
+            -1 if self._process.returncode is None else self._process.returncode
+        )
 
         stdout_decoded = stdout.decode("utf-8", errors="replace") if stdout else ""
         stderr_decoded = stderr.decode("utf-8", errors="replace") if stderr else ""
 
         # Create the ProcessResult before checking the return code
-        result = ProcessResult(command=command, returncode=returncode, stdout=stdout_decoded, stderr=stderr_decoded)
+        result = ProcessResult(
+            command=command,
+            returncode=returncode,
+            stdout=stdout_decoded,
+            stderr=stderr_decoded,
+        )
 
         if returncode != 0:
             raise ProcessError(self, result)
@@ -125,7 +132,13 @@ class ProcessStream(Process):
         stdout_lines = []
         stderr_lines = []
 
-        return await self._internal_call_(command, stdout_lines, stderr_lines, **kwargs, log_level=logger.Level.VERBOSE)
+        return await self._internal_call_(
+            command,
+            stdout_lines,
+            stderr_lines,
+            **kwargs,
+            log_level=logger.Level.VERBOSE,
+        )
 
     async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
         self._process = await tracer.Async.call_raise(
@@ -157,7 +170,9 @@ class ProcessStream(Process):
         stdout = "".join(stdout_lines)
         stderr = "".join(stderr_lines)
 
-        result = ProcessResult(command=command, returncode=returncode, stdout=stdout, stderr=stderr)
+        result = ProcessResult(
+            command=command, returncode=returncode, stdout=stdout, stderr=stderr
+        )
 
         if returncode != 0:
             raise ProcessError(self, result)

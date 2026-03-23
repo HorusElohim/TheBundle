@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import os
 import shutil
 import sys
@@ -21,7 +40,9 @@ def get_tmp_example_module(tmp_path_factory, request):
     """Copies the example_module to a temporary directory for CMake testing."""
     log.testing("Copying example module to temporary directory for testing")
     if not EXAMPLE_MODULE_SRC_DIR.exists():
-        raise FileNotFoundError(f"Example module source directory does not exist: {EXAMPLE_MODULE_SRC_DIR}")
+        raise FileNotFoundError(
+            f"Example module source directory does not exist: {EXAMPLE_MODULE_SRC_DIR}"
+        )
 
     dest_proj_dir = tmp_path_factory.mktemp("tests_example_module")
     shutil.copytree(EXAMPLE_MODULE_SRC_DIR, dest_proj_dir, dirs_exist_ok=True)
@@ -43,7 +64,9 @@ async def built_example_module(get_tmp_example_module: Path):
     build_dir_name = "integration_build"
     install_prefix = source_dir / "install"
 
-    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
+    await CMakeService.configure(
+        source_dir, build_dir_name, install_prefix=install_prefix
+    )
     await CMakeService.build(source_dir, build_dir_name, target="install")
 
     return install_prefix
@@ -62,7 +85,9 @@ async def built_example_module_pybind(built_example_module: Path):
     os.environ.update(env)
     log.debug(f"Setting PKG_CONFIG_PATH to: {env['PKG_CONFIG_PATH']}")
 
-    source_dir = dest.parent  # e.g. tests_example_module/install -> tests_example_module
+    source_dir = (
+        dest.parent
+    )  # e.g. tests_example_module/install -> tests_example_module
     pyproject_path = source_dir / "pyproject.toml"
     if not pyproject_path.exists():
         raise FileNotFoundError(f"pyproject.toml not found in {source_dir}")
@@ -81,4 +106,6 @@ async def built_example_module_pybind(built_example_module: Path):
             log.debug(f"Found and added compiled extension path to sys.path: {sub}")
             return sub, pyproject_path
 
-    raise FileNotFoundError("Could not locate compiled extension output directory in build/")
+    raise FileNotFoundError(
+        "Could not locate compiled extension output directory in build/"
+    )

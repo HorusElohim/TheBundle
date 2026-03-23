@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from fastapi import APIRouter
 
 from bundle.website.builtin import components
@@ -7,20 +26,28 @@ def test_websocket_component_defaults():
     default = components.WebSocketHeartbeatComponent()
     assert default.slug == "ws-heartbeat"
     assert default.params.endpoint == "/ws/heartbeat"
-    assert any(asset.path.endswith("heartbeat/component.js") for asset in default.assets)
+    assert any(
+        asset.path.endswith("heartbeat/component.js") for asset in default.assets
+    )
     assert all(asset.route_name == "components_static" for asset in default.assets)
 
 
 def test_component_context_supports_data_params_override():
-    custom = components.WebSocketHeartbeatComponent(params=components.WebSocketComponentParams(endpoint="/ws/custom"))
+    custom = components.WebSocketHeartbeatComponent(
+        params=components.WebSocketComponentParams(endpoint="/ws/custom")
+    )
     ctx = components.context(custom)
     selected = ctx["components"]
     assert len(selected) == 1
-    assert selected[0].params is not None and selected[0].params.endpoint == "/ws/custom"
+    assert (
+        selected[0].params is not None and selected[0].params.endpoint == "/ws/custom"
+    )
 
 
 def test_component_context_accepts_component_instance():
-    custom = components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-alt"))
+    custom = components.WebSocketECCComponent(
+        params=components.WebSocketComponentParams(endpoint="/ws/ecc-alt")
+    )
     ctx = components.context(custom)
     selected = ctx["components"]
     assert len(selected) == 1
@@ -41,8 +68,12 @@ def test_attach_routes_supports_multiple_ecc_instances():
     router = APIRouter()
     components.attach_routes(
         router,
-        components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")),
-        components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")),
+        components.WebSocketECCComponent(
+            params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")
+        ),
+        components.WebSocketECCComponent(
+            params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")
+        ),
     )
     paths = {route.path for route in router.routes}
     assert "/ws/ecc-1" in paths

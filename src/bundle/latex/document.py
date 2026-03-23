@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -99,7 +99,11 @@ class Document:
         self._sections.append(section)
 
     def render(self) -> str:
-        doc_class = "\\documentclass[landscape]{article}" if self.landscape else "\\documentclass{article}"
+        doc_class = (
+            "\\documentclass[landscape]{article}"
+            if self.landscape
+            else "\\documentclass{article}"
+        )
         orientation = "landscape, " if self.landscape else ""
         lines = [
             doc_class + "\n",

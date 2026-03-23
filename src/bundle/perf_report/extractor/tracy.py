@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -104,9 +104,13 @@ class ProfileExtractor:
         tracy_path = Path(tracy_path)
         csvexport = shutil.which("tracy-csvexport")
         if not csvexport:
-            raise FileNotFoundError("tracy-csvexport not found on PATH — run: bundle tracy build csvexport")
+            raise FileNotFoundError(
+                "tracy-csvexport not found on PATH — run: bundle tracy build csvexport"
+            )
 
-        result = subprocess.run([csvexport, str(tracy_path)], capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            [csvexport, str(tracy_path)], capture_output=True, text=True, check=True
+        )
 
         csv_path = tracy_path.with_suffix(".csv")
         csv_path.write_text(result.stdout, encoding="utf-8")

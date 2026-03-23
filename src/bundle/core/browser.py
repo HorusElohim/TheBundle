@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -32,7 +32,13 @@ from collections.abc import AsyncIterator, Awaitable, Callable
 from typing import Any, Generic, List, Type, TypeVar
 
 from playwright.async_api import Browser as PlaywrightBrowser
-from playwright.async_api import BrowserContext, ElementHandle, Page, Playwright, async_playwright
+from playwright.async_api import (
+    BrowserContext,
+    ElementHandle,
+    Page,
+    Playwright,
+    async_playwright,
+)
 
 from . import data, entity, tracer
 from .logger import get_logger
@@ -73,14 +79,18 @@ class Browser(entity.Entity):
                 return BrowserType(v.lower())
             except ValueError as err:
                 supported = [bt.value for bt in BrowserType]
-                raise ValueError(f"Unsupported browser type: {v}. Supported types are: {supported}") from err
+                raise ValueError(
+                    f"Unsupported browser type: {v}. Supported types are: {supported}"
+                ) from err
         if isinstance(v, BrowserType):
             return v
         raise ValueError(f"Invalid browser type: {v}")
 
     @classmethod
     @asynccontextmanager
-    async def chromium(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def chromium(
+        cls: type[Self], headless: bool = True, **kwargs
+    ) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Chromium browser.
         """
@@ -93,7 +103,9 @@ class Browser(entity.Entity):
 
     @classmethod
     @asynccontextmanager
-    async def firefox(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def firefox(
+        cls: type[Self], headless: bool = True, **kwargs
+    ) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a Firefox browser.
         """
@@ -106,7 +118,9 @@ class Browser(entity.Entity):
 
     @classmethod
     @asynccontextmanager
-    async def webkit(cls: type[Self], headless: bool = True, **kwargs) -> AsyncIterator[Self]:
+    async def webkit(
+        cls: type[Self], headless: bool = True, **kwargs
+    ) -> AsyncIterator[Self]:
         """
         Context manager to instantiate a WebKit browser.
         """
@@ -148,11 +162,17 @@ class Browser(entity.Entity):
             raise RuntimeError("Playwright is not started.")
 
         if self.browser_type == BrowserType.CHROMIUM:
-            self.browser = await tracer.Async.call_raise(self._playwright.chromium.launch, headless=self.headless)
+            self.browser = await tracer.Async.call_raise(
+                self._playwright.chromium.launch, headless=self.headless
+            )
         elif self.browser_type == BrowserType.FIREFOX:
-            self.browser = await tracer.Async.call_raise(self._playwright.firefox.launch, headless=self.headless)
+            self.browser = await tracer.Async.call_raise(
+                self._playwright.firefox.launch, headless=self.headless
+            )
         elif self.browser_type == BrowserType.WEBKIT:
-            self.browser = await tracer.Async.call_raise(self._playwright.webkit.launch, headless=self.headless)
+            self.browser = await tracer.Async.call_raise(
+                self._playwright.webkit.launch, headless=self.headless
+            )
         else:
             raise ValueError(f"Unsupported browser type: {self.browser_type.value}")
 
@@ -208,7 +228,11 @@ class Browser(entity.Entity):
                     await context.close()
                     logger.debug("%s Browser context closed.", logger.Emoji.success)
                 except Exception as e:
-                    logger.warning("%s Failed to close a browser context: %s", logger.Emoji.warning, e)
+                    logger.warning(
+                        "%s Failed to close a browser context: %s",
+                        logger.Emoji.warning,
+                        e,
+                    )
             self.contexts.clear()
 
         if self.browser:
@@ -216,7 +240,9 @@ class Browser(entity.Entity):
                 await self.browser.close()
                 logger.info("Browser closed.")
             except Exception as e:
-                logger.error("%s Failed to close the browser: %s", logger.Emoji.failed, e)
+                logger.error(
+                    "%s Failed to close the browser: %s", logger.Emoji.failed, e
+                )
             self.browser = None
 
         self.is_closed = True
@@ -284,7 +310,9 @@ class Browser(entity.Entity):
                 return href
 
             # Map parser types to methods—easy to extend with new types
-            _PARSER_MAP: dict[type, Callable[[Browser.Table.Column, ElementHandle], Awaitable[Any]]] = {
+            _PARSER_MAP: dict[
+                type, Callable[[Browser.Table.Column, ElementHandle], Awaitable[Any]]
+            ] = {
                 Type.TEXT: parse_text,
                 Type.INT: parse_int,
                 Type.URL: parse_url,

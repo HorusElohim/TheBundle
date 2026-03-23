@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """YouTube page routes and websocket download/probe workflow."""
 
 import asyncio
@@ -15,7 +34,11 @@ from bundle.website.core.ws_messages import WebSocketDataMixin
 from bundle.youtube import media
 from bundle.youtube.media import MP4
 from bundle.youtube.pytube import probe, resolve
-from bundle.youtube.track import YoutubeResolveOptions, YoutubeStreamOption, YoutubeTrackData
+from bundle.youtube.track import (
+    YoutubeResolveOptions,
+    YoutubeStreamOption,
+    YoutubeTrackData,
+)
 
 page = PageModule(
     __file__,
@@ -82,12 +105,25 @@ class QualityOptionsMessage(data.Data, WebSocketDataMixin):
 def _pick_simple_mp4_option(track: YoutubeTrackData) -> YoutubeStreamOption | None:
     """Return preferred progressive MP4 option (360p first, then first MP4)."""
     preferred = next(
-        (opt for opt in track.video_streams if opt.progressive and opt.mime_type == "video/mp4" and opt.resolution == "360p"),
+        (
+            opt
+            for opt in track.video_streams
+            if opt.progressive
+            and opt.mime_type == "video/mp4"
+            and opt.resolution == "360p"
+        ),
         None,
     )
     if preferred:
         return preferred
-    return next((opt for opt in track.video_streams if opt.progressive and opt.mime_type == "video/mp4"), None)
+    return next(
+        (
+            opt
+            for opt in track.video_streams
+            if opt.progressive and opt.mime_type == "video/mp4"
+        ),
+        None,
+    )
 
 
 def _simple_quality_options(track: YoutubeTrackData) -> list[YoutubeStreamOption]:
@@ -123,7 +159,9 @@ def _existing_served_path(filename: str, requested_format: str) -> Path | None:
 @page.router.get("/youtube", response_class=HTMLResponse)
 async def youtube(request: Request):
     """Render the YouTube page."""
-    return page.templates.TemplateResponse(request, "youtube.html", base_context(request))
+    return page.templates.TemplateResponse(
+        request, "youtube.html", base_context(request)
+    )
 
 
 @page.router.websocket("/ws/youtube/download_track")
@@ -150,7 +188,9 @@ async def download_track(websocket: WebSocket):
             resolved_any = False
             async for youtube_track in probe(youtube_url):
                 if youtube_track is None or not youtube_track.is_resolved():
-                    await InfoMessage(info_message="Skipping unresolved entry from playlist").send(websocket)
+                    await InfoMessage(
+                        info_message="Skipping unresolved entry from playlist"
+                    ).send(websocket)
                     continue
 
                 resolved_any = True
@@ -158,29 +198,41 @@ async def download_track(websocket: WebSocket):
                 await track_metadata.send(websocket)
                 simple_options = _simple_quality_options(youtube_track)
                 if not simple_options:
-                    await InfoMessage(info_message="No supported progressive MP4 stream found for this video").send(websocket)
+                    await InfoMessage(
+                        info_message="No supported progressive MP4 stream found for this video"
+                    ).send(websocket)
                     continue
                 break
 
             if not resolved_any:
-                await InfoMessage(info_message="Unable to resolve any playable entries").send(websocket)
+                await InfoMessage(
+                    info_message="Unable to resolve any playable entries"
+                ).send(websocket)
 
             await CompletedMessage().send(websocket)
             continue
 
         await InfoMessage(info_message="Resolving track").send(websocket)
         resolved_any = False
-        async for base_track in resolve(youtube_url, options=YoutubeResolveOptions(best=True)):
+        async for base_track in resolve(
+            youtube_url, options=YoutubeResolveOptions(best=True)
+        ):
             if base_track is None or not base_track.is_resolved():
-                await InfoMessage(info_message="Skipping unresolved entry from playlist").send(websocket)
+                await InfoMessage(
+                    info_message="Skipping unresolved entry from playlist"
+                ).send(websocket)
                 continue
 
             existing_path = _existing_served_path(base_track.filename, requested_format)
             if existing_path:
                 resolved_any = True
-                await InfoMessage(info_message="Using existing local file").send(websocket)
+                await InfoMessage(info_message="Using existing local file").send(
+                    websocket
+                )
                 file_url = f"/youtube/{existing_path.name}"
-                await FileReadyMessage(url=file_url, filename=existing_path.name, format=requested_format).send(websocket)
+                await FileReadyMessage(
+                    url=file_url, filename=existing_path.name, format=requested_format
+                ).send(websocket)
                 continue
 
             mp4_option = _pick_simple_mp4_option(base_track)
@@ -188,7 +240,9 @@ async def download_track(websocket: WebSocket):
             if not download_url:
                 download_url = base_track.video_url.strip()
             if not download_url:
-                await InfoMessage(info_message="No downloadable MP4 stream found for this video").send(websocket)
+                await InfoMessage(
+                    info_message="No downloadable MP4 stream found for this video"
+                ).send(websocket)
                 continue
 
             resolved_any = True
@@ -199,43 +253,63 @@ async def download_track(websocket: WebSocket):
                 destination=destination,
                 websocket=websocket,
             )
-            video_ok, thumb_ok = await asyncio.gather(video_downloader.download(), thumbnail_downloader.download())
+            video_ok, thumb_ok = await asyncio.gather(
+                video_downloader.download(), thumbnail_downloader.download()
+            )
             if not video_ok or not destination.exists():
                 detail = video_downloader.error_message or "unknown reason"
-                await InfoMessage(info_message=f"Video download failed before processing: {detail}").send(websocket)
+                await InfoMessage(
+                    info_message=f"Video download failed before processing: {detail}"
+                ).send(websocket)
                 continue
             if not media.is_mp4_container(destination):
                 destination.unlink(missing_ok=True)
-                await InfoMessage(info_message="Download failed: stream is not a valid MP4 container").send(websocket)
+                await InfoMessage(
+                    info_message="Download failed: stream is not a valid MP4 container"
+                ).send(websocket)
                 continue
 
             if requested_format == "mp3":
                 try:
-                    await InfoMessage(info_message=f"Extracting MP3 for {base_track.filename}").send(websocket)
+                    await InfoMessage(
+                        info_message=f"Extracting MP3 for {base_track.filename}"
+                    ).send(websocket)
                     mp3_thumbnail = thumbnail_downloader.buffer if thumb_ok else None
-                    mp3 = await media.extract_mp3_from_path(destination, base_track, mp3_thumbnail)
+                    mp3 = await media.extract_mp3_from_path(
+                        destination, base_track, mp3_thumbnail
+                    )
                     destination.unlink(missing_ok=True)
                     served_path = mp3.path
                 except Exception as exc:
-                    await InfoMessage(info_message=f"MP3 conversion failed: {exc}").send(websocket)
+                    await InfoMessage(
+                        info_message=f"MP3 conversion failed: {exc}"
+                    ).send(websocket)
                     destination.unlink(missing_ok=True)
                     continue
             else:
                 try:
-                    await InfoMessage(info_message=f"Embedding metadata for {base_track.filename}").send(websocket)
+                    await InfoMessage(
+                        info_message=f"Embedding metadata for {base_track.filename}"
+                    ).send(websocket)
                     mp4 = MP4.from_track(path=destination, track=base_track)
                     mp4_thumbnail = thumbnail_downloader.buffer if thumb_ok else None
                     await mp4.save(mp4_thumbnail)
                     served_path = mp4.path
                 except Exception as exc:
-                    await InfoMessage(info_message=f"MP4 tagging failed: {exc}").send(websocket)
+                    await InfoMessage(info_message=f"MP4 tagging failed: {exc}").send(
+                        websocket
+                    )
                     continue
 
             file_url = f"/youtube/{served_path.name}"
             await InfoMessage(info_message="Download ready").send(websocket)
-            await FileReadyMessage(url=file_url, filename=served_path.name, format=requested_format).send(websocket)
+            await FileReadyMessage(
+                url=file_url, filename=served_path.name, format=requested_format
+            ).send(websocket)
 
         if not resolved_any:
-            await InfoMessage(info_message="Unable to resolve any playable entries").send(websocket)
+            await InfoMessage(
+                info_message="Unable to resolve any playable entries"
+            ).send(websocket)
 
         await CompletedMessage().send(websocket)

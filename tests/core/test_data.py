@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -35,6 +35,8 @@ DATA_CLASSES_TO_TEST = [
 
 @pytest.mark.parametrize("dataclass", DATA_CLASSES_TO_TEST)
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(expected_duration=500_000, performance_threshold=3_000_000)  # 0.5ms + ~3ms
+@pytest.mark.bundle_cprofile(
+    expected_duration=500_000, performance_threshold=3_000_000
+)  # 0.5ms + ~3ms
 async def test_dataclass(dataclass):
     return dataclass()

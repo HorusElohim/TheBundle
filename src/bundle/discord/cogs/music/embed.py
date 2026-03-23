@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """Player embed -- message lifecycle and seek-bar updates."""
 
 from __future__ import annotations
@@ -77,7 +96,9 @@ class PlayerEmbed:
         for i in range(start, end):
             track = self._queue.tracks[i]
             marker = "\u25b6" if i == self._queue.index else f"{i + 1}."
-            lines.append(f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`")
+            lines.append(
+                f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`"
+            )
 
         description = "\n".join(lines) or "Queue is empty."
         if self._queue.resolving:
@@ -103,7 +124,9 @@ class PlayerEmbed:
         except discord.HTTPException:
             pass
 
-    async def send_or_update(self, embed: discord.Embed, view: discord.ui.View | None = None) -> None:
+    async def send_or_update(
+        self, embed: discord.Embed, view: discord.ui.View | None = None
+    ) -> None:
         """Send a new message or edit the existing one."""
         if self.msg:
             try:

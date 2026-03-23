@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import os
@@ -61,7 +80,9 @@ def _resolve_compose_command() -> str:
         return "docker compose"
     if shutil.which("docker-compose"):
         return "docker-compose"
-    raise click.ClickException("Docker compose is not available. Install Docker and ensure it is on PATH.")
+    raise click.ClickException(
+        "Docker compose is not available. Install Docker and ensure it is on PATH."
+    )
 
 
 class PodManager(Entity):
@@ -115,7 +136,9 @@ class PodManager(Entity):
     @staticmethod
     def _inspect(pod_name: str, pod_path: Path) -> PodSpec:
         """Parse a pod's docker-compose.yml to extract service, build, and container metadata."""
-        content = (pod_path / "docker-compose.yml").read_text(encoding="utf-8", errors="replace")
+        content = (pod_path / "docker-compose.yml").read_text(
+            encoding="utf-8", errors="replace"
+        )
         buildable = "build:" in content
         service = None
         target = f"{pod_name}:"
@@ -124,7 +147,13 @@ class PodManager(Entity):
                 service = pod_name
                 break
         containers = re.findall(r"container_name:\s*(\S+)", content)
-        return PodSpec(name=pod_name, folder=pod_name, service=service, buildable=buildable, containers=containers)
+        return PodSpec(
+            name=pod_name,
+            folder=pod_name,
+            service=service,
+            buildable=buildable,
+            containers=containers,
+        )
 
     @property
     def specs(self) -> dict[str, PodSpec]:
@@ -135,7 +164,9 @@ class PodManager(Entity):
         pod = self._specs.get(name.lower())
         if pod is None:
             available = ", ".join(sorted(self._specs.keys())) if self._specs else "none"
-            raise click.ClickException(f"Unknown pod '{name}'. Available pods: {available}")
+            raise click.ClickException(
+                f"Unknown pod '{name}'. Available pods: {available}"
+            )
         return pod
 
     def pod_path(self, pod: PodSpec) -> Path:
@@ -150,25 +181,35 @@ class PodManager(Entity):
     async def running_containers(self) -> set[str]:
         """Query Docker for currently running container names."""
         try:
-            result = await process.Process(name="docker.ps")("docker ps --format {{.Names}}")
+            result = await process.Process(name="docker.ps")(
+                "docker ps --format {{.Names}}"
+            )
             return {line.strip() for line in result.stdout.splitlines() if line.strip()}
         except Exception:
             return set()
 
     # -- Compose execution --
 
-    async def compose(self, pod: PodSpec, subcommand: str, stream: bool = False) -> process.ProcessResult:
+    async def compose(
+        self, pod: PodSpec, subcommand: str, stream: bool = False
+    ) -> process.ProcessResult:
         """Execute a docker compose subcommand against a pod's compose file."""
         cwd = self.pod_path(pod)
         compose_file = cwd / "docker-compose.yml"
         if not compose_file.exists():
-            raise click.ClickException(f"docker-compose.yml not found for pod at '{cwd}'.")
+            raise click.ClickException(
+                f"docker-compose.yml not found for pod at '{cwd}'."
+            )
         ansi_flag = " --ansi always" if sys.platform != "win32" else ""
         cmd = f'{self._compose_cmd}{ansi_flag} -f "{compose_file}" {subcommand}'
         if pod.service:
             cmd = f"{cmd} {pod.service}"
         runner: process.Process | process.ProcessStream
-        runner = process.ProcessStream(name="Pods.compose.stream") if stream else process.Process(name="Pods.compose")
+        runner = (
+            process.ProcessStream(name="Pods.compose.stream")
+            if stream
+            else process.Process(name="Pods.compose")
+        )
         return await runner(cmd, cwd=str(cwd))
 
     # -- High-level operations --
@@ -197,7 +238,9 @@ class PodManager(Entity):
         return await self.compose(pod, "ps", stream=False)
 
     @tracer.Async.decorator.call_raise
-    async def logs(self, pod: PodSpec, follow: bool = True, tail: int = 200) -> process.ProcessResult:
+    async def logs(
+        self, pod: PodSpec, follow: bool = True, tail: int = 200
+    ) -> process.ProcessResult:
         """Stream or show pod container logs."""
         follow_flag = "-f " if follow else ""
         return await self.compose(pod, f"logs {follow_flag}--tail {tail}", stream=True)

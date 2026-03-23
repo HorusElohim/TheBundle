@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 import asyncio
 import time
 from pathlib import Path
@@ -33,7 +52,9 @@ def _describe_option(option: YoutubeStreamOption) -> str:
     return " | ".join(part for part in parts if part)
 
 
-def _select_stream(options: list[YoutubeStreamOption], label: str, best: bool) -> int | None:
+def _select_stream(
+    options: list[YoutubeStreamOption], label: str, best: bool
+) -> int | None:
     if not options:
         log.warning("No %s streams available to choose from.", label)
         return None
@@ -42,7 +63,9 @@ def _select_stream(options: list[YoutubeStreamOption], label: str, best: bool) -
     click.echo(f"Available {label} qualities:")
     for idx, option in enumerate(options, start=1):
         click.echo(f"{idx}. {_describe_option(option)} (itag {option.itag})")
-    choice = click.prompt(f"Select {label} quality", type=int, default=1, show_default=True)
+    choice = click.prompt(
+        f"Select {label} quality", type=int, default=1, show_default=True
+    )
     choice = max(1, min(choice, len(options)))
     return options[choice - 1].itag
 
@@ -64,11 +87,24 @@ async def new_token():
 
 @youtube.command()
 @click.argument("url", type=str)
-@click.option("directory", "-d", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination Folder")
-@click.option("--dry-run", "-dr", is_flag=True, help="Dry run, without any download just resolve the URL")
+@click.option(
+    "directory",
+    "-d",
+    type=click.Path(exists=True),
+    default=YOUTUBE_PATH,
+    help="Destination Folder",
+)
+@click.option(
+    "--dry-run",
+    "-dr",
+    is_flag=True,
+    help="Dry run, without any download just resolve the URL",
+)
 @click.option("--mp3", is_flag=True, help="Download MP4 and convert to MP3")
 @click.option("--mp3-only", is_flag=True, help="Download MP4 and convert to MP3")
-@click.option("--best", is_flag=True, help="Pick the best available quality automatically")
+@click.option(
+    "--best", is_flag=True, help="Pick the best available quality automatically"
+)
 @tracer.Sync.decorator.call_raise
 async def download(url, directory, dry_run, mp3, mp3_only, best):
     log.info(f"started {url=}")
@@ -128,9 +164,13 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
         # MP3 only
         if mp3_only:
             audio_path = await media.download_audio(resolved_track, directory)
-            thumbnail_downloader = downloader.Downloader(url=resolved_track.thumbnail_url)
+            thumbnail_downloader = downloader.Downloader(
+                url=resolved_track.thumbnail_url
+            )
             await thumbnail_downloader.download()
-            _mp3 = await media.extract_mp3_from_path(audio_path, resolved_track, thumbnail_downloader.buffer)
+            _mp3 = await media.extract_mp3_from_path(
+                audio_path, resolved_track, thumbnail_downloader.buffer
+            )
             db.add(_mp3)
             audio_path.unlink()
         # Safe sleep (avoid been blocked)
@@ -142,7 +182,13 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
 
 @youtube.command()
 @click.argument("url", type=str)
-@click.option("--limit", type=int, default=0, show_default=False, help="Limit how many entries to display")
+@click.option(
+    "--limit",
+    type=int,
+    default=0,
+    show_default=False,
+    help="Limit how many entries to display",
+)
 @tracer.Sync.decorator.call_raise
 async def resolve(url, limit):
     """Resolve a YouTube URL and log the resulting track metadata."""
@@ -192,7 +238,9 @@ async def to_mp3(track_paths):
     @tracer.Async.decorator.call_raise
     async def extract_mp4_audio(track_path: Path):
         if track_path.suffix != ".mp4":
-            log.warning(f"Only MP4 audio extraction to MP3 is supported. Skipping: {track_path}")
+            log.warning(
+                f"Only MP4 audio extraction to MP3 is supported. Skipping: {track_path}"
+            )
             return
 
         log.info(f"🎶 Audio extraction started on: {track_path}")
@@ -211,7 +259,13 @@ async def database():
 
 
 @database.command()
-@click.option("-d", "directory", type=click.Path(exists=True), default=YOUTUBE_PATH, help="Destination directory")
+@click.option(
+    "-d",
+    "directory",
+    type=click.Path(exists=True),
+    default=YOUTUBE_PATH,
+    help="Destination directory",
+)
 @tracer.Sync.decorator.call_raise
 async def show(directory):
     db = Database(path=directory)

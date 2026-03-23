@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -26,7 +26,9 @@ from bundle.perf_report import ProfileExtractor, ProfileStorage
 VERSION = "0.1.dev1"
 PLATFORM = "linux-x86_64-CPython3.12.8"
 
-_CSV_HEADER = "name,src_file,src_line,total_ns,total_perc,counts,mean_ns,min_ns,max_ns,std_ns\n"
+_CSV_HEADER = (
+    "name,src_file,src_line,total_ns,total_perc,counts,mean_ns,min_ns,max_ns,std_ns\n"
+)
 
 
 @pytest.fixture
@@ -36,7 +38,8 @@ def csv_dir(tmp_path) -> Path:
         csv_path = tmp_path / "profiles" / f"{name}.csv"
         csv_path.parent.mkdir(parents=True, exist_ok=True)
         csv_path.write_text(
-            _CSV_HEADER + f"{name}_func,/src/bundle/{name}.py,1,800000,40.0,8,100000,90000,110000,5000.0\n",
+            _CSV_HEADER
+            + f"{name}_func,/src/bundle/{name}.py,1,800000,40.0,8,100000,90000,110000,5000.0\n",
             encoding="utf-8",
         )
     return tmp_path / "profiles"
@@ -51,7 +54,12 @@ class TestProfileStorage:
     def test_save_and_load_meta(self, csv_dir, h5_path):
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
-        storage.save(profiles, machine_id="test-machine-001", bundle_version=VERSION, platform_id=PLATFORM)
+        storage.save(
+            profiles,
+            machine_id="test-machine-001",
+            bundle_version=VERSION,
+            platform_id=PLATFORM,
+        )
 
         meta = storage.load_meta(VERSION, PLATFORM)
         assert meta["machine_id"] == "test-machine-001"
@@ -62,7 +70,9 @@ class TestProfileStorage:
     def test_save_and_load_profiles(self, csv_dir, h5_path):
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
-        storage.save(profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM)
+        storage.save(
+            profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM
+        )
 
         loaded = storage.load_profiles(VERSION, PLATFORM)
         assert len(loaded) == 2
@@ -78,7 +88,13 @@ class TestProfileStorage:
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
         pmeta = {"system": "linux", "arch": "x86_64", "python_compiler": "GCC 12.2"}
-        storage.save(profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM, platform_meta=pmeta)
+        storage.save(
+            profiles,
+            machine_id="m1",
+            bundle_version=VERSION,
+            platform_id=PLATFORM,
+            platform_meta=pmeta,
+        )
 
         meta = storage.load_meta(VERSION, PLATFORM)
         assert meta["system"] == "linux"
@@ -88,8 +104,12 @@ class TestProfileStorage:
     def test_list_versions_and_platforms(self, csv_dir, h5_path):
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
-        storage.save(profiles, machine_id="m1", bundle_version="1.0.0", platform_id=PLATFORM)
-        storage.save(profiles, machine_id="m2", bundle_version="1.1.0", platform_id=PLATFORM)
+        storage.save(
+            profiles, machine_id="m1", bundle_version="1.0.0", platform_id=PLATFORM
+        )
+        storage.save(
+            profiles, machine_id="m2", bundle_version="1.1.0", platform_id=PLATFORM
+        )
 
         versions = storage.list_versions()
         assert "1.0.0" in versions
@@ -114,7 +134,9 @@ class TestProfileStorage:
     def test_roundtrip_values(self, csv_dir, h5_path):
         profiles = ProfileExtractor.extract_all(csv_dir)
         storage = ProfileStorage(h5_path)
-        storage.save(profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM)
+        storage.save(
+            profiles, machine_id="m1", bundle_version=VERSION, platform_id=PLATFORM
+        )
 
         loaded = storage.load_profiles(VERSION, PLATFORM)
         assert len(loaded) == len(profiles)

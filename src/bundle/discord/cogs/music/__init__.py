@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 """Music playback cog -- queue-based YouTube streaming with interactive controls."""
 
 from __future__ import annotations
@@ -52,12 +71,16 @@ class MusicCog(commands.Cog, name="music"):
     def _get_session(self, guild_id: int) -> GuildSession | None:
         return self._sessions.get(guild_id)
 
-    def _ensure_session(self, guild_id: int, text_channel: discord.TextChannel) -> GuildSession:
+    def _ensure_session(
+        self, guild_id: int, text_channel: discord.TextChannel
+    ) -> GuildSession:
         if guild_id not in self._sessions:
             queue = TrackQueue()
             player = GuildPlayer(on_track_end=self._on_track_end)
             embed = PlayerEmbed(self.bot.embeds, queue, player, text_channel)
-            self._sessions[guild_id] = GuildSession(queue=queue, player=player, embed=embed)
+            self._sessions[guild_id] = GuildSession(
+                queue=queue, player=player, embed=embed
+            )
         return self._sessions[guild_id]
 
     def _clear_session(self, guild_id: int) -> None:
@@ -84,7 +107,9 @@ class MusicCog(commands.Cog, name="music"):
             if gs.queue.resolving:
                 gs.queue.waiting = True
                 await gs.embed.send_or_update(
-                    self.bot.embeds.info(title="Music", description="\u23f3 Waiting for next track..."),
+                    self.bot.embeds.info(
+                        title="Music", description="\u23f3 Waiting for next track..."
+                    ),
                     gs.embed.view,
                 )
             else:
@@ -267,7 +292,9 @@ class MusicCog(commands.Cog, name="music"):
 
     # ---- resolution ----
 
-    async def _resolve_and_queue(self, url: str, guild: discord.Guild, is_first_play: bool) -> None:
+    async def _resolve_and_queue(
+        self, url: str, guild: discord.Guild, is_first_play: bool
+    ) -> None:
         gs = self._get_session(guild.id)
         if not gs:
             return
@@ -275,7 +302,9 @@ class MusicCog(commands.Cog, name="music"):
         added = 0
 
         try:
-            async for track in pytube.resolve(url, options=YoutubeResolveOptions(best=True)):
+            async for track in pytube.resolve(
+                url, options=YoutubeResolveOptions(best=True)
+            ):
                 gs = self._get_session(guild.id)
                 if not gs:
                     return
@@ -332,7 +361,9 @@ class MusicCog(commands.Cog, name="music"):
         """Add a YouTube URL to the queue and start playing."""
         e = self.bot.embeds
         if not ctx.author.voice or not ctx.author.voice.channel:
-            await ctx.send(embed=e.error(title="Music", description="Join a voice channel first."))
+            await ctx.send(
+                embed=e.error(title="Music", description="Join a voice channel first.")
+            )
             return
 
         voice_channel = ctx.author.voice.channel
@@ -362,10 +393,14 @@ class MusicCog(commands.Cog, name="music"):
         else:
             # First play -- ctx.send works for both prefix and slash interactions
             gs.embed.msg = await ctx.send(
-                embed=e.progress(title="Music", status=f"Resolving `{url}` ...", percent=5),
+                embed=e.progress(
+                    title="Music", status=f"Resolving `{url}` ...", percent=5
+                ),
             )
 
-        task = asyncio.create_task(self._resolve_and_queue(url, ctx.guild, is_first_play))
+        task = asyncio.create_task(
+            self._resolve_and_queue(url, ctx.guild, is_first_play)
+        )
         gs.resolve_tasks.append(task)
 
     @commands.hybrid_command()
@@ -373,7 +408,11 @@ class MusicCog(commands.Cog, name="music"):
     async def skip(self, ctx: commands.Context) -> None:
         """Skip to the next track in the queue."""
         if not self._get_session(ctx.guild.id):
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Nothing playing."
+                )
+            )
             return
         await self._advance(ctx.guild, +1)
         await ctx.send("\u23ed Skipped", delete_after=5)
@@ -383,7 +422,11 @@ class MusicCog(commands.Cog, name="music"):
     async def prev(self, ctx: commands.Context) -> None:
         """Go back to the previous track."""
         if not self._get_session(ctx.guild.id):
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing playing."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Nothing playing."
+                )
+            )
             return
         await self._advance(ctx.guild, -1)
         await ctx.send("\u23ee Previous", delete_after=5)
@@ -394,7 +437,11 @@ class MusicCog(commands.Cog, name="music"):
         """Display the current queue."""
         gs = self._get_session(ctx.guild.id)
         if not gs or not gs.queue:
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Queue is empty."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Queue is empty."
+                )
+            )
             return
         paginator = QueuePaginator(gs.embed)
         await ctx.send(embed=gs.embed.queue_embed(page=0), view=paginator)
@@ -404,7 +451,11 @@ class MusicCog(commands.Cog, name="music"):
     async def stop(self, ctx: commands.Context) -> None:
         """Stop playback, clear the queue, and disconnect."""
         await self._stop_guild(ctx.guild)
-        await ctx.send(embed=self.bot.embeds.success(title="Music", description="Playback stopped."))
+        await ctx.send(
+            embed=self.bot.embeds.success(
+                title="Music", description="Playback stopped."
+            )
+        )
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
@@ -413,7 +464,11 @@ class MusicCog(commands.Cog, name="music"):
         if await self._pause_guild(ctx.guild):
             await ctx.send("\u23f8 Paused", delete_after=5)
         else:
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to pause."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Nothing to pause."
+                )
+            )
 
     @commands.hybrid_command()
     @tracer.Async.decorator.call_raise
@@ -421,7 +476,11 @@ class MusicCog(commands.Cog, name="music"):
         """Shuffle the remaining tracks in the queue."""
         gs = self._get_session(ctx.guild.id)
         if not gs or len(gs.queue) < 2:
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Not enough tracks to shuffle."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Not enough tracks to shuffle."
+                )
+            )
             return
         gs.queue.shuffle()
         await gs.embed.refresh(status=vc_status(ctx.guild.voice_client))
@@ -434,4 +493,8 @@ class MusicCog(commands.Cog, name="music"):
         if await self._resume_guild(ctx.guild):
             await ctx.send("\u25b6 Resumed", delete_after=5)
         else:
-            await ctx.send(embed=self.bot.embeds.error(title="Music", description="Nothing to resume."))
+            await ctx.send(
+                embed=self.bot.embeds.error(
+                    title="Music", description="Nothing to resume."
+                )
+            )

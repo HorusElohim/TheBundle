@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -73,7 +73,9 @@ class Socket(entity.Entity, Generic[T_Socket]):
     @data.field_validator("type")
     def check_positive(cls, socket_type):
         if socket_type in DRAFT_SOCKET_TYPES and not zmq.has("draft"):
-            raise RuntimeError(f"DRAFT support is not enabled; cannot create socket of type {socket_type.name}")
+            raise RuntimeError(
+                f"DRAFT support is not enabled; cannot create socket of type {socket_type.name}"
+            )
         return socket_type
 
     @data.model_validator(mode="after")
@@ -148,7 +150,9 @@ class Socket(entity.Entity, Generic[T_Socket]):
             zmq.SocketType.XSUB,
             zmq.SocketType.DISH,
         ):
-            raise ValueError("subscribe() can only be used with SUB, XSUB, or DISH sockets.")
+            raise ValueError(
+                "subscribe() can only be used with SUB, XSUB, or DISH sockets."
+            )
         self.socket.setsockopt(zmq.SUBSCRIBE, topic)
         return self
 
@@ -233,7 +237,9 @@ class Socket(entity.Entity, Generic[T_Socket]):
             ValueError: If either socket is closed.
         """
         if frontend.is_closed or backend.is_closed:
-            raise ValueError("Both frontend and backend sockets must be open for proxying.")
+            raise ValueError(
+                "Both frontend and backend sockets must be open for proxying."
+            )
 
         poller = zmq.asyncio.Poller()
         poller.register(frontend.socket, zmq.POLLIN)

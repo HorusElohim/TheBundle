@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -10,7 +29,9 @@ from bundle.core import browser, data, entity, logger, tracer
 
 log = logger.get_logger(__name__)
 
-DEFAULT_EMBED_URL = "https://www.youtube-nocookie.com/embed/ouEl3qTLc0M?autoplay=1&mute=1"
+DEFAULT_EMBED_URL = (
+    "https://www.youtube-nocookie.com/embed/ouEl3qTLc0M?autoplay=1&mute=1"
+)
 REFERER_ORIGIN = "https://bundle.local"
 REFERER_URL = f"{REFERER_ORIGIN}/youtube/token"
 
@@ -62,7 +83,9 @@ class PotoTokenBrowser(browser.Browser):
             return
 
         # Update the token entity and signal that extraction is complete.
-        self.token_info = PotoTokenEntity(name="real", potoken=potoken, visitor_data=visitor_data)
+        self.token_info = PotoTokenEntity(
+            name="real", potoken=potoken, visitor_data=visitor_data
+        )
         log.info(f"Extracted new token: {self.token_info}")
         self.extraction_event.set()
 
@@ -72,10 +95,14 @@ class PotoTokenBrowser(browser.Browser):
         Wait for the video player element and click it to trigger the token request.
         """
         search_contexts: list[Page | Frame] = [page]
-        search_contexts.extend(frame for frame in page.frames if frame != page.main_frame)
+        search_contexts.extend(
+            frame for frame in page.frames if frame != page.main_frame
+        )
 
         for context in search_contexts:
-            player, exception = await tracer.Async.call(context.wait_for_selector, "#movie_player", timeout=timeout)
+            player, exception = await tracer.Async.call(
+                context.wait_for_selector, "#movie_player", timeout=timeout
+            )
             if exception:
                 continue
             await player.click()
@@ -90,7 +117,9 @@ class PotoTokenBrowser(browser.Browser):
         await asyncio.wait_for(self.extraction_event.wait(), timeout=timeout)
 
     @tracer.Async.decorator.call_raise
-    async def extract_token(self, url: str | None = None, timeout: float = 30.0) -> PotoTokenEntity:
+    async def extract_token(
+        self, url: str | None = None, timeout: float = 30.0
+    ) -> PotoTokenEntity:
         """
         Orchestrates the token extraction process.
 
@@ -122,7 +151,9 @@ class PotoTokenBrowser(browser.Browser):
         await self.click_player(page)
 
         # Step 4: Wait until the token is extracted.
-        _, exception = await tracer.Async.call(self.wait_for_extraction, timeout=timeout)
+        _, exception = await tracer.Async.call(
+            self.wait_for_extraction, timeout=timeout
+        )
 
         if exception:
             log.warning("Timeout waiting for token extraction.")

@@ -1,3 +1,22 @@
+# Copyright 2026 HorusElohim
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
 from __future__ import annotations
 
 import asyncio
@@ -104,7 +123,9 @@ class PlatformSpecific(data.Data):
         if platform.system().lower() != cls.__name__.lower():
             return cls()
         platform_cmds = cls.platform_commands().run()
-        return cls(**{cmd.name: cmd.result for cmd in platform_cmds.commands if cmd.result})
+        return cls(
+            **{cmd.name: cmd.result for cmd in platform_cmds.commands if cmd.result}
+        )
 
 
 class Darwin(PlatformSpecific):
@@ -130,7 +151,10 @@ class Darwin(PlatformSpecific):
     command_line_tools_version: str = data.Field(default_factory=str, frozen=True)
     macosx_deployment_target: float = data.Field(
         default_factory=lambda: (
-            float(val) if (val := sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET")) not in (None, "") else -1.0
+            float(val)
+            if (val := sysconfig.get_config_var("MACOSX_DEPLOYMENT_TARGET"))
+            not in (None, "")
+            else -1.0
         ),
         frozen=True,
     )
@@ -145,14 +169,19 @@ class Darwin(PlatformSpecific):
         """
         return ProcessCommands(
             commands=[
-                ProcessCommand(name="product_version", command="sw_vers -productVersion"),
+                ProcessCommand(
+                    name="product_version", command="sw_vers -productVersion"
+                ),
                 ProcessCommand(name="build_version", command="sw_vers -buildVersion"),
                 ProcessCommand(name="kernel_version", command="uname -r"),
                 ProcessCommand(name="hardware_model", command="sysctl -n hw.model"),
                 ProcessCommand(
-                    name="hardware_uuid", command="ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/ { print $3; }'"
+                    name="hardware_uuid",
+                    command="ioreg -rd1 -c IOPlatformExpertDevice | awk '/IOPlatformUUID/ { print $3; }'",
                 ),
-                ProcessCommand(name="xcode_version", command="xcodebuild -version 2>/dev/null"),
+                ProcessCommand(
+                    name="xcode_version", command="xcodebuild -version 2>/dev/null"
+                ),
                 ProcessCommand(
                     name="command_line_tools_version",
                     command="pkgutil --pkg-info=com.apple.pkg.CLTools_Executables 2>/dev/null | grep version | awk '{print $2}'",
@@ -191,9 +220,14 @@ class Platform(Entity):
     release: str = data.Field(default=platform.release(), frozen=True)
     version: str = data.Field(default=platform.version(), frozen=True)
     arch: str = data.Field(default=platform.machine(), frozen=True)
-    processor: str = data.Field(default=platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", ""), frozen=True)
+    processor: str = data.Field(
+        default=platform.processor() or os.environ.get("PROCESSOR_IDENTIFIER", ""),
+        frozen=True,
+    )
     python_version: str = data.Field(default=platform.python_version(), frozen=True)
-    python_implementation: str = data.Field(default=platform.python_implementation(), frozen=True)
+    python_implementation: str = data.Field(
+        default=platform.python_implementation(), frozen=True
+    )
     python_executable: str = data.Field(default=sys.executable, frozen=True)
     python_compiler: str = data.Field(default=platform.python_compiler(), frozen=True)
     cwd: Path = data.Field(default=Path.cwd(), frozen=True)
@@ -201,8 +235,12 @@ class Platform(Entity):
     env: dict = data.Field(default_factory=lambda: dict(os.environ), frozen=True)
     is_64bits: bool = data.Field(default=sys.maxsize > 2**32, frozen=True)
     pid: int = data.Field(default=os.getpid(), frozen=True)
-    uid: None | int = data.Field(default=(os.getuid() if hasattr(os, "getuid") else None), frozen=True)
-    gid: None | int = data.Field(default=(os.getgid() if hasattr(os, "getgid") else None), frozen=True)
+    uid: None | int = data.Field(
+        default=(os.getuid() if hasattr(os, "getuid") else None), frozen=True
+    )
+    gid: None | int = data.Field(
+        default=(os.getgid() if hasattr(os, "getgid") else None), frozen=True
+    )
 
     # Platform-specific attributes
     darwin: None | Darwin = data.Field(default_factory=Darwin.resolve, frozen=True)
