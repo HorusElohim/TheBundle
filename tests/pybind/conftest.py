@@ -40,9 +40,7 @@ def get_tmp_example_module(tmp_path_factory, request):
     """Copies the example_module to a temporary directory for CMake testing."""
     log.testing("Copying example module to temporary directory for testing")
     if not EXAMPLE_MODULE_SRC_DIR.exists():
-        raise FileNotFoundError(
-            f"Example module source directory does not exist: {EXAMPLE_MODULE_SRC_DIR}"
-        )
+        raise FileNotFoundError(f"Example module source directory does not exist: {EXAMPLE_MODULE_SRC_DIR}")
 
     dest_proj_dir = tmp_path_factory.mktemp("tests_example_module")
     shutil.copytree(EXAMPLE_MODULE_SRC_DIR, dest_proj_dir, dirs_exist_ok=True)
@@ -64,9 +62,7 @@ async def built_example_module(get_tmp_example_module: Path):
     build_dir_name = "integration_build"
     install_prefix = source_dir / "install"
 
-    await CMakeService.configure(
-        source_dir, build_dir_name, install_prefix=install_prefix
-    )
+    await CMakeService.configure(source_dir, build_dir_name, install_prefix=install_prefix)
     await CMakeService.build(source_dir, build_dir_name, target="install")
 
     return install_prefix
@@ -85,9 +81,7 @@ async def built_example_module_pybind(built_example_module: Path):
     os.environ.update(env)
     log.debug(f"Setting PKG_CONFIG_PATH to: {env['PKG_CONFIG_PATH']}")
 
-    source_dir = (
-        dest.parent
-    )  # e.g. tests_example_module/install -> tests_example_module
+    source_dir = dest.parent  # e.g. tests_example_module/install -> tests_example_module
     pyproject_path = source_dir / "pyproject.toml"
     if not pyproject_path.exists():
         raise FileNotFoundError(f"pyproject.toml not found in {source_dir}")
@@ -106,6 +100,4 @@ async def built_example_module_pybind(built_example_module: Path):
             log.debug(f"Found and added compiled extension path to sys.path: {sub}")
             return sub, pyproject_path
 
-    raise FileNotFoundError(
-        "Could not locate compiled extension output directory in build/"
-    )
+    raise FileNotFoundError("Could not locate compiled extension output directory in build/")

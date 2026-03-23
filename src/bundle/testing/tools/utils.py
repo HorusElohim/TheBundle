@@ -51,11 +51,7 @@ def class_instance_name(class_instance: object):
     if isinstance(class_instance, str):
         return class_instance
     name = f".{class_instance.name}" if hasattr(class_instance, "name") else ""
-    name = (
-        f"{name}__{class_instance.__test_name}"
-        if hasattr(class_instance, "__test_name")
-        else name
-    )
+    name = f"{name}__{class_instance.__test_name}" if hasattr(class_instance, "__test_name") else name
     return f"{class_instance.__class__.__name__}{name}"
 
 
@@ -94,9 +90,7 @@ def retrieves_tests_paths(
     ref_path = ensure_path(ref_dir / "ref" / Path(*categories) / filename)
     tmp_path = ensure_path(tmp_dir / Path(*categories) / filename)
     failed_path = ensure_path(ref_dir / "failed" / Path(*categories) / filename)
-    failed_error_log_path = ensure_path(
-        ref_dir / "failed" / Path(*categories) / "logs" / filename
-    )
+    failed_error_log_path = ensure_path(ref_dir / "failed" / Path(*categories) / "logs" / filename)
 
     return (
         ref_path,

@@ -105,6 +105,4 @@ def format_date_ns(ns: int) -> str:
     nanoseconds = ns % 1_000
 
     # Format the datetime object with milliseconds, microseconds, and nanoseconds
-    return dt.strftime(
-        f"%Y-%m-%d %H:%M:%S.{milliseconds:03d}.{microseconds:03d}.{nanoseconds:03d}"
-    )
+    return dt.strftime(f"%Y-%m-%d %H:%M:%S.{milliseconds:03d}.{microseconds:03d}.{nanoseconds:03d}")

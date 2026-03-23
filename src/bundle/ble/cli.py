@@ -63,9 +63,7 @@ async def ble() -> None:
 
 
 @ble.command()
-@click.option(
-    "--timeout", type=float, default=5.0, show_default=True, help="Seconds to scan"
-)
+@click.option("--timeout", type=float, default=5.0, show_default=True, help="Seconds to scan")
 @tracer.Sync.decorator.call_raise
 async def scan(timeout: float) -> None:
     """Scan for available BLE devices."""
@@ -80,9 +78,7 @@ async def scan(timeout: float) -> None:
 
 
 @ble.command()
-@click.option(
-    "--name", help="Connect to the first device containing this name substring"
-)
+@click.option("--name", help="Connect to the first device containing this name substring")
 @click.option("--address", help="Connect to the device with this BLE address")
 @tracer.Sync.decorator.call_raise
 async def connect(name: str | None, address: str | None) -> None:

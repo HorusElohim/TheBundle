@@ -46,11 +46,7 @@ class LifecycleCog(commands.Cog, name="lifecycle"):
         latency_ms = round(self.bot.latency * 1000)
         for guild in self.bot.guilds:
             channel = await self.bot.bot_channel(guild)
-            await channel.send(
-                embed=self.bot.embeds.online(
-                    self.bot.user, len(self.bot.guilds), latency_ms
-                )
-            )
+            await channel.send(embed=self.bot.embeds.online(self.bot.user, len(self.bot.guilds), latency_ms))
             log.info(f"Sent online announcement in #{channel.name} ({guild.name})")
 
     async def cog_unload(self) -> None:

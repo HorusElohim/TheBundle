@@ -97,9 +97,7 @@ class BundleLogger(logging.getLoggerClass()):
         """
         if hasattr(callable_obj, "__qualname__"):
             return callable_obj.__qualname__
-        elif hasattr(callable_obj, "__class__") and hasattr(
-            callable_obj.__class__, "__qualname__"
-        ):
+        elif hasattr(callable_obj, "__class__") and hasattr(callable_obj.__class__, "__qualname__"):
             return callable_obj.__class__.__qualname__
         elif callable(callable_obj) and hasattr(callable_obj.__call__, "__qualname__"):
             return callable_obj.__call__.__qualname__
@@ -237,9 +235,7 @@ class JsonFormatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         log_record = {
-            "time": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            ),
+            "time": datetime.fromtimestamp(record.created, tz=timezone.utc).strftime("%Y-%m-%d %H:%M:%S"),
             "level": record.levelname,
             "name": record.name,
             "message": record.getMessage(),
@@ -266,9 +262,7 @@ def setup_file_handler(log_path: Path, to_json: bool) -> logging.FileHandler:
     formatter = (
         JsonFormatter()
         if to_json
-        else logging.Formatter(
-            "%(asctime)s - %(levelname)s [%(name)s] %(filename)s:%(funcName)s:%(lineno)d: %(message)s"
-        )
+        else logging.Formatter("%(asctime)s - %(levelname)s [%(name)s] %(filename)s:%(funcName)s:%(lineno)d: %(message)s")
     )
     file_handler.setFormatter(formatter)
     return file_handler
@@ -313,9 +307,7 @@ def setup_console_handler(colored_output: bool) -> logging.Handler:
         return RichHandler(console=custom_console, rich_tracebacks=True)
     else:
         handler = logging.StreamHandler()
-        handler.setFormatter(
-            logging.Formatter("%(levelname)s - [%(name)s]: %(message)s")
-        )
+        handler.setFormatter(logging.Formatter("%(levelname)s - [%(name)s]: %(message)s"))
         return handler
 
 
@@ -369,9 +361,7 @@ if __name__ == "__main__":
     # -----------------------------------------------------------------------------
     # Setup Logger
     # -----------------------------------------------------------------------------
-    logger = setup_root_logger(
-        colored_output=True, log_path=Path("./logs"), to_json=True, level=Level.VERBOSE
-    )
+    logger = setup_root_logger(colored_output=True, log_path=Path("./logs"), to_json=True, level=Level.VERBOSE)
 
     # -----------------------------------------------------------------------------
     # Standard Logging Examples

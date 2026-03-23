@@ -82,9 +82,7 @@ def load_poto_token():
 
 async def _stream_filesize(stream) -> int:
     try:
-        size = getattr(stream, "filesize", None) or getattr(
-            stream, "filesize_approx", None
-        )
+        size = getattr(stream, "filesize", None) or getattr(stream, "filesize_approx", None)
         if asyncio.iscoroutine(size):
             size = await size
         return int(size or 0)
@@ -123,20 +121,12 @@ def _pick_stream_by_itag(yt: YouTube, itag: int | None):
 async def _collect_streams(
     yt: YouTube,
 ) -> tuple[list[YoutubeStreamOption], list[YoutubeStreamOption]]:
-    progressive_video_streams = (
-        yt.streams.filter(progressive=True, file_extension="mp4")
-        .order_by("resolution")
-        .desc()
-    )
+    progressive_video_streams = yt.streams.filter(progressive=True, file_extension="mp4").order_by("resolution").desc()
     adaptive_video_streams = (
-        yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4")
-        .order_by("resolution")
-        .desc()
+        yt.streams.filter(adaptive=True, only_video=True, file_extension="mp4").order_by("resolution").desc()
     )
     video_streams = [*progressive_video_streams, *adaptive_video_streams]
-    audio_streams = (
-        yt.streams.filter(only_audio=True, mime_type="audio/mp4").order_by("abr").desc()
-    )
+    audio_streams = yt.streams.filter(only_audio=True, mime_type="audio/mp4").order_by("abr").desc()
     if len(audio_streams) == 0:
         audio_streams = yt.streams.filter(only_audio=True).order_by("abr").desc()
     video_options = [await _stream_option(stream, "video") for stream in video_streams]
@@ -190,12 +180,8 @@ async def fetch_url_youtube_info(
             return YoutubeTrackData()
         resolve_options = options or YoutubeResolveOptions()
         video_options, audio_options = await _collect_streams(yt)
-        selected_video_stream = _pick_stream_by_itag(
-            yt, resolve_options.select_video_itag
-        )
-        selected_audio_stream = _pick_stream_by_itag(
-            yt, resolve_options.select_audio_itag
-        )
+        selected_video_stream = _pick_stream_by_itag(yt, resolve_options.select_video_itag)
+        selected_audio_stream = _pick_stream_by_itag(yt, resolve_options.select_audio_itag)
 
         if resolve_options.best and not selected_video_stream and video_options:
             selected_video_stream = _pick_stream_by_itag(yt, video_options[0].itag)
@@ -241,9 +227,7 @@ async def resolve_with_clients(url: str) -> YouTube | None:
 
 async def fetch_playlist_urls(url: str) -> AsyncGenerator[str, None]:
     list_id = _playlist_id(url)
-    playlist_url = (
-        f"https://www.youtube.com/playlist?list={list_id}" if list_id else url
-    )
+    playlist_url = f"https://www.youtube.com/playlist?list={list_id}" if list_id else url
     playlist = await tracer.Async.call_raise(Playlist, playlist_url)
     for video_url in playlist.video_urls:
         yield video_url
@@ -285,9 +269,7 @@ async def resolve(
                 yield await fetch_url_youtube_info(playlist_url, options=options)
                 yielded = True
         except Exception:
-            log.warning(
-                "Playlist resolution failed for %s, falling back to single video", url
-            )
+            log.warning("Playlist resolution failed for %s, falling back to single video", url)
         # Fall back to single video if playlist yielded nothing (e.g. Radio/Mix)
         if not yielded and _has_video_id(url):
             log.info("Falling back to single-video resolve for %s", url)

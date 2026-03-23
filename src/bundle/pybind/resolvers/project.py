@@ -29,10 +29,5 @@ class ProjectResolver:
         self.module_resolver = module_resolver or ModuleResolver()
 
     async def resolve(self, project_spec: ProjectSpec) -> ProjectResolved:
-        tasks = [
-            self.module_resolver.resolve(module_spec)
-            for module_spec in project_spec.modules
-        ]
-        return ProjectResolved(
-            spec=project_spec, modules=list(await asyncio.gather(*tasks))
-        )
+        tasks = [self.module_resolver.resolve(module_spec) for module_spec in project_spec.modules]
+        return ProjectResolved(spec=project_spec, modules=list(await asyncio.gather(*tasks)))

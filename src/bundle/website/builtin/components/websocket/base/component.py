@@ -55,9 +55,7 @@ class WebSocketBaseComponent(Component):
     """Base websocket component with default params and shared assets."""
 
     shared_assets: ClassVar[tuple[str, ...]] = ("websocket/base/component.css",)
-    params: WebSocketComponentParams = data.Field(
-        default_factory=WebSocketComponentParams
-    )
+    params: WebSocketComponentParams = data.Field(default_factory=WebSocketComponentParams)
 
     @classmethod
     def _resolve_component_asset(cls, asset_path: str) -> str | None:
@@ -86,11 +84,7 @@ class WebSocketBaseComponent(Component):
         asset_filenames: Iterable[str] | None = None,
     ) -> list[str]:
         discovered_paths: list[str] = cls.shared_asset_paths()
-        discovered_paths.extend(
-            super().component_asset_paths_for(
-                component_file, asset_filenames=asset_filenames
-            )
-        )
+        discovered_paths.extend(super().component_asset_paths_for(component_file, asset_filenames=asset_filenames))
         unique_paths = list(dict.fromkeys(discovered_paths))
         return unique_paths
 

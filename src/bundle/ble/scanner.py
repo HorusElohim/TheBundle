@@ -63,10 +63,7 @@ class Scanner(Entity):
         limit = timeout if timeout is not None else self.timeout
         log.debug("BLE scan timeout=%s", limit)
         raw_results = await BleakScanner.discover(timeout=limit, return_adv=True)
-        devices = [
-            Device.from_backend(device, advertisement)
-            for device, advertisement in _iter_results(raw_results)
-        ]
+        devices = [Device.from_backend(device, advertisement) for device, advertisement in _iter_results(raw_results)]
         return ScanResult(timeout=limit, devices=devices)
 
 

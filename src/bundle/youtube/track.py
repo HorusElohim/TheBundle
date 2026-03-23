@@ -63,12 +63,7 @@ class YoutubeTrackData(TrackData):
 
     def is_resolved(self) -> bool:
         """Return True when the resolver filled the stream URLs."""
-        return bool(
-            self.video_url.strip()
-            or self.audio_url.strip()
-            or self.video_streams
-            or self.audio_streams
-        )
+        return bool(self.video_url.strip() or self.audio_url.strip() or self.video_streams or self.audio_streams)
 
 
 class YoutubeStreamOption(data.Data):

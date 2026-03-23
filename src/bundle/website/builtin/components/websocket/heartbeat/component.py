@@ -25,6 +25,4 @@ class WebSocketHeartbeatComponent(WebSocketBaseComponent):
     slug: str = "ws-heartbeat"
     name: str = "WebSocket Heartbeat"
     description: str = "Periodic keepalive loop with a minimal UI."
-    params: WebSocketComponentParams = WebSocketComponentParams(
-        endpoint="/ws/heartbeat"
-    )
+    params: WebSocketComponentParams = WebSocketComponentParams(endpoint="/ws/heartbeat")

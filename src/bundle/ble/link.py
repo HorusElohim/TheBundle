@@ -58,9 +58,7 @@ class NordicLink(Entity):
         await self.connect()
         return self
 
-    async def __aexit__(
-        self, exc_type, exc, tb
-    ) -> None:  # pragma: no cover - context helper
+    async def __aexit__(self, exc_type, exc, tb) -> None:  # pragma: no cover - context helper
         await self.disconnect()
 
     def on_message(self, callback: Callable[[bytes], None]) -> None:

@@ -84,7 +84,9 @@ class Downloader(Entity):
         query = parse_qs(parsed.query)
         client = (query.get("c", [""])[0] or "").upper()
 
-        user_agent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        user_agent = (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+        )
         if client == "ANDROID":
             user_agent = (
                 "Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro Build/AP2A.240805.005) "
@@ -137,14 +139,10 @@ class Downloader(Entity):
         self._error_message = ""
         try:
             async with aiohttp.ClientSession() as session:  # noqa: SIM117
-                async with session.get(
-                    self.url, headers=self._request_headers()
-                ) as response:
+                async with session.get(self.url, headers=self._request_headers()) as response:
                     if response.status not in {200, 206}:
                         self._error_message = f"HTTP {response.status}"
-                        log.error(
-                            f"Error downloading {self.url}. Status: {response.status}"
-                        )
+                        log.error(f"Error downloading {self.url}. Status: {response.status}")
                         return False
 
                     byte_size = int(response.headers.get("content-length", 0))
@@ -153,12 +151,8 @@ class Downloader(Entity):
                     if self.destination:
                         self.destination.parent.mkdir(parents=True, exist_ok=True)
                         async with aio_open(self.destination, "wb") as fd:
-                            async for chunk in response.content.iter_chunked(
-                                self.chunk_size
-                            ):
-                                await tracer.Async.call_raise(
-                                    fd.write, chunk, log_level=logger.Level.VERBOSE
-                                )
+                            async for chunk in response.content.iter_chunked(self.chunk_size):
+                                await tracer.Async.call_raise(fd.write, chunk, log_level=logger.Level.VERBOSE)
                                 downloaded_bytes += len(chunk)
                                 await tracer.Async.call_raise(
                                     self.update,
@@ -167,9 +161,7 @@ class Downloader(Entity):
                                 )
                                 await asyncio.sleep(0)
                     else:
-                        async for chunk in response.content.iter_chunked(
-                            self.chunk_size
-                        ):
+                        async for chunk in response.content.iter_chunked(self.chunk_size):
                             self._buffer.extend(chunk)
                             downloaded_bytes += len(chunk)
                             await tracer.Async.call_raise(self.update, len(chunk))
@@ -177,9 +169,7 @@ class Downloader(Entity):
                     if downloaded_bytes <= 0:
                         content_type = response.headers.get("content-type", "")
                         self._error_message = f"Empty response body (status={response.status}, content-type={content_type})"
-                        log.error(
-                            f"Error downloading {self.url}. {self._error_message}"
-                        )
+                        log.error(f"Error downloading {self.url}. {self._error_message}")
                         return False
                     status = True
 

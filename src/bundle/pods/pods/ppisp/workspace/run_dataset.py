@@ -94,9 +94,7 @@ def load(paths: list[Path], size: int) -> list[torch.Tensor]:
     for p in paths:
         x = read_image(str(p)).float().div(255)
         x = x[:3] if x.shape[0] > 3 else x.repeat(3, 1, 1) if x.shape[0] == 1 else x
-        x = F.interpolate(
-            x[None], size=(size, size), mode="bilinear", align_corners=False
-        )[0]
+        x = F.interpolate(x[None], size=(size, size), mode="bilinear", align_corners=False)[0]
         out.append(x.permute(1, 2, 0).contiguous())
     return out
 
@@ -121,20 +119,14 @@ def main() -> None:
     a = args()
     assert torch.cuda.is_available(), "CUDA is required."
     custom_images = Path(a.images_dir) if a.images_dir else None
-    files = (
-        images_in(custom_images)
-        if custom_images
-        else ensure_data(Path(a.data_dir), a.scene)
-    )
+    files = images_in(custom_images) if custom_images else ensure_data(Path(a.data_dir), a.scene)
     n = min(max(1, a.samples), len(files))
     idx = torch.linspace(0, len(files) - 1, n).round().long().tolist()
     imgs = load([files[i] for i in idx], a.image_size)
     h, w, _ = imgs[0].shape
     d = torch.device("cuda")
     xy = torch.stack(
-        torch.meshgrid(
-            torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij"
-        )[::-1],
+        torch.meshgrid(torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij")[::-1],
         -1,
     ).float()
     m = PPISP(num_cameras=1, num_frames=n).to(d).train()
@@ -172,20 +164,12 @@ def main() -> None:
     save_image(x0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_input.png")
     save_image(y0.permute(2, 0, 1).cpu().clamp(0, 1), save / "frame0_output.png")
     for name, img in novels.items():
-        save_image(
-            img.permute(2, 0, 1).cpu().clamp(0, 1), save / f"novel_view_{name}.png"
-        )
-    novel_panel = torch.cat(
-        [novels[k] for k in ("center", "north", "south", "east", "west")], 1
-    )
-    save_image(
-        novel_panel.permute(2, 0, 1).cpu().clamp(0, 1), save / "novel_views_panel.png"
-    )
+        save_image(img.permute(2, 0, 1).cpu().clamp(0, 1), save / f"novel_view_{name}.png")
+    novel_panel = torch.cat([novels[k] for k in ("center", "north", "south", "east", "west")], 1)
+    save_image(novel_panel.permute(2, 0, 1).cpu().clamp(0, 1), save / "novel_views_panel.png")
     scene_name = custom_images.name if custom_images else a.scene
     (save / "scene.txt").write_text(scene_name, encoding="utf-8")
-    (save / "novel_views.txt").write_text(
-        "center\nnorth\nsouth\neast\nwest\n", encoding="utf-8"
-    )
+    (save / "novel_views.txt").write_text("center\nnorth\nsouth\neast\nwest\n", encoding="utf-8")
     (save / "novel_view_sources.txt").write_text(
         "\n".join([f"{k}:{v}" for k, v in ids.items()]) + "\n",
         encoding="utf-8",

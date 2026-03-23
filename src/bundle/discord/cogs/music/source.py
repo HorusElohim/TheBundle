@@ -68,7 +68,9 @@ from bundle.core import logger
 
 log = logger.get_logger(__name__)
 
-FFMPEG_BEFORE_OPTIONS = "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -analyzeduration 0 -probesize 32768 -thread_queue_size 4096"
+FFMPEG_BEFORE_OPTIONS = (
+    "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -analyzeduration 0 -probesize 32768 -thread_queue_size 4096"
+)
 FFMPEG_OPTIONS = "-vn -b:a 256k -bufsize 5M -application audio"
 
 # 500 frames x 20 ms = 10 seconds of pre-buffer

@@ -25,6 +25,4 @@ class WebSocketHeartBeatCardioComponent(GPXWebSocketBaseComponent):
     slug: str = "ws-heartbeat-cardio"
     name: str = "HeartBeatCardio"
     description: str = "3D cardiogram monitor for websocket heartbeat pulses."
-    params: GPXComponentParams = GPXComponentParams(
-        endpoint="/ws/heartbeat-cardio", graph_id="heartbeat-cardio"
-    )
+    params: GPXComponentParams = GPXComponentParams(endpoint="/ws/heartbeat-cardio", graph_id="heartbeat-cardio")

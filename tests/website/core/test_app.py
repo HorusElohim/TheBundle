@@ -35,9 +35,7 @@ def test_create_app_uses_manifest_and_mounts_assets(tmp_path):
     components_dir = tmp_path / "components"
     component_subdir = components_dir / "demo"
     component_subdir.mkdir(parents=True)
-    (component_subdir / "component.js").write_text(
-        "console.log('ok');", encoding="utf-8"
-    )
+    (component_subdir / "component.js").write_text("console.log('ok');", encoding="utf-8")
     (component_subdir / "component.py").write_text("print('secret')", encoding="utf-8")
 
     called = {"initialized": False}
@@ -79,9 +77,7 @@ def test_create_app_uses_manifest_and_mounts_assets(tmp_path):
         blocked = client.get("/widgets-static/demo/component.py")
         assert blocked.status_code == 404
 
-        csp_json = client.post(
-            "/csp-report", json={"csp-report": {"blocked-uri": "inline"}}
-        )
+        csp_json = client.post("/csp-report", json={"csp-report": {"blocked-uri": "inline"}})
         assert csp_json.status_code == 204
 
         csp_raw = client.post(

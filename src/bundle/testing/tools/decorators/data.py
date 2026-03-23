@@ -54,29 +54,19 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
     async def test_pydantic_data_as_dict(class_instance: core.Data):
-        logger.testing(
-            f"test_pydantic_data_as_dict: {utils.class_instance_name(class_instance)}"
-        )
+        logger.testing(f"test_pydantic_data_as_dict: {utils.class_instance_name(class_instance)}")
         return class_instance, await class_instance.as_dict()
 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
-    async def test_pydantic_data_from_dict(
-        class_instance: core.Data, class_instance_dict: dict
-    ):
-        logger.testing(
-            f"test_pydantic_data_from_dict: {utils.class_instance_name(class_instance)}"
-        )
+    async def test_pydantic_data_from_dict(class_instance: core.Data, class_instance_dict: dict):
+        logger.testing(f"test_pydantic_data_from_dict: {utils.class_instance_name(class_instance)}")
         return class_instance, await class_instance.from_dict(class_instance_dict)
 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
-    async def test_pydantic_data_compare(
-        class_instance: core.Data, class_instance_from_dict: core.Data
-    ):
-        logger.testing(
-            f"test_pydantic_data_compare: {utils.class_instance_name(class_instance)}"
-        )
+    async def test_pydantic_data_compare(class_instance: core.Data, class_instance_from_dict: core.Data):
+        logger.testing(f"test_pydantic_data_compare: {utils.class_instance_name(class_instance)}")
         assertions.compare(class_instance_from_dict, class_instance)
         return class_instance
 
@@ -88,17 +78,13 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
         failed_json_path: Path,
         failed_error_log_path: Path,
     ):
-        logger.testing(
-            f"test_pydantic_data_as_json: {utils.class_instance_name(class_instance)}"
-        )
+        logger.testing(f"test_pydantic_data_as_json: {utils.class_instance_name(class_instance)}")
         try:
             await class_instance.as_json()
             return class_instance
         except Exception as ex:
             logger.error(str(ex))
-            failed_error_log_path.open("a+").write(
-                "test_pydantic_data_as_json\n\n" + str(ex)
-            )
+            failed_error_log_path.open("a+").write("test_pydantic_data_as_json\n\n" + str(ex))
             await class_instance.dump_json(failed_json_path)
             raise ex
 
@@ -110,17 +96,13 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
         failed_json_path: Path,
         failed_error_log_path: Path,
     ):
-        logger.testing(
-            f"test_pydantic_data_dump_json: {utils.class_instance_name(class_instance)}"
-        )
+        logger.testing(f"test_pydantic_data_dump_json: {utils.class_instance_name(class_instance)}")
         try:
             await class_instance.dump_json(tmp_json_path)
             return class_instance
         except Exception as ex:
             logger.error(str(ex))
-            failed_error_log_path.open("a+").write(
-                "test_pydantic_data_dump_json\n\n" + str(ex)
-            )
+            failed_error_log_path.open("a+").write("test_pydantic_data_dump_json\n\n" + str(ex))
             await class_instance.dump_json(failed_json_path)
             raise ex
 
@@ -132,27 +114,19 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
         failed_json_path: Path,
         failed_error_log_path: Path,
     ):
-        logger.testing(
-            f"test_pydantic_data_from_json: {utils.class_instance_name(class_instance)}"
-        )
+        logger.testing(f"test_pydantic_data_from_json: {utils.class_instance_name(class_instance)}")
         try:
             return class_instance, await class_instance.from_json(ref_json_path)
         except Exception as ex:
             logger.error(str(ex))
-            failed_error_log_path.open("a+").write(
-                "test_pydantic_data_from_json\n\n" + str(ex)
-            )
+            failed_error_log_path.open("a+").write("test_pydantic_data_from_json\n\n" + str(ex))
             await class_instance.dump_json(failed_json_path)
             raise ex
 
     @cprofile(cprofile_folder=cprofile_dir)
     @core.tracer.Async.decorator.call_raise(log_level=core.logger.Level.TESTING)
-    async def test_pydantic_data_dump_jsonschema(
-        class_instance: core.Data, ref_jsonschema_path: Path
-    ):
-        logger.testing(
-            f"test_pydantic_data_dump_jsonschema: {utils.class_instance_name(class_instance)}"
-        )
+    async def test_pydantic_data_dump_jsonschema(class_instance: core.Data, ref_jsonschema_path: Path):
+        logger.testing(f"test_pydantic_data_dump_jsonschema: {utils.class_instance_name(class_instance)}")
         await class_instance.dump_jsonschema(ref_jsonschema_path)
         return class_instance
 
@@ -165,9 +139,7 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
         failed_error_log_path: Path,
         failed_jsonschema_path: Path,
     ):
-        logger.testing(
-            f"test_pydantic_data_validate_dict_with_jsonschema: {utils.class_instance_name(class_instance)}"
-        )
+        logger.testing(f"test_pydantic_data_validate_dict_with_jsonschema: {utils.class_instance_name(class_instance)}")
         try:
             jsonschema.validate(instance=data_dict, schema=jsonschema_dict)
             return class_instance
@@ -181,34 +153,24 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
         @wraps(func)
         async def wrapper(*args, **kwds):
             class_instance = await func(*args, **kwds)
-            logger.testing(
-                f"@data testing -> {utils.class_instance_name(class_instance)}"
-            )
+            logger.testing(f"@data testing -> {utils.class_instance_name(class_instance)}")
 
             assertions.instance_identity(class_instance, core.Data)
 
             _, class_instance_dict = await test_pydantic_data_as_dict(class_instance)
 
-            _, class_instance_from_dict = await test_pydantic_data_from_dict(
-                class_instance, class_instance_dict
-            )
+            _, class_instance_from_dict = await test_pydantic_data_from_dict(class_instance, class_instance_dict)
 
             await test_pydantic_data_compare(class_instance, class_instance_from_dict)
 
             # Json tests path
-            ref_json_path, tmp_json_path, failed_json_path, failed_error_log_path = (
-                utils.retrieves_tests_paths(
-                    "data/json", ref_dir, tmp_dir, class_instance, "pydantic_json"
-                )
+            ref_json_path, tmp_json_path, failed_json_path, failed_error_log_path = utils.retrieves_tests_paths(
+                "data/json", ref_dir, tmp_dir, class_instance, "pydantic_json"
             )
 
-            await test_pydantic_data_as_json(
-                class_instance, tmp_json_path, failed_json_path, failed_error_log_path
-            )
+            await test_pydantic_data_as_json(class_instance, tmp_json_path, failed_json_path, failed_error_log_path)
 
-            await test_pydantic_data_dump_json(
-                class_instance, tmp_json_path, failed_json_path, failed_error_log_path
-            )
+            await test_pydantic_data_dump_json(class_instance, tmp_json_path, failed_json_path, failed_error_log_path)
 
             # Generate ref only if doesn't exists
             if not ref_json_path.exists():
@@ -225,24 +187,18 @@ def data(tmp_dir: Path, ref_dir: str | Path, cprofile_folder: str | Path | None 
             await test_pydantic_data_compare(class_instance, class_instance_from_json)
 
             # Jsonschema tests path
-            ref_jsonschema_path, _, failed_jsonschema_path, failed_error_log_path = (
-                utils.retrieves_tests_paths(
-                    "data/jsonschema",
-                    ref_dir,
-                    tmp_dir,
-                    class_instance,
-                    "pydantic_jsonschema",
-                )
+            ref_jsonschema_path, _, failed_jsonschema_path, failed_error_log_path = utils.retrieves_tests_paths(
+                "data/jsonschema",
+                ref_dir,
+                tmp_dir,
+                class_instance,
+                "pydantic_jsonschema",
             )
 
             # Generate jsonchema ref only if doesn't exists
             if not ref_jsonschema_path.exists():
-                logger.verbose(
-                    f"jsonschema reference will be created {ref_json_path!s}"
-                )
-                await test_pydantic_data_dump_jsonschema(
-                    class_instance, ref_jsonschema_path
-                )
+                logger.verbose(f"jsonschema reference will be created {ref_json_path!s}")
+                await test_pydantic_data_dump_jsonschema(class_instance, ref_jsonschema_path)
 
             jsonschema_dict = await class_instance.as_jsonschema()
 

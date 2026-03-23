@@ -40,15 +40,11 @@ class GraphicThreeDComponentParams(GraphicComponentParams):
         if self.near <= 0:
             raise ValueError("near clip distance must be greater than 0")
         if self.far <= self.near:
-            raise ValueError(
-                "far clip distance must be greater than near clip distance"
-            )
+            raise ValueError("far clip distance must be greater than near clip distance")
         return self
 
 
 class GraphicThreeDComponent(GraphicBaseComponent):
     """Base class for Three.js/WebGL style 3D graphics components."""
 
-    params: GraphicThreeDComponentParams = data.Field(
-        default_factory=GraphicThreeDComponentParams
-    )
+    params: GraphicThreeDComponentParams = data.Field(default_factory=GraphicThreeDComponentParams)

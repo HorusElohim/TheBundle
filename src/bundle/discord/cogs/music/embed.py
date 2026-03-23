@@ -96,9 +96,7 @@ class PlayerEmbed:
         for i in range(start, end):
             track = self._queue.tracks[i]
             marker = "\u25b6" if i == self._queue.index else f"{i + 1}."
-            lines.append(
-                f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`"
-            )
+            lines.append(f"`{marker}` **{track.title}** \u2014 {track.author} `{_fmt_duration(track.duration)}`")
 
         description = "\n".join(lines) or "Queue is empty."
         if self._queue.resolving:
@@ -124,9 +122,7 @@ class PlayerEmbed:
         except discord.HTTPException:
             pass
 
-    async def send_or_update(
-        self, embed: discord.Embed, view: discord.ui.View | None = None
-    ) -> None:
+    async def send_or_update(self, embed: discord.Embed, view: discord.ui.View | None = None) -> None:
         """Send a new message or edit the existing one."""
         if self.msg:
             try:

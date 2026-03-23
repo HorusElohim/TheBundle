@@ -69,9 +69,7 @@ class GuildPlayer:
 
     # ---- playback ----
 
-    def play(
-        self, vc: discord.VoiceClient, track: YoutubeTrackData, guild_id: int
-    ) -> bool:
+    def play(self, vc: discord.VoiceClient, track: YoutubeTrackData, guild_id: int) -> bool:
         """Start FFmpeg playback.  Returns False if no stream URL available."""
         stream_url = track.video_url or track.audio_url
         if not stream_url:
@@ -84,9 +82,7 @@ class GuildPlayer:
         source = make_source(stream_url)
         vc.play(
             source,
-            after=lambda err: asyncio.run_coroutine_threadsafe(
-                self._after_track(guild_id, err), loop
-            ),
+            after=lambda err: asyncio.run_coroutine_threadsafe(self._after_track(guild_id, err), loop),
         )
         return True
 

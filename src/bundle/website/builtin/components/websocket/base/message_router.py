@@ -46,9 +46,7 @@ class MessageRouter:
         """Register a callback for a `Data` message model."""
         kind = message_type.model_fields["type"].default
         if not isinstance(kind, str) or not kind:
-            raise ValueError(
-                f"Message type {message_type.__name__} must define a default 'type' string"
-            )
+            raise ValueError(f"Message type {message_type.__name__} must define a default 'type' string")
         self._handlers[kind] = (message_type, handler)
         return self
 

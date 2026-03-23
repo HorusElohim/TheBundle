@@ -34,9 +34,7 @@ class DocsConfig(Data):
     project_version: str = ""
     author: str = ""
     source_dir: Path = Field(default_factory=Path.cwd)
-    output_dir: Path = Field(
-        default_factory=lambda: Path.cwd() / "docs" / "_build" / "html"
-    )
+    output_dir: Path = Field(default_factory=lambda: Path.cwd() / "docs" / "_build" / "html")
     package_dirs: list[str] = Field(default_factory=list)
     autoapi_dirs: list[str] = Field(default_factory=list)
     theme: str = "furo"

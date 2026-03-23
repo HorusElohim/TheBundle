@@ -46,12 +46,8 @@ COMPONENTS = (
         description="Pseudo-3D starfield with pointer-driven parallax.",
         component_file=getfile(components.graphic.GraphicThreeDComponent),
     ),
-    components.WebSocketECCComponent(
-        params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")
-    ),
-    components.WebSocketECCComponent(
-        params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")
-    ),
+    components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")),
+    components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")),
     components.WebSocketHeartbeatComponent(),
     components.WebSocketHeartBeatCardioComponent(),
     components.WebSocketHeartBeatMonitorEarthComponent(),

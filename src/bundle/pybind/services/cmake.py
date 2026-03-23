@@ -34,9 +34,7 @@ def _get_platform_specific_cmake_args_env() -> tuple[list[str], dict]:
     if platform_info.is_darwin:
         cmake_args.append(f"-DCMAKE_OSX_ARCHITECTURES={platform_info.arch}")
         env["ARCHFLAGS"] = f"-arch {platform_info.arch}"
-        env["MACOSX_DEPLOYMENT_TARGET"] = str(
-            platform_info.darwin.macosx_deployment_target
-        )
+        env["MACOSX_DEPLOYMENT_TARGET"] = str(platform_info.darwin.macosx_deployment_target)
     return cmake_args, env
 
 

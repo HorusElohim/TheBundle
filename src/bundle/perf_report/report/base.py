@@ -110,11 +110,7 @@ def best_unit_for_values_seconds(times_seconds: list[float]) -> tuple[str, float
     """Return the best (unit, multiplier_from_seconds) for a list of second values."""
     if not times_seconds:
         return "ns", 1e9
-    max_val = (
-        max(abs(t) for t in times_seconds if t != 0)
-        if any(t != 0 for t in times_seconds)
-        else 0
-    )
+    max_val = max(abs(t) for t in times_seconds if t != 0) if any(t != 0 for t in times_seconds) else 0
     for threshold, unit, multiplier in TIME_THRESHOLDS:
         if max_val >= threshold:
             return unit, multiplier
@@ -125,11 +121,7 @@ def best_unit_for_values_ns(times_ns: list[int | float]) -> tuple[str, float]:
     """Return the best (unit, multiplier_from_ns) for a list of nanosecond values."""
     if not times_ns:
         return "ns", 1.0
-    max_val_s = (
-        max(abs(t) for t in times_ns if t != 0) / 1e9
-        if any(t != 0 for t in times_ns)
-        else 0
-    )
+    max_val_s = max(abs(t) for t in times_ns if t != 0) / 1e9 if any(t != 0 for t in times_ns) else 0
     for threshold, unit, multiplier in TIME_THRESHOLDS:
         if max_val_s >= threshold:
             return unit, multiplier / 1e9
@@ -188,9 +180,7 @@ def truncate_labels(labels: list[str], max_len: int = 50) -> list[str]:
 # ---------------------------------------------------------------------------
 
 
-def setup_plot(
-    n_bars: int, has_baseline: bool
-) -> tuple[plt.Figure, plt.Axes, np.ndarray]:
+def setup_plot(n_bars: int, has_baseline: bool) -> tuple[plt.Figure, plt.Axes, np.ndarray]:
     """Create a dark-themed horizontal bar chart canvas."""
     fig_height = max(3, n_bars * (0.7 if has_baseline else 0.5) + 1)
     fig, ax = plt.subplots(figsize=(10, fig_height))
@@ -200,9 +190,7 @@ def setup_plot(
     return fig, ax, np.arange(n_bars)
 
 
-def draw_baseline_bars(
-    ax: plt.Axes, y_pos: np.ndarray, baseline_times: list[float], bar_height: float
-):
+def draw_baseline_bars(ax: plt.Axes, y_pos: np.ndarray, baseline_times: list[float], bar_height: float):
     """Draw baseline comparison bars and add the legend."""
     ax.barh(
         y_pos + bar_height / 2,
@@ -324,9 +312,7 @@ def build_platform_section(meta: dict) -> Section:
 # ---------------------------------------------------------------------------
 
 
-def find_baseline_version(
-    storage: Any, current_version: str, platform_id: str
-) -> str | None:
+def find_baseline_version(storage: Any, current_version: str, platform_id: str) -> str | None:
     """Find the most recent version in HDF5 that isn't the current one and has this platform."""
     versions = storage.list_versions()
     for version in reversed(versions):
@@ -363,9 +349,7 @@ async def generate_report(
     current_version_key = safe_key(bundle_version)
 
     if h5_path:
-        LOGGER.info(
-            "Saving HDF5 to %s (version=%s, platform=%s)", h5_path, bundle_version, pid
-        )
+        LOGGER.info("Saving HDF5 to %s (version=%s, platform=%s)", h5_path, bundle_version, pid)
         await asyncio.to_thread(
             storage_cls.from_directory,
             input_path,
@@ -380,17 +364,11 @@ async def generate_report(
     baseline_meta = None
     if h5_path and h5_path.exists():
         storage = storage_cls(h5_path)
-        baseline_version = find_baseline_version(
-            storage, current_version_key, safe_key(pid)
-        )
+        baseline_version = find_baseline_version(storage, current_version_key, safe_key(pid))
         if baseline_version:
             LOGGER.info("Found baseline version: %s", baseline_version)
-            baseline_profiles = await asyncio.to_thread(
-                storage.load_profiles, baseline_version, pid
-            )
-            baseline_meta = await asyncio.to_thread(
-                storage.load_meta, baseline_version, pid
-            )
+            baseline_profiles = await asyncio.to_thread(storage.load_profiles, baseline_version, pid)
+            baseline_meta = await asyncio.to_thread(storage.load_meta, baseline_version, pid)
             if baseline_profiles:
                 baseline_lookup = build_func_map_fn(baseline_profiles)
 
@@ -402,23 +380,15 @@ async def generate_report(
     async def gen(profile):
         async with semaphore:
             func_map = baseline_lookup.get(profile.name) if baseline_lookup else None
-            return profile, await asyncio.to_thread(
-                generate_plot_fn, profile, plot_dir, func_map
-            )
+            return profile, await asyncio.to_thread(generate_plot_fn, profile, plot_dir, func_map)
 
     results = await asyncio.gather(*[gen(p) for p in profiles])
 
     LOGGER.info("Building LaTeX document ...")
     title = f"Performance Report: {escape(bundle_version)}"
     if has_comparison:
-        base_ver = (
-            baseline_meta.get("bundle_version", "baseline")
-            if baseline_meta
-            else "baseline"
-        )
-        title = (
-            f"Performance Report: {escape(bundle_version)} vs {escape(str(base_ver))}"
-        )
+        base_ver = baseline_meta.get("bundle_version", "baseline") if baseline_meta else "baseline"
+        title = f"Performance Report: {escape(bundle_version)} vs {escape(str(base_ver))}"
 
     doc = Document(title=title)
     if has_comparison:

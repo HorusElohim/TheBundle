@@ -120,9 +120,7 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(session, config, items):
     # Log Platform
-    log.testing(
-        f"Running tests on platform: {log.pretty_repr(bundle.core.platform.platform_info)}"
-    )
+    log.testing(f"Running tests on platform: {log.pretty_repr(bundle.core.platform.platform_info)}")
 
     # Compute bundle_folder
     bundle_folder = _get_bundle_folder()
@@ -142,9 +140,7 @@ def pytest_collection_modifyitems(session, config, items):
         if cprofile_marker := item.get_closest_marker("bundle_cprofile"):
             log.testing(f"added @cprofile marker to {item.name}")
             expected_duration = cprofile_marker.kwargs.get("expected_duration", 0)
-            performance_threshold = cprofile_marker.kwargs.get(
-                "performance_threshold", 10_000_000
-            )  # Default 10 ms
+            performance_threshold = cprofile_marker.kwargs.get("performance_threshold", 10_000_000)  # Default 10 ms
 
             item.obj = bundle.testing.decorators.cprofile(
                 expected_duration=expected_duration,
@@ -160,9 +156,7 @@ def pytest_collection_modifyitems(session, config, items):
             tmp_dir = bundle.Path(tempfile.mkdtemp(prefix=f"data_{item.name}"))
             session.collected_temp_dirs.append(tmp_dir)
 
-            cprofile_dir = data_marker.kwargs.get(
-                "cprofile_folder", str(cprofile_folder)
-            )
+            cprofile_dir = data_marker.kwargs.get("cprofile_folder", str(cprofile_folder))
 
             # Apply the data_decorator with parameters
             item.obj = bundle.testing.decorators.data(

@@ -34,9 +34,7 @@ class PybindPluginSpec(ABC):
         It should return the (potentially modified) module. For immutability,
         it's recommended to return a new instance if changes are made.
         """
-        raise NotImplementedError(
-            "Plugin 'apply' method must be implemented by subclasses."
-        )
+        raise NotImplementedError("Plugin 'apply' method must be implemented by subclasses.")
 
 
 class PybindPluginResolved(ABC):
@@ -48,6 +46,4 @@ class PybindPluginResolved(ABC):
         It should return the (potentially modified) module. For immutability,
         it's recommended to return a new instance if changes are made.
         """
-        raise NotImplementedError(
-            "Plugin 'apply' method must be implemented by subclasses."
-        )
+        raise NotImplementedError("Plugin 'apply' method must be implemented by subclasses.")

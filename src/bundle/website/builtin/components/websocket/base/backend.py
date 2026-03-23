@@ -86,9 +86,7 @@ async def run_websocket(websocket: WebSocket, *task_factories: TaskFactory) -> N
         for task in tasks:
             task.cancel()
         for task in tasks:
-            with contextlib.suppress(
-                asyncio.CancelledError, WebSocketDisconnect, RuntimeError
-            ):
+            with contextlib.suppress(asyncio.CancelledError, WebSocketDisconnect, RuntimeError):
                 await task
 
 
@@ -137,9 +135,7 @@ async def keepalive_loop(websocket: WebSocket) -> None:
     server_tx_bytes = 0
 
     @tracer.Async.decorator.call_raise(log_level=logger.Level.VERBOSE)
-    async def _on_keepalive(
-        ws: WebSocket, message: KeepAliveMessage, request_frame_bytes: int
-    ) -> None:
+    async def _on_keepalive(ws: WebSocket, message: KeepAliveMessage, request_frame_bytes: int) -> None:
         nonlocal server_rx_packets, server_tx_packets, server_rx_bytes, server_tx_bytes
         request_payload_bytes = len((message.payload or "").encode("utf-8"))
 

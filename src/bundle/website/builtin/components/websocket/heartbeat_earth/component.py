@@ -25,6 +25,4 @@ class WebSocketHeartBeatMonitorEarthComponent(GPXWebSocketBaseComponent):
     slug: str = "ws-heartbeat-earth"
     name: str = "HeartBeatMonitorEarth"
     description: str = "Futuristic Earth monitor for websocket heartbeat pulses."
-    params: GPXComponentParams = GPXComponentParams(
-        endpoint="/ws/heartbeat-earth", graph_id="heartbeat-earth"
-    )
+    params: GPXComponentParams = GPXComponentParams(endpoint="/ws/heartbeat-earth", graph_id="heartbeat-earth")

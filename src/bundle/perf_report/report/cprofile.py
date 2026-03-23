@@ -36,9 +36,11 @@ from .base import (
     finalize_plot,
     format_delta,
     format_time_seconds,
+    setup_plot,
+    shorten_path,
+    truncate_labels,
 )
 from .base import generate_report as _generate_report
-from .base import setup_plot, shorten_path, truncate_labels
 
 # ---------------------------------------------------------------------------
 # cProfile-specific helpers
@@ -90,9 +92,7 @@ def generate_plot(
     all_times = raw_times + (baseline_times_raw if has_baseline else [])
     unit_label, multiplier = best_unit_for_values_seconds(all_times)
     cumulative_times = [t * multiplier for t in raw_times]
-    baseline_times = (
-        [t * multiplier for t in baseline_times_raw] if has_baseline else []
-    )
+    baseline_times = [t * multiplier for t in baseline_times_raw] if has_baseline else []
 
     labels = truncate_labels([format_label(r) for r in top_n])
     fig, ax, y_pos = setup_plot(len(labels), has_baseline)
@@ -122,11 +122,7 @@ def generate_plot(
 
     ax.set_yticks(y_pos)
     ax.set_yticklabels(labels)
-    max_val = (
-        max(cumulative_times + (baseline_times if has_baseline else []))
-        if cumulative_times
-        else 1
-    )
+    max_val = max(cumulative_times + (baseline_times if has_baseline else [])) if cumulative_times else 1
 
     return finalize_plot(
         fig,

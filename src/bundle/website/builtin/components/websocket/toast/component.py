@@ -44,6 +44,4 @@ class WebSocketToastComponent(WebSocketBaseComponent):
 @tracer.Async.decorator.call_raise
 async def _send_toast(websocket: WebSocket) -> None:
     """Send one toast payload."""
-    await websocket.send_json(
-        {"type": "toast", "body": f"Server ping {int(time.time())}"}
-    )
+    await websocket.send_json({"type": "toast", "body": f"Server ping {int(time.time())}"})

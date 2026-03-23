@@ -29,9 +29,7 @@ def main() -> None:
     assert torch.cuda.is_available(), "CUDA is not available in the ppisp container."
     h, w, d = 8, 8, "cuda"
     xy = torch.stack(
-        torch.meshgrid(
-            torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij"
-        )[::-1],
+        torch.meshgrid(torch.arange(h, device=d), torch.arange(w, device=d), indexing="ij")[::-1],
         -1,
     ).float()
     rgb = torch.rand((h, w, 3), device=d)

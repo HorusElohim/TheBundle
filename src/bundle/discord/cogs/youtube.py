@@ -70,11 +70,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
     async def resolve(self, ctx: commands.Context, url: str) -> None:
         """Resolve a YouTube URL and show available streams."""
         e = self.bot.embeds
-        msg = await ctx.send(
-            embed=e.progress(
-                title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10
-            )
-        )
+        msg = await ctx.send(embed=e.progress(title="YouTube Resolve", status=f"Resolving `{url}` ...", percent=10))
 
         try:
             options = YoutubeResolveOptions(best=True)
@@ -106,9 +102,7 @@ class YoutubeCog(commands.Cog, name="youtube"):
             }
             if track.video_streams:
                 best = track.video_streams[0]
-                fields["Best Video"] = (
-                    f"`{best.resolution}` {best.fps}fps {best.mime_type}"
-                )
+                fields["Best Video"] = f"`{best.resolution}` {best.fps}fps {best.mime_type}"
             if track.audio_streams:
                 best = track.audio_streams[0]
                 fields["Best Audio"] = f"`{best.abr}` {best.mime_type}"
@@ -124,8 +118,4 @@ class YoutubeCog(commands.Cog, name="youtube"):
 
         except Exception as exc:
             log.exception(f"YouTube resolve failed for {url}")
-            await msg.edit(
-                embed=e.error(
-                    title="YouTube Resolve Failed", description=f"```{exc}```"
-                )
-            )
+            await msg.edit(embed=e.error(title="YouTube Resolve Failed", description=f"```{exc}```"))

@@ -35,8 +35,6 @@ DATA_CLASSES_TO_TEST = [
 
 @pytest.mark.parametrize("dataclass", DATA_CLASSES_TO_TEST)
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(
-    expected_duration=500_000, performance_threshold=3_000_000
-)  # 0.5ms + ~3ms
+@pytest.mark.bundle_cprofile(expected_duration=500_000, performance_threshold=3_000_000)  # 0.5ms + ~3ms
 async def test_dataclass(dataclass):
     return dataclass()

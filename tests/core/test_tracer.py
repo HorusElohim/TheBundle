@@ -251,14 +251,10 @@ def file_name() -> str:
     return os.path.basename(__file__)
 
 
-def assert_log_correct(
-    record: logging.LogRecord, file_name: str, func_name: str
-) -> bool:
+def assert_log_correct(record: logging.LogRecord, file_name: str, func_name: str) -> bool:
     # Check that the logged record's pathname ends with our test file name
     # and that the funcName is not one of the known wrappers.
-    assert file_name == os.path.basename(
-        record.pathname
-    ), f"wrong file_name -> {file_name}"
+    assert file_name == os.path.basename(record.pathname), f"wrong file_name -> {file_name}"
     return func_name == record.funcName, f"Wrong func_name -> {func_name}"
 
 
@@ -275,9 +271,7 @@ def test_sync_direct_stacklevel(list_handler: ListHandler, file_name) -> None:
 
 
 @pytest.mark.asyncio
-async def test_async_direct_stacklevel(
-    list_handler: ListHandler, file_name: str
-) -> None:
+async def test_async_direct_stacklevel(list_handler: ListHandler, file_name: str) -> None:
     async def dummy_async() -> int:
         return 123
 
@@ -312,9 +306,7 @@ async def dummy_decorated_async() -> int:
 
 
 @pytest.mark.asyncio
-async def test_async_decorator_stacklevel(
-    list_handler: ListHandler, file_name: str
-) -> None:
+async def test_async_decorator_stacklevel(list_handler: ListHandler, file_name: str) -> None:
     result, exc = await dummy_decorated_async()
     assert result == 456, "Decorated async function did not return expected value"
     assert exc is None

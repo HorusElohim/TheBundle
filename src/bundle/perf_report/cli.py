@@ -48,13 +48,9 @@ async def perf_report():
     type=click.Path(exists=True),
     help="Directory with profile data (.prof or .csv)",
 )
-@click.option(
-    "--output-dir", "-o", required=True, type=click.Path(), help="Output directory"
-)
+@click.option("--output-dir", "-o", required=True, type=click.Path(), help="Output directory")
 @click.option("--h5/--no-h5", default=True, help="Save HDF5 data alongside PDF")
-@click.option(
-    "--pdf-name", default=None, help="PDF filename (auto-generated if omitted)"
-)
+@click.option("--pdf-name", default=None, help="PDF filename (auto-generated if omitted)")
 @click.option(
     "--backend",
     type=click.Choice(["cprofile", "tracy", "auto"]),

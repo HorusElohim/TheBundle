@@ -77,9 +77,7 @@ def site():
 
 
 @site.command("start")
-@click.argument(
-    "name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False)
-)
+@click.argument("name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False))
 @click.option("--host", default="127.0.0.1", help="Host to run the server on.")
 @click.option("--port", default=8000, type=int, help="Port to run the server on.")
 @tracer.Sync.decorator.call_raise
@@ -113,7 +111,9 @@ def install():
                 "npm is not available on PATH and winget was not found. Install Node.js manually, then rerun `bundle website install`."
             )
 
-        install_node_command = f'"{winget_command}" install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements'
+        install_node_command = (
+            f'"{winget_command}" install -e --id OpenJS.NodeJS.LTS --accept-source-agreements --accept-package-agreements'
+        )
         log.info("npm not found; installing Node.js LTS via winget")
         try:
             asyncio.run(runner(install_node_command, cwd=str(frontend_root)))
@@ -133,17 +133,13 @@ def install():
     try:
         asyncio.run(runner(npm_install_command, cwd=str(frontend_root)))
     except process.ProcessError as exc:
-        raise click.ClickException(
-            f"`npm install` failed with exit code {exc.result.returncode}."
-        ) from exc
+        raise click.ClickException(f"`npm install` failed with exit code {exc.result.returncode}.") from exc
 
     log.info("frontend dependencies installed")
 
 
 @site.command("build")
-@click.argument(
-    "name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False)
-)
+@click.argument("name", type=click.Choice(tuple(_SITE_MANIFESTS.keys()), case_sensitive=False))
 @click.option(
     "--script",
     default="build:website-ts",
@@ -197,9 +193,7 @@ def site_build(name: str, script: str):
                 "TypeScript compiler (tsc) is not available. Run `bundle website install`, then retry."
             ) from exc
 
-        raise click.ClickException(
-            f"Frontend build failed with exit code {exc.result.returncode}."
-        ) from exc
+        raise click.ClickException(f"Frontend build failed with exit code {exc.result.returncode}.") from exc
 
 
 if __name__ == "__main__":

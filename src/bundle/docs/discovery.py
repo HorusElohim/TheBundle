@@ -64,9 +64,7 @@ def discover_project(source_dir: Path) -> dict:
         result["author"] = authors[0].get("name", "")
 
     # Discover package directories from setuptools config
-    find_cfg = (
-        data.get("tool", {}).get("setuptools", {}).get("packages", {}).get("find", {})
-    )
+    find_cfg = data.get("tool", {}).get("setuptools", {}).get("packages", {}).get("find", {})
     where = find_cfg.get("where", ["."])
     if isinstance(where, str):
         where = [where]

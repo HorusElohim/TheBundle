@@ -118,9 +118,7 @@ class Device(Entity):
     _advertisement: Advertisement | None = data.PrivateAttr(default=None)
 
     @classmethod
-    def from_backend(
-        cls, device: BleakPeripheral, advertisement: AdvertisementData | None
-    ) -> Device:
+    def from_backend(cls, device: BleakPeripheral, advertisement: AdvertisementData | None) -> Device:
         adv = Advertisement(raw=advertisement)
         name, alias = cls._names(device, adv)
         services = adv.service_labels
@@ -166,11 +164,7 @@ class Device(Entity):
         if not query:
             return False
         query = query.lower()
-        candidates = (
-            candidate.lower()
-            for candidate in (self.name, self.alias, self.local_name)
-            if candidate
-        )
+        candidates = (candidate.lower() for candidate in (self.name, self.alias, self.local_name) if candidate)
         return any(query in candidate for candidate in candidates)
 
     def __str__(self) -> str:  # pragma: no cover - convenience for printing

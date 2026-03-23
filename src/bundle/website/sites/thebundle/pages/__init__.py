@@ -29,6 +29,4 @@ from . import ble, excalidraw, home, playground, youtube
 
 def initialize_pages(app: FastAPI) -> None:
     """Attach all TheBundle pages and publish navigation metadata on app state."""
-    initialize_site_pages(
-        app, [home.page, ble.page, youtube.page, excalidraw.page, playground.page]
-    )
+    initialize_site_pages(app, [home.page, ble.page, youtube.page, excalidraw.page, playground.page])

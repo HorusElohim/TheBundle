@@ -101,9 +101,7 @@ class EmbedFactory:
 
     # ---- public builders ----
 
-    def online(
-        self, bot_user: discord.User, guild_count: int, latency_ms: int
-    ) -> discord.Embed:
+    def online(self, bot_user: discord.User, guild_count: int, latency_ms: int) -> discord.Embed:
         avatar = bot_user.display_avatar.url
         embed = self._base(
             title=f"{self.bot_name} Online",
@@ -143,9 +141,7 @@ class EmbedFactory:
         thumbnail_url: str | None = None,
     ) -> discord.Embed:
         bar = _progress_bar(min(max(percent, 0), 100))
-        embed = self._base(
-            title=title, description=f"{status}\n{bar}", color=Color.PROGRESS
-        )
+        embed = self._base(title=title, description=f"{status}\n{bar}", color=Color.PROGRESS)
         return self._with_extras(embed, fields=fields, thumbnail_url=thumbnail_url)
 
     def success(

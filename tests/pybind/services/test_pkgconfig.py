@@ -97,9 +97,7 @@ def set_pkg_config_path(pkgconfig_dir, monkeypatch):
     ],
 )
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(
-    expected_duration=5_000_000, performance_threshold=3_000_000
-)
+@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
 async def test_pkgconfig_resolve(
     pkg_config_service,
     foo_pc_file,
@@ -114,33 +112,23 @@ async def test_pkgconfig_resolve(
     resolved.spec.extra_dirs = spec.extra_dirs
     if spec.extra_dirs:
         # Use Path.relative_to for stable, relative comparison
-        resolved.spec.extra_dirs = [
-            str(Path(d).relative_to(pkgconfig_dir)) for d in spec.extra_dirs
-        ]
+        resolved.spec.extra_dirs = [str(Path(d).relative_to(pkgconfig_dir)) for d in spec.extra_dirs]
     resolved.__test_name = request.node.name.strip()
     return resolved
 
 
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(
-    expected_duration=5_000_000, performance_threshold=3_000_000
-)
-async def test_pkgconfig_resolve_with_extra_dirs(
-    pkg_config_service, foo_pc_file, pkgconfig_dir, request
-):
+@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
+async def test_pkgconfig_resolve_with_extra_dirs(pkg_config_service, foo_pc_file, pkgconfig_dir, request):
     spec = PkgConfigSpec(packages=["foo"], extra_dirs=[str(pkgconfig_dir)])
     resolved = await pkg_config_service.resolve(spec)
-    resolved.spec.extra_dirs = [
-        str(Path(d).relative_to(pkgconfig_dir)) for d in spec.extra_dirs
-    ]
+    resolved.spec.extra_dirs = [str(Path(d).relative_to(pkgconfig_dir)) for d in spec.extra_dirs]
     resolved.__test_name = request.node.name.strip()
     return resolved
 
 
 @pytest.mark.bundle_data()
-@pytest.mark.bundle_cprofile(
-    expected_duration=5_000_000, performance_threshold=3_000_000
-)
+@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
 async def test_pkgconfig_resolve_empty(pkg_config_service, request):
     spec = PkgConfigSpec(packages=[])
     resolved = await pkg_config_service.resolve(spec)
@@ -148,12 +136,8 @@ async def test_pkgconfig_resolve_empty(pkg_config_service, request):
     return resolved
 
 
-@pytest.mark.bundle_cprofile(
-    expected_duration=5_000_000, performance_threshold=3_000_000
-)
-async def test_pkgconfig_resolve_missing(
-    pkg_config_service, foo_pc_file, set_pkg_config_path, request
-):
+@pytest.mark.bundle_cprofile(expected_duration=5_000_000, performance_threshold=3_000_000)
+async def test_pkgconfig_resolve_missing(pkg_config_service, foo_pc_file, set_pkg_config_path, request):
     spec = PkgConfigSpec(packages=["foo", "missing"])
     with pytest.raises(process.ProcessError):
         await pkg_config_service.resolve(spec)

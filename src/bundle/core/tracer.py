@@ -79,21 +79,15 @@ class Sync:
 
         try:
             if asyncio.iscoroutinefunction(func):
-                result = asyncio.run(
-                    cast(Coroutine[Any, Any, R], func(*args, **kwargs))
-                )
+                result = asyncio.run(cast(Coroutine[Any, Any, R], func(*args, **kwargs)))
             else:
                 result = cast(R, func(*args, **kwargs))
             log.callable_success(func, args, kwargs, result, stacklevel, log_level)
         except Exception as exception:
             if isinstance(exception, asyncio.CancelledError):
-                log.callable_exception(
-                    func, args, kwargs, exception, stacklevel, exc_log_level
-                )
+                log.callable_exception(func, args, kwargs, exception, stacklevel, exc_log_level)
             else:
-                log.callable_cancel(
-                    func, args, kwargs, exception, stacklevel, exc_log_level
-                )
+                log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
             return None, exception
 
         return result, None
@@ -137,9 +131,7 @@ class Sync:
                 f: Callable[P, R] | Callable[P, Awaitable[R]],
             ) -> Callable[P, tuple[R | None, Exception | None]]:
                 @wraps(f)
-                def wrapper(
-                    *args: P.args, **kwargs: P.kwargs
-                ) -> tuple[R | None, Exception | None]:
+                def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, Exception | None]:
                     return Sync.call(
                         f,
                         *args,
@@ -214,14 +206,10 @@ class Async:
             log.callable_success(func, args, kwargs, result, stacklevel, log_level)
             return cast(R, result), None
         except asyncio.CancelledError as cancel_exception:
-            log.callable_exception(
-                func, args, kwargs, cancel_exception, stacklevel, exc_log_level
-            )
+            log.callable_exception(func, args, kwargs, cancel_exception, stacklevel, exc_log_level)
             return None, cancel_exception
         except Exception as exception:
-            log.callable_cancel(
-                func, args, kwargs, exception, stacklevel, exc_log_level
-            )
+            log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
             return None, exception
 
     @staticmethod
@@ -263,9 +251,7 @@ class Async:
                 f: Callable[P, R] | Callable[P, Awaitable[R]],
             ) -> Callable[P, Awaitable[tuple[R | None, BaseException | None]]]:
                 @wraps(f)
-                async def wrapper(
-                    *args: P.args, **kwargs: P.kwargs
-                ) -> tuple[R | None, BaseException | None]:
+                async def wrapper(*args: P.args, **kwargs: P.kwargs) -> tuple[R | None, BaseException | None]:
                     return await Async.call(
                         f,
                         *args,

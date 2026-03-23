@@ -38,9 +38,7 @@ class TestData(core.data.Data):
 class NestedModel(core.data.Data):
     id: int = core.data.Field(default=0)
     info: str = core.data.Field(default="")
-    timestamp: datetime = core.data.Field(
-        default_factory=lambda: datetime(1991, 12, 28)
-    )
+    timestamp: datetime = core.data.Field(default_factory=lambda: datetime(1991, 12, 28))
     model_config = core.data.configuration(json_encoders=JSON_ENCODERS)
 
 

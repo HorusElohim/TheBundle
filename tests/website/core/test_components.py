@@ -26,28 +26,20 @@ def test_websocket_component_defaults():
     default = components.WebSocketHeartbeatComponent()
     assert default.slug == "ws-heartbeat"
     assert default.params.endpoint == "/ws/heartbeat"
-    assert any(
-        asset.path.endswith("heartbeat/component.js") for asset in default.assets
-    )
+    assert any(asset.path.endswith("heartbeat/component.js") for asset in default.assets)
     assert all(asset.route_name == "components_static" for asset in default.assets)
 
 
 def test_component_context_supports_data_params_override():
-    custom = components.WebSocketHeartbeatComponent(
-        params=components.WebSocketComponentParams(endpoint="/ws/custom")
-    )
+    custom = components.WebSocketHeartbeatComponent(params=components.WebSocketComponentParams(endpoint="/ws/custom"))
     ctx = components.context(custom)
     selected = ctx["components"]
     assert len(selected) == 1
-    assert (
-        selected[0].params is not None and selected[0].params.endpoint == "/ws/custom"
-    )
+    assert selected[0].params is not None and selected[0].params.endpoint == "/ws/custom"
 
 
 def test_component_context_accepts_component_instance():
-    custom = components.WebSocketECCComponent(
-        params=components.WebSocketComponentParams(endpoint="/ws/ecc-alt")
-    )
+    custom = components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-alt"))
     ctx = components.context(custom)
     selected = ctx["components"]
     assert len(selected) == 1
@@ -68,12 +60,8 @@ def test_attach_routes_supports_multiple_ecc_instances():
     router = APIRouter()
     components.attach_routes(
         router,
-        components.WebSocketECCComponent(
-            params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")
-        ),
-        components.WebSocketECCComponent(
-            params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")
-        ),
+        components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")),
+        components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")),
     )
     paths = {route.path for route in router.routes}
     assert "/ws/ecc-1" in paths

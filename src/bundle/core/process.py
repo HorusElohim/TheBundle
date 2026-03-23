@@ -90,9 +90,7 @@ class Process(Entity):
 
         stdout, stderr = await self._process.communicate()
 
-        returncode = (
-            -1 if self._process.returncode is None else self._process.returncode
-        )
+        returncode = -1 if self._process.returncode is None else self._process.returncode
 
         stdout_decoded = stdout.decode("utf-8", errors="replace") if stdout else ""
         stderr_decoded = stderr.decode("utf-8", errors="replace") if stderr else ""
@@ -170,9 +168,7 @@ class ProcessStream(Process):
         stdout = "".join(stdout_lines)
         stderr = "".join(stderr_lines)
 
-        result = ProcessResult(
-            command=command, returncode=returncode, stdout=stdout, stderr=stderr
-        )
+        result = ProcessResult(command=command, returncode=returncode, stdout=stdout, stderr=stderr)
 
         if returncode != 0:
             raise ProcessError(self, result)

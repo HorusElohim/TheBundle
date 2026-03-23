@@ -43,6 +43,4 @@ class GraphicTwoDComponentParams(GraphicComponentParams):
 class GraphicTwoDComponent(GraphicBaseComponent):
     """Base class for canvas/SVG style 2D graphics components."""
 
-    params: GraphicTwoDComponentParams = data.Field(
-        default_factory=GraphicTwoDComponentParams
-    )
+    params: GraphicTwoDComponentParams = data.Field(default_factory=GraphicTwoDComponentParams)

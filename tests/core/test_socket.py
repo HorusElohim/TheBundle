@@ -394,9 +394,7 @@ async def test_stream():
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(
-    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
-)
+@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
 async def test_server_client(protocol, tmp_path):
     """
     Test SERVER/CLIENT pattern with parameterized protocols.
@@ -430,9 +428,7 @@ async def test_server_client(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(
-    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
-)
+@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
 async def test_radio_dish(protocol, tmp_path):
     """
     Test RADIO/DISH pattern with parameterized protocols.
@@ -460,9 +456,7 @@ async def test_radio_dish(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(
-    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
-)
+@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
 async def test_gather_scatter(protocol, tmp_path):
     """
     Test GATHER/SCATTER pattern with parameterized protocols.
@@ -490,9 +484,7 @@ async def test_gather_scatter(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(
-    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
-)
+@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
 async def test_peer(protocol, tmp_path):
     """
     Test PEER socket with parameterized protocols.
@@ -522,9 +514,7 @@ async def test_peer(protocol, tmp_path):
 
 @bundle_cprofile
 @parametrize_socket_protocol
-@pytest.mark.skipif(
-    not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq"
-)
+@pytest.mark.skipif(not HAS_DRAFT_SUPPORT, reason="DRAFT support is not enabled in pyzmq/libzmq")
 async def test_channel(protocol, tmp_path):
     """
     Test CHANNEL socket with parameterized protocols.

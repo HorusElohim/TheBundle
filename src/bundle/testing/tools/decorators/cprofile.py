@@ -82,11 +82,7 @@ class ProfileContext:
         log.testing(f"[{self.func_name}] executed in {formatted_elapsed}")
 
         if self.cprofile_folder:
-            identifier = (
-                self.result_identifier(self.result)
-                if self.result is not None
-                else "result"
-            )
+            identifier = self.result_identifier(self.result) if self.result is not None else "result"
             dump_file = self.cprofile_folder / f"{self.func_name}.{identifier}.prof"
             log.testing(f"[{self.func_name}] dumping cProfile stats to: {dump_file}")
             self.profiler.dump_stats(str(dump_file))

@@ -65,9 +65,7 @@ class Component(data.Data):
     name: str | None = None
     description: str | None = None
     asset_filenames: ClassVar[tuple[str, ...]] = DEFAULT_COMPONENT_ASSET_FILES
-    component_file: str | Path | None = data.Field(
-        default=None, exclude=True, repr=False
-    )
+    component_file: str | Path | None = data.Field(default=None, exclude=True, repr=False)
 
     @data.model_validator(mode="after")
     def _finalize_component(self):
@@ -92,17 +90,11 @@ class Component(data.Data):
         return self.routers
 
     @staticmethod
-    def component_assets(
-        *paths: str, route_name: str = "components_static"
-    ) -> list[ComponentAsset]:
+    def component_assets(*paths: str, route_name: str = "components_static") -> list[ComponentAsset]:
         assets: list[ComponentAsset] = []
         for path in paths:
             suffix = Path(path).suffix.lower()
-            assets.append(
-                ComponentAsset(
-                    path=path, route_name=route_name, module=suffix in {".js", ".mjs"}
-                )
-            )
+            assets.append(ComponentAsset(path=path, route_name=route_name, module=suffix in {".js", ".mjs"}))
         return assets
 
     @staticmethod
@@ -117,11 +109,7 @@ class Component(data.Data):
         asset_filenames: Iterable[str] | None = None,
     ) -> list[str]:
         component_dir = Path(component_file).resolve().parent
-        names = (
-            tuple(asset_filenames)
-            if asset_filenames is not None
-            else cls.asset_filenames
-        )
+        names = tuple(asset_filenames) if asset_filenames is not None else cls.asset_filenames
         discovered: list[str] = []
         for asset_name in names:
             asset_path = component_dir / asset_name
@@ -131,12 +119,8 @@ class Component(data.Data):
         return discovered
 
     @classmethod
-    def component_assets_for(
-        cls, component_file: str | Path, *, route_name: str = "components_static"
-    ) -> list[ComponentAsset]:
-        return cls.component_assets(
-            *cls.component_asset_paths_for(component_file), route_name=route_name
-        )
+    def component_assets_for(cls, component_file: str | Path, *, route_name: str = "components_static") -> list[ComponentAsset]:
+        return cls.component_assets(*cls.component_asset_paths_for(component_file), route_name=route_name)
 
     @classmethod
     def component_template_for(cls, component_file: str | Path) -> str | None:

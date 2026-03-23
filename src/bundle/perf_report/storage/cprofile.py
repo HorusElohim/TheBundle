@@ -80,9 +80,7 @@ class CProfileStorage:
             if store.has(prefix):
                 del store.file[prefix]
 
-            write_meta(
-                store, prefix, machine_id, bundle_version, platform_id, platform_meta
-            )
+            write_meta(store, prefix, machine_id, bundle_version, platform_id, platform_meta)
 
             dt = _cprofile_dtype()
             for profile in profiles:

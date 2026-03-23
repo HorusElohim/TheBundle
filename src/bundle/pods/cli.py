@@ -85,9 +85,7 @@ async def list_pods(ctx: click.Context) -> None:
                 container_parts.append(f"[green]{c}[/green]")
             else:
                 container_parts.append(f"[dim]{c}[/dim]")
-        containers_text = (
-            "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
-        )
+        containers_text = "\n".join(container_parts) if container_parts else "[dim]-[/dim]"
 
         table.add_row(pod.name, status_text, containers_text, str(pod_path))
 
@@ -103,9 +101,7 @@ async def status(ctx: click.Context, pod_name: str) -> None:
     mgr = _get_manager(ctx)
     pod = mgr.get(pod_name)
     result = await mgr.status(pod)
-    output = (
-        result.stdout.strip() if result.stdout.strip() else "No compose status output."
-    )
+    output = result.stdout.strip() if result.stdout.strip() else "No compose status output."
     log.info("%s", output)
 
 

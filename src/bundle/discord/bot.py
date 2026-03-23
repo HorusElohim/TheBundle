@@ -100,9 +100,7 @@ class Bot(commands.Bot):
         channel = discord.utils.get(guild.text_channels, name=channel_name)
         if channel is None:
             log.info(f"Creating #{channel_name} in {guild.name}")
-            channel = await guild.create_text_channel(
-                channel_name, topic=f"{self.config.bot_name} announcements"
-            )
+            channel = await guild.create_text_channel(channel_name, topic=f"{self.config.bot_name} announcements")
         return channel
 
     async def sync_guild_identity(self, guild: discord.Guild) -> None:

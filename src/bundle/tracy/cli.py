@@ -92,15 +92,11 @@ async def _build_ext(jobs: int) -> None:
             )
 
 
-async def _build_tool(
-    name: str, jobs: int, extra_cmake_args: list[str] | None = None
-) -> None:
+async def _build_tool(name: str, jobs: int, extra_cmake_args: list[str] | None = None) -> None:
     """Build a Tracy CLI tool and install it to the active venv prefix."""
     source_dir = _TRACY_VENDOR / name
     if not source_dir.exists():
-        log.warning(
-            "Tracy tool source not found: %s (submodule initialised?)", source_dir
-        )
+        log.warning("Tracy tool source not found: %s (submodule initialised?)", source_dir)
         return
 
     log.info("Building tracy-%s ...", name)
@@ -138,9 +134,7 @@ _VALID_TARGETS = ("extension", "profiler", "capture", "csvexport")
 
 
 @tracy.command()
-@click.argument(
-    "targets", nargs=-1, type=click.Choice(_VALID_TARGETS, case_sensitive=False)
-)
+@click.argument("targets", nargs=-1, type=click.Choice(_VALID_TARGETS, case_sensitive=False))
 @click.option(
     "--jobs",
     "-j",

@@ -337,15 +337,11 @@ async def main() -> None:
     print(f"DEFAULT_SYNC_CALL_STACKLEVEL              = {sync_call}")
     print(f"DEFAULT_SYNC_CALL_RAISE_STACKLEVEL        = {sync_call_raise}")
     print(f"DEFAULT_SYNC_DECORATOR_CALL_STACKLEVEL      = {sync_decorated_call}")
-    print(
-        f"DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL  = {sync_decorated_call_raise}"
-    )
+    print(f"DEFAULT_SYNC_DECORATOR_CALL_RAISE_STACKLEVEL  = {sync_decorated_call_raise}")
     print(f"DEFAULT_ASYNC_CALL_STACKLEVEL               = {async_call}")
     print(f"DEFAULT_ASYNC_CALL_RAISE_STACKLEVEL         = {async_call_raise}")
     print(f"DEFAULT_ASYNC_DECORATOR_CALL_STACKLEVEL       = {async_decorated_call}")
-    print(
-        f"DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL   = {async_decorated_call_raise}"
-    )
+    print(f"DEFAULT_ASYNC_DECORATOR_CALL_RAISE_STACKLEVEL   = {async_decorated_call_raise}")
 
 
 if __name__ == "__main__":

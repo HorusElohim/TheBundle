@@ -59,15 +59,11 @@ def discord():
 @tracer.Sync.decorator.call_raise
 async def start(bot_name: str | None, token: str | None, prefix: str):
     """Start the Discord bot."""
-    bot_name = (
-        bot_name or os.environ.get("DISCORD_BOT_NAME") or "Bundle Bot"
-    ).strip() or "Bundle Bot"
+    bot_name = (bot_name or os.environ.get("DISCORD_BOT_NAME") or "Bundle Bot").strip() or "Bundle Bot"
     if not token:
         token = os.environ.get("DISCORD_BOT_TOKEN")
     if not token:
-        log.error(
-            "No bot token provided. Use --token or set DISCORD_BOT_TOKEN env var."
-        )
+        log.error("No bot token provided. Use --token or set DISCORD_BOT_TOKEN env var.")
         raise click.Abort()
 
     config = BotConfig(token=token, bot_name=bot_name, command_prefix=prefix)

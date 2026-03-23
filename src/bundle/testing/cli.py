@@ -45,9 +45,7 @@ async def python():
 
 @python.command("pytest")
 @tracer.Sync.decorator.call_raise
-@click.option(
-    "--show-exc", is_flag=True, default=False, help="Show expected trace Exceptions"
-)
+@click.option("--show-exc", is_flag=True, default=False, help="Show expected trace Exceptions")
 @click.option(
     "--no-logs",
     is_flag=True,
@@ -112,9 +110,7 @@ async def pytest_cmd(
     elif perf:
         await _run_cprofile(tests_folder, extra_args, perf_output, report)
     else:
-        test_result = await asyncio.to_thread(
-            pytest.main, [str(tests_folder), *extra_args]
-        )
+        test_result = await asyncio.to_thread(pytest.main, [str(tests_folder), *extra_args])
         if test_result == 0:
             log.info("Test success")
             exit(0)
@@ -133,11 +129,7 @@ async def _run_cprofile(
     from bundle import version as bundle_version
     from bundle.core.platform import platform_info
 
-    perf_dir = (
-        bundle.Path(perf_output)
-        if perf_output
-        else tests_folder.parent / "performances"
-    )
+    perf_dir = bundle.Path(perf_output) if perf_output else tests_folder.parent / "performances"
     perf_dir.mkdir(parents=True, exist_ok=True)
 
     # Run pytest as subprocess with cProfile enabled
@@ -208,9 +200,7 @@ async def _run_tracy(
         _tracy._ext.shutdown()
 
     log.info("Starting tracy-capture → %s", tracy_path)
-    capture_proc = await asyncio.create_subprocess_exec(
-        capture_exe, "-o", str(tracy_path), "-f"
-    )
+    capture_proc = await asyncio.create_subprocess_exec(capture_exe, "-o", str(tracy_path), "-f")
 
     # Give the subprocess time to start Tracy and claim port 8086
     await asyncio.sleep(0.5)

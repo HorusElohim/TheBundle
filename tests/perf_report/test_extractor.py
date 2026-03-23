@@ -23,9 +23,7 @@ import pytest
 
 from bundle.perf_report import ProfileExtractor
 
-_CSV_HEADER = (
-    "name,src_file,src_line,total_ns,total_perc,counts,mean_ns,min_ns,max_ns,std_ns\n"
-)
+_CSV_HEADER = "name,src_file,src_line,total_ns,total_perc,counts,mean_ns,min_ns,max_ns,std_ns\n"
 _CSV_ROWS = (
     "my_func,/src/bundle/foo.py,10,1000000,50.0,10,100000,80000,150000,20000.0\n"
     "other_func,/src/bundle/bar.py,20,500000,25.0,5,100000,90000,120000,10000.0\n"
@@ -45,8 +43,7 @@ def sample_csv_dir(tmp_path) -> Path:
     """Write two Tracy CSV files into a directory."""
     for name in ("func_a", "func_b"):
         (tmp_path / f"{name}.csv").write_text(
-            _CSV_HEADER
-            + f"{name},/src/bundle/{name}.py,1,800000,40.0,8,100000,90000,110000,5000.0\n",
+            _CSV_HEADER + f"{name},/src/bundle/{name}.py,1,800000,40.0,8,100000,90000,110000,5000.0\n",
             encoding="utf-8",
         )
     return tmp_path

@@ -70,9 +70,7 @@ def add_cli_submodule(submodule_name: str) -> None:
         else:
             log.warning(f"Command '{submodule_name}' not found in module {module}.")
     except ImportError as e:
-        log.warning(
-            f"Module 'bundle.{submodule_name}.cli' could not be imported -> {e}"
-        )
+        log.warning(f"Module 'bundle.{submodule_name}.cli' could not be imported -> {e}")
 
 
 add_cli_submodule("testing")
