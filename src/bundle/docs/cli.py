@@ -1,4 +1,4 @@
-# Copyright 2024 HorusElohim
+# Copyright 2026 HorusElohim
 
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -20,9 +20,12 @@
 """
 bundle docs CLI
 
-  bundle docs build [--source .] [--output docs/_build/html] [--package src/bundle] [--theme furo]
-  bundle docs serve [--output docs/_build/html] [--port 8000]
-  bundle docs init  [--source .]
+  bundle docs build      [--source .] [--output docs/_build/html] [--package src/bundle] [--theme furo]
+  bundle docs serve      [--output docs/_build/html] [--port 8000]
+  bundle docs init       [--source .]
+  bundle docs copyright  update --year 2026 [--source .]
+  bundle docs copyright  check  [--source .]
+  bundle docs copyright  add    --year 2026 --owner Name [--source .]
 """
 
 from pathlib import Path
@@ -162,3 +165,86 @@ async def init(source: str):
         log.info("Written %s", index_path)
 
     log.info("Sphinx configuration initialized in %s", docs_dir)
+
+
+# ── copyright subcommands ──────────────────────────────────────────────
+
+
+@docs.group()
+@tracer.Sync.decorator.call_raise
+async def copyright():
+    """Manage copyright headers in source files."""
+    pass
+
+
+@copyright.command()
+@click.option(
+    "--source",
+    "-s",
+    type=click.Path(exists=True),
+    default=".",
+    help="Root directory to scan.",
+)
+@tracer.Sync.decorator.call_raise
+async def check(source: str):
+    """Report which files have or lack a copyright header."""
+    from bundle.docs.copyright import scan_copyright
+
+    root = Path(source).resolve()
+    with_hdr, without_hdr = scan_copyright(root)
+
+    log.info("Files with copyright header: %d", len(with_hdr))
+    log.info("Files missing copyright header: %d", len(without_hdr))
+    for p in without_hdr:
+        log.warning("  missing: %s", p.relative_to(root))
+
+
+@copyright.command()
+@click.option(
+    "--source",
+    "-s",
+    type=click.Path(exists=True),
+    default=".",
+    help="Root directory to scan.",
+)
+@click.option("--year", "-y", type=int, required=True, help="Copyright year to set.")
+@tracer.Sync.decorator.call_raise
+async def update(source: str, year: int):
+    """Update the copyright year in all files that already have a header."""
+    from bundle.docs.copyright import scan_copyright, update_copyright_year
+
+    root = Path(source).resolve()
+    with_hdr, _ = scan_copyright(root)
+
+    updated = 0
+    for p in with_hdr:
+        if update_copyright_year(p, year):
+            updated += 1
+
+    log.info("Updated %d / %d files to Copyright %d", updated, len(with_hdr), year)
+
+
+@copyright.command()
+@click.option(
+    "--source",
+    "-s",
+    type=click.Path(exists=True),
+    default=".",
+    help="Root directory to scan.",
+)
+@click.option("--year", "-y", type=int, required=True, help="Copyright year.")
+@click.option("--owner", "-o", type=str, required=True, help="Copyright holder name.")
+@tracer.Sync.decorator.call_raise
+async def add(source: str, year: int, owner: str):
+    """Add a copyright + license header to files that lack one."""
+    from bundle.docs.copyright import add_copyright_header, scan_copyright
+
+    root = Path(source).resolve()
+    _, without_hdr = scan_copyright(root)
+
+    added = 0
+    for p in without_hdr:
+        if add_copyright_header(p, year, owner):
+            added += 1
+
+    log.info("Added copyright header to %d / %d files", added, len(without_hdr))
