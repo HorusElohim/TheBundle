@@ -22,6 +22,7 @@ from __future__ import annotations
 import asyncio
 import os
 import platform
+import shutil
 import sys
 import sysconfig
 from pathlib import Path
@@ -229,6 +230,16 @@ class Platform(Entity):
 
     # Platform-specific attributes
     darwin: None | Darwin = data.Field(default_factory=Darwin.resolve, frozen=True)
+    gpu_backend: str = data.Field(
+        default_factory=lambda: (
+            "cuda"
+            if (shutil.which("nvidia-smi") is not None or "CUDA_HOME" in os.environ)
+            else "metal"
+            if sys.platform == "darwin"
+            else "cpu"
+        ),
+        frozen=True,
+    )
 
     @property
     def platform_string(self) -> str:
@@ -269,6 +280,14 @@ class Platform(Entity):
             bool: True if Darwin, False otherwise.
         """
         return self.system == "darwin"
+
+    @property
+    def has_cuda(self) -> bool:
+        return self.gpu_backend == "cuda"
+
+    @property
+    def has_metal(self) -> bool:
+        return self.gpu_backend == "metal"
 
 
 # Singleton instance constructed at import

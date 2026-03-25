@@ -30,6 +30,7 @@ from pydantic import PrivateAttr
 
 from bundle.core import data, logger, process, tracer
 from bundle.core.entity import Entity
+from bundle.core.platform import platform_info
 
 log = logger.get_logger(__name__)
 
@@ -324,6 +325,10 @@ class PodManager(Entity):
         """Execute a docker compose subcommand against a pod's compose file."""
         cwd = self.pod_path(pod)
         compose_file = cwd / "docker-compose.yml"
+        # On macOS, prefer CPU-only compose file when available (no NVIDIA runtime)
+        cpu_compose = cwd / "docker-compose.cpu.yml"
+        if platform_info.is_darwin and cpu_compose.exists():
+            compose_file = cpu_compose
         if not compose_file.exists():
             raise click.ClickException(f"docker-compose.yml not found for pod at '{cwd}'.")
         ansi_flag = " --ansi always" if sys.platform != "win32" else ""

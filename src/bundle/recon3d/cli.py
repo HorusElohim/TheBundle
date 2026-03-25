@@ -107,7 +107,12 @@ async def data_locate(scene: str, data_root: Path):
 @recon3d.command()
 @click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
 @click.option("--sfm-backend", type=click.Choice(["colmap", "pycusfm"]), default="colmap", help="SfM backend.")
-@click.option("--renderer", type=click.Choice(["3dgut", "3dgrt"]), default="3dgut", help="Gaussian renderer.")
+@click.option(
+    "--renderer",
+    type=click.Choice(["auto", "3dgut", "3dgrt", "opensplat"]),
+    default="auto",
+    help="Gaussian renderer (auto selects by platform).",
+)
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
 @tracer.Sync.decorator.call_raise
 async def run(workspace: Path, sfm_backend: str, renderer: str, export_usdz: bool):
@@ -162,7 +167,12 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 @click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
 @click.option("--config", "config_name", default="auto", help="Hydra config name (auto selects from backend + renderer).")
 @click.option("--experiment", default="default", help="Experiment name for output directory.")
-@click.option("--renderer", type=click.Choice(["3dgut", "3dgrt"]), default="3dgut", help="Gaussian renderer.")
+@click.option(
+    "--renderer",
+    type=click.Choice(["auto", "3dgut", "3dgrt", "opensplat"]),
+    default="auto",
+    help="Gaussian renderer (auto selects by platform).",
+)
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
 @tracer.Sync.decorator.call_raise
 async def gaussians(workspace: Path, config_name: str, experiment: str, renderer: str, export_usdz: bool):
@@ -188,7 +198,8 @@ async def gaussians(workspace: Path, config_name: str, experiment: str, renderer
     )
 
     if not await stage.check_deps():
-        raise click.ClickException("3DGRUT is not available on this system.")
+        renderer_name = stage.name.split(".")[-1] if hasattr(stage, "name") else renderer
+        raise click.ClickException(f"Gaussian renderer '{renderer_name}' is not available on this system.")
 
     input_contract = GaussiansInput(
         sfm_output=sfm_out,
