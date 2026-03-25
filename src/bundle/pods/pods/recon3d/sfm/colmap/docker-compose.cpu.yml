@@ -1,0 +1,21 @@
+services:
+  colmap:
+    build:
+      context: .
+      dockerfile: Dockerfile.cpu
+      network: host
+      args:
+        BASE_TAG: latest
+        COLMAP_VERSION: "3.11.1"
+    image: thebundle/recon3d/sfm/colmap:cpu
+    container_name: thebundle.recon3d.sfm.colmap
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    environment:
+      - RECON3D_DATA_ROOT=/workspace/data
+    volumes:
+      - ../../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+      - ../../data:/workspace/data
+    command: ["sleep", "infinity"]

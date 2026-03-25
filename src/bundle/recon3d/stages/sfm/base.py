@@ -9,7 +9,8 @@ from pathlib import Path
 from pydantic import field_validator
 
 from bundle.core import logger
-from bundle.core.data import Data
+from bundle.core.data import Data, Field
+from bundle.core.platform import platform_info
 
 from ..base import Stage
 
@@ -91,7 +92,7 @@ class SfmStage(Stage):
 
     name: str = "sfm"
     backend: SfmBackend = SfmBackend.COLMAP
-    use_gpu: bool = True
+    use_gpu: bool = Field(default_factory=lambda: platform_info.has_cuda)
     matcher: str = "exhaustive"  # "exhaustive" | "sequential"
     undistort: bool = True  # run image_undistorter to produce PINHOLE cameras
 

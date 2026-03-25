@@ -43,7 +43,7 @@ class Pipeline(Entity):
         cls,
         workspace: Workspace,
         sfm_backend: SfmBackend = SfmBackend.COLMAP,
-        renderer: str = "3dgut",
+        renderer: str = "auto",
         export_usdz: bool = True,
     ) -> Pipeline:
         """Create the standard SfM -> Gaussians pipeline."""
