@@ -109,22 +109,49 @@ async def data_locate(scene: str, data_root: Path):
 @click.option("--sfm-backend", type=click.Choice(["colmap", "pycusfm"]), default="colmap", help="SfM backend.")
 @click.option(
     "--renderer",
-    type=click.Choice(["auto", "3dgut", "3dgrt", "opensplat"]),
+    type=click.Choice(["auto", "3dgut", "3dgrt"]),
     default="auto",
-    help="Gaussian renderer (auto selects by platform).",
+    help="Gaussian training renderer (CUDA required).",
 )
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
+@click.option("--lambda/--no-lambda", "use_lambda", default=False, help="Run training on Lambda Labs GPU.")
+@click.option(
+    "--lambda-ip",
+    default=None,
+    envvar="LAMBDA_INSTANCE_IP",
+    help="Lambda instance IP (or set LAMBDA_INSTANCE_IP).",
+)
+@click.option("--visualize/--no-visualize", default=True, help="Run local OpenSplat preview after training.")
+@click.option("--vis-iters", default=2_000, help="OpenSplat iterations for visualization preview.")
 @tracer.Sync.decorator.call_raise
-async def run(workspace: Path, sfm_backend: str, renderer: str, export_usdz: bool):
-    """Run the full reconstruction pipeline: SfM -> Gaussians -> USD."""
+async def run(
+    workspace: Path,
+    sfm_backend: str,
+    renderer: str,
+    export_usdz: bool,
+    use_lambda: bool,
+    lambda_ip: str | None,
+    visualize: bool,
+    vis_iters: int,
+):
+    """Run the full reconstruction pipeline: SfM -> Train (CUDA) -> Visualize."""
     from .pipeline import Pipeline
+    from .stages.remote.lambda_runner import LambdaConfig
 
     ws = Workspace(root=workspace)
+    lambda_cfg = None
+    if use_lambda:
+        lambda_cfg = LambdaConfig(instance_ip=lambda_ip) if lambda_ip else LambdaConfig.from_env()
+
     pipeline = Pipeline.default(
         workspace=ws,
         sfm_backend=SfmBackend(sfm_backend),
         renderer=renderer,
         export_usdz=export_usdz,
+        use_lambda=use_lambda,
+        lambda_config=lambda_cfg,
+        visualize=visualize,
+        vis_iters=vis_iters,
     )
     results = await pipeline.run()
     for name, output in results.items():
@@ -159,7 +186,7 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 
 
 # ---------------------------------------------------------------------------
-# bundle recon3d gaussians
+# bundle recon3d gaussians  (CUDA training)
 # ---------------------------------------------------------------------------
 
 
@@ -169,19 +196,32 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 @click.option("--experiment", default="default", help="Experiment name for output directory.")
 @click.option(
     "--renderer",
-    type=click.Choice(["auto", "3dgut", "3dgrt", "opensplat"]),
+    type=click.Choice(["auto", "3dgut", "3dgrt"]),
     default="auto",
-    help="Gaussian renderer (auto selects by platform).",
+    help="Gaussian training renderer (CUDA required).",
 )
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
+@click.option("--lambda/--no-lambda", "use_lambda", default=False, help="Run training on Lambda Labs GPU.")
+@click.option(
+    "--lambda-ip",
+    default=None,
+    envvar="LAMBDA_INSTANCE_IP",
+    help="Lambda instance IP (or set LAMBDA_INSTANCE_IP).",
+)
 @tracer.Sync.decorator.call_raise
-async def gaussians(workspace: Path, config_name: str, experiment: str, renderer: str, export_usdz: bool):
-    """Run only the Gaussian splatting training stage."""
-    from .stages.gaussians import create_gaussians_stage
+async def gaussians(
+    workspace: Path,
+    config_name: str,
+    experiment: str,
+    renderer: str,
+    export_usdz: bool,
+    use_lambda: bool,
+    lambda_ip: str | None,
+):
+    """Run only the Gaussian splatting training stage (CUDA or Lambda)."""
     from .stages.sfm.base import SfmOutput
 
     ws = Workspace(root=workspace)
-    # Require SfM output to already exist
     sfm_out = SfmOutput(
         sparse_dir=ws.sfm_dir / "sparse" / "0",
         database_path=ws.sfm_dir / "database.db",
@@ -190,16 +230,29 @@ async def gaussians(workspace: Path, config_name: str, experiment: str, renderer
     if not sfm_out.validate_exists():
         raise click.ClickException("SfM output not found — run 'bundle recon3d sfm' first.")
 
-    stage = create_gaussians_stage(
-        renderer=renderer,
-        export_usdz=export_usdz,
-        config_name=config_name,
-        experiment_name=experiment,
-    )
+    if use_lambda:
+        from .stages.remote.lambda_runner import LambdaConfig, LambdaRunner
+
+        cfg = LambdaConfig(instance_ip=lambda_ip) if lambda_ip else LambdaConfig.from_env()
+        stage = LambdaRunner(
+            config=cfg,
+            renderer=renderer if renderer != "auto" else "3dgut",
+            experiment_name=experiment,
+            config_name=config_name,
+            export_usdz=export_usdz,
+        )
+    else:
+        from .stages.gaussians import create_gaussians_stage
+
+        stage = create_gaussians_stage(
+            renderer=renderer,
+            export_usdz=export_usdz,
+            config_name=config_name,
+            experiment_name=experiment,
+        )
 
     if not await stage.check_deps():
-        renderer_name = stage.name.split(".")[-1] if hasattr(stage, "name") else renderer
-        raise click.ClickException(f"Gaussian renderer '{renderer_name}' is not available on this system.")
+        raise click.ClickException(f"Stage '{stage.name}' is not available on this system.")
 
     input_contract = GaussiansInput(
         sfm_output=sfm_out,
@@ -207,6 +260,50 @@ async def gaussians(workspace: Path, config_name: str, experiment: str, renderer
     )
     output = await stage.run(input_contract)
     log.info("Gaussians output: %s", output)
+
+
+# ---------------------------------------------------------------------------
+# bundle recon3d visualize  (any platform: Metal / CPU / CUDA)
+# ---------------------------------------------------------------------------
+
+
+@recon3d.command()
+@click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
+@click.option("--experiment", default="default", help="Training experiment to visualize.")
+@click.option("--backend", type=click.Choice(["opensplat"]), default="opensplat", help="Visualization backend.")
+@click.option("--num-iters", default=2_000, help="Iterations for the quick preview pass.")
+@tracer.Sync.decorator.call_raise
+async def visualize(workspace: Path, experiment: str, backend: str, num_iters: int):
+    """Run a quick visualization preview (Metal / CPU / CUDA — any platform)."""
+    from .stages.gaussians.base import GaussiansOutput
+    from .stages.sfm.base import SfmOutput
+    from .stages.visualization import create_visualization_stage
+    from .stages.visualization.base import VisualizationInput
+
+    ws = Workspace(root=workspace)
+    sfm_out = SfmOutput(
+        sparse_dir=ws.sfm_dir / "sparse" / "0",
+        database_path=ws.sfm_dir / "database.db",
+        backend=SfmBackend.COLMAP,
+    )
+    exp_dir = ws.runs_dir / experiment
+    gauss_out = GaussiansOutput(
+        checkpoint_path=exp_dir / "checkpoint.pth",
+        ply_path=exp_dir / "model.ply",
+        renders_dir=exp_dir / "renders",
+    )
+
+    stage = create_visualization_stage(backend=backend, num_iters=num_iters)
+    if not await stage.check_deps():
+        raise click.ClickException(f"Visualization backend '{backend}' is not available on this system.")
+
+    inp = VisualizationInput(
+        gaussians_output=gauss_out,
+        images_dir=ws.images_dir,
+        sfm_output=sfm_out,
+    )
+    output = await stage.run(inp)
+    log.info("Visualization output: %s", output)
 
 
 # ---------------------------------------------------------------------------
