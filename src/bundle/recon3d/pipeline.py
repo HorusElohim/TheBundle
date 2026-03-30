@@ -6,15 +6,19 @@ import json
 import time
 from pathlib import Path
 
+from pydantic import PrivateAttr
+
 from bundle.core import logger
 from bundle.core.data import Data
 from bundle.core.entity import Entity
 
 from .stages import Stage
 from .stages.gaussians import GaussiansStage, create_gaussians_stage
-from .stages.gaussians.base import GaussiansInput
+from .stages.gaussians.base import GaussiansInput, GaussiansOutput
 from .stages.sfm import SfmStage, create_sfm_stage
-from .stages.sfm.base import SfmBackend, SfmInput
+from .stages.sfm.base import SfmBackend, SfmInput, SfmOutput
+from .stages.visualization import VisualizationStage, create_visualization_stage
+from .stages.visualization.base import VisualizationInput
 from .workspace import Workspace
 
 log = logger.get_logger(__name__)
@@ -31,6 +35,8 @@ class Pipeline(Entity):
     workspace: Workspace
     stages: list[Stage] = []
 
+    _last_sfm_output: SfmOutput | None = PrivateAttr(default=None)
+
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
 
@@ -43,17 +49,32 @@ class Pipeline(Entity):
         cls,
         workspace: Workspace,
         sfm_backend: SfmBackend = SfmBackend.COLMAP,
-        renderer: str = "auto",
+        renderer: str = "3dgut",
         export_usdz: bool = True,
+        use_lambda: bool = False,
+        lambda_config=None,
+        visualize: bool = True,
+        vis_backend: str = "opensplat",
+        vis_iters: int = 2_000,
     ) -> Pipeline:
-        """Create the standard SfM -> Gaussians pipeline."""
-        return cls(
-            workspace=workspace,
-            stages=[
-                create_sfm_stage(backend=sfm_backend),
-                create_gaussians_stage(renderer=renderer, export_usdz=export_usdz),
-            ],
-        )
+        """Create the standard SfM -> Train -> Visualize pipeline."""
+        stages: list[Stage] = [create_sfm_stage(backend=sfm_backend)]
+
+        if use_lambda:
+            from .stages.remote.lambda_runner import LambdaRunner
+
+            cfg = (
+                lambda_config
+                or __import__("bundle.recon3d.stages.remote.lambda_runner", fromlist=["LambdaConfig"]).LambdaConfig.from_env()
+            )
+            stages.append(LambdaRunner(config=cfg, renderer=renderer, export_usdz=export_usdz))
+        else:
+            stages.append(create_gaussians_stage(renderer=renderer, export_usdz=export_usdz))
+
+        if visualize:
+            stages.append(create_visualization_stage(backend=vis_backend, num_iters=vis_iters))
+
+        return cls(workspace=workspace, stages=stages)
 
     # ------------------------------------------------------------------
     # Execution
@@ -94,20 +115,29 @@ class Pipeline(Entity):
         """Build the first input contract from the workspace layout."""
         if isinstance(stage, SfmStage):
             return SfmInput(images_dir=self.workspace.images_dir)
-        if isinstance(stage, GaussiansStage):
+        if isinstance(stage, (GaussiansStage,)):
             raise RuntimeError("GaussiansStage requires SfM output — it cannot be the first stage")
-        raise RuntimeError(f"Unknown stage type: {type(stage)}")
+        if isinstance(stage, VisualizationStage):
+            raise RuntimeError("VisualizationStage requires GaussiansOutput — it cannot be the first stage")
+        # LambdaRunner
+        raise RuntimeError(f"Unknown stage type as first stage: {type(stage)}")
 
     def _adapt(self, _prev_stage: Stage, output: Data) -> Data:
         """Convert one stage's output into the next stage's input."""
-        from .stages.sfm.base import SfmOutput
-
         if isinstance(output, SfmOutput):
+            self._last_sfm_output = output
             return GaussiansInput(
                 sfm_output=output,
                 images_dir=self.workspace.images_dir,
             )
-        # Terminal stage — no further adaptation needed
+        if isinstance(output, GaussiansOutput):
+            if self._last_sfm_output is None:
+                raise RuntimeError("No SfmOutput available to build VisualizationInput")
+            return VisualizationInput(
+                gaussians_output=output,
+                images_dir=self.workspace.images_dir,
+                sfm_output=self._last_sfm_output,
+            )
         return output
 
     def _update_manifest(self, stage_name: str, elapsed: float) -> None:

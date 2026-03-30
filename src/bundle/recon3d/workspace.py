@@ -46,6 +46,10 @@ class Workspace(Data):
         return self.root / "export"
 
     @property
+    def preview_dir(self) -> Path:
+        return self.root / "preview"
+
+    @property
     def manifest_path(self) -> Path:
         return self.root / "manifest.json"
 
@@ -54,5 +58,5 @@ class Workspace(Data):
 
     def ensure_dirs(self) -> None:
         """Create the workspace directory tree if it does not exist."""
-        for d in (self.images_dir, self.sfm_dir, self.runs_dir, self.export_dir):
+        for d in (self.images_dir, self.sfm_dir, self.runs_dir, self.export_dir, self.preview_dir):
             d.mkdir(parents=True, exist_ok=True)
