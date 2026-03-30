@@ -116,11 +116,12 @@ async def data_locate(scene: str, data_root: Path):
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
 @click.option("--lambda/--no-lambda", "use_lambda", default=False, help="Run training on Lambda Labs GPU.")
 @click.option(
-    "--lambda-ip",
+    "--instance-id",
     default=None,
-    envvar="LAMBDA_INSTANCE_IP",
-    help="Lambda instance IP (or set LAMBDA_INSTANCE_IP).",
+    envvar="LAMBDA_INSTANCE_ID",
+    help="Attach to an existing Lambda instance ID instead of launching a new one.",
 )
+@click.option("--auto-terminate/--no-auto-terminate", default=False, help="Terminate Lambda instance after training.")
 @click.option("--visualize/--no-visualize", default=True, help="Run local OpenSplat preview after training.")
 @click.option("--vis-iters", default=2_000, help="OpenSplat iterations for visualization preview.")
 @tracer.Sync.decorator.call_raise
@@ -130,26 +131,23 @@ async def run(
     renderer: str,
     export_usdz: bool,
     use_lambda: bool,
-    lambda_ip: str | None,
+    instance_id: str | None,
+    auto_terminate: bool,
     visualize: bool,
     vis_iters: int,
 ):
     """Run the full reconstruction pipeline: SfM -> Train (CUDA) -> Visualize."""
     from .pipeline import Pipeline
-    from .stages.remote.lambda_runner import LambdaConfig
 
     ws = Workspace(root=workspace)
-    lambda_cfg = None
-    if use_lambda:
-        lambda_cfg = LambdaConfig(instance_ip=lambda_ip) if lambda_ip else LambdaConfig.from_env()
-
     pipeline = Pipeline.default(
         workspace=ws,
         sfm_backend=SfmBackend(sfm_backend),
         renderer=renderer,
         export_usdz=export_usdz,
         use_lambda=use_lambda,
-        lambda_config=lambda_cfg,
+        lambda_instance_id=instance_id,
+        lambda_auto_terminate=auto_terminate,
         visualize=visualize,
         vis_iters=vis_iters,
     )
@@ -203,11 +201,12 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 @click.option("--export-usdz/--no-export-usdz", default=True, help="Export USDZ after training.")
 @click.option("--lambda/--no-lambda", "use_lambda", default=False, help="Run training on Lambda Labs GPU.")
 @click.option(
-    "--lambda-ip",
+    "--instance-id",
     default=None,
-    envvar="LAMBDA_INSTANCE_IP",
-    help="Lambda instance IP (or set LAMBDA_INSTANCE_IP).",
+    envvar="LAMBDA_INSTANCE_ID",
+    help="Attach to an existing Lambda instance ID instead of launching a new one.",
 )
+@click.option("--auto-terminate/--no-auto-terminate", default=False, help="Terminate Lambda instance after training.")
 @tracer.Sync.decorator.call_raise
 async def gaussians(
     workspace: Path,
@@ -216,7 +215,8 @@ async def gaussians(
     renderer: str,
     export_usdz: bool,
     use_lambda: bool,
-    lambda_ip: str | None,
+    instance_id: str | None,
+    auto_terminate: bool,
 ):
     """Run only the Gaussian splatting training stage (CUDA or Lambda)."""
     from .stages.sfm.base import SfmOutput
@@ -231,15 +231,15 @@ async def gaussians(
         raise click.ClickException("SfM output not found — run 'bundle recon3d sfm' first.")
 
     if use_lambda:
-        from .stages.remote.lambda_runner import LambdaConfig, LambdaRunner
+        from .stages.remote.lambda_runner import LambdaRunner
 
-        cfg = LambdaConfig(instance_ip=lambda_ip) if lambda_ip else LambdaConfig.from_env()
         stage = LambdaRunner(
-            config=cfg,
             renderer=renderer if renderer != "auto" else "3dgut",
             experiment_name=experiment,
             config_name=config_name,
             export_usdz=export_usdz,
+            instance_id=instance_id,
+            auto_terminate=auto_terminate,
         )
     else:
         from .stages.gaussians import create_gaussians_stage
