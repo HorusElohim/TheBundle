@@ -44,6 +44,10 @@ class LambdaRunner(Stage):
     auto_terminate: bool = False
     # SSH key path on local machine (defaults to ~/.ssh/id_rsa).
     ssh_key_path: Path | None = None
+    # Lambda Labs filesystem name. If set (or configured in ~/.bundle/lambdalabs.json),
+    # the workspace is stored on the persistent NFS volume — images and SfM output
+    # are uploaded once and reused across jobs.
+    filesystem_name: str | None = None
 
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
@@ -62,6 +66,7 @@ class LambdaRunner(Stage):
             config=cfg,
             ssh_key_path=self.ssh_key_path,
             auto_terminate=self.auto_terminate,
+            filesystem_name=self.filesystem_name,
         )
 
         # 1. Attach to existing or launch new instance

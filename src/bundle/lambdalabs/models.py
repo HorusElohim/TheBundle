@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from pathlib import Path
 from typing import Any
 
 from bundle.core.data import Data
@@ -56,6 +57,25 @@ class SshKey(Data):
     id: str
     name: str
     public_key: str
+
+
+class Filesystem(Data):
+    """A Lambda Labs persistent NFS filesystem.
+
+    Auto-mounted on instances at ``/home/ubuntu/<name>/``.
+    Survives instance termination — ideal for storing datasets and results
+    across multiple training jobs without re-uploading.
+    """
+
+    id: str
+    name: str
+    region: dict[str, Any] = {}
+    mount_point: str = ""
+
+    @property
+    def path(self) -> Path:
+        """Mount path on the instance."""
+        return Path("/home/ubuntu") / self.name
 
 
 class LaunchRequest(Data):

@@ -15,6 +15,7 @@ class LambdaLabsConfig(Data):
     default_ssh_key: str = ""
     default_region: str = "us-east-1"
     default_instance_type: str = "gpu_1x_a10"
+    default_filesystem: str = ""  # Lambda Labs filesystem name (persists across jobs)
 
     @classmethod
     def load(cls) -> LambdaLabsConfig:

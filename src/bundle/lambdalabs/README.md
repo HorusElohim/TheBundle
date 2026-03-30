@@ -3,7 +3,8 @@
 Lambda Labs cloud GPU integration for TheBundle.
 
 Provides a Python API and CLI for launching GPU instances, running remote jobs,
-and managing SSH keys — purpose-built for the `bundle recon3d` training pipeline.
+managing SSH keys, and using persistent filesystems — purpose-built for the
+`bundle recon3d` training pipeline.
 
 ---
 
@@ -19,7 +20,8 @@ This interactive wizard walks you through:
 2. Generating an API key at https://cloud.lambdalabs.com/api-keys
 3. Saving credentials locally (`~/.bundle/lambdalabs.json`)
 4. Adding your SSH public key to Lambda
-5. Choosing an instance type and launching
+5. Creating a persistent filesystem (recommended — avoids re-uploading datasets)
+6. Choosing an instance type and launching
 
 ---
 
@@ -28,13 +30,17 @@ This interactive wizard walks you through:
 ### 1. Save your API key
 
 ```bash
-bundle lambdalabs setup --api-key YOUR_KEY --ssh-key my-ssh-key-name
+bundle lambdalabs setup \
+  --api-key YOUR_KEY \
+  --ssh-key my-ssh-key-name \
+  --filesystem bundle-recon3d    # optional: default persistent filesystem
 ```
 
-Or export the env var:
+Or export env vars:
 
 ```bash
 export LAMBDA_API_KEY=your_key_here
+export LAMBDA_FILESYSTEM=bundle-recon3d   # optional
 ```
 
 Config is stored at `~/.bundle/lambdalabs.json`.
@@ -49,7 +55,24 @@ bundle lambdalabs keys add --name my-key
 bundle lambdalabs keys add --name my-key --pub-key ~/.ssh/id_ed25519.pub
 ```
 
-### 3. Browse available GPU types
+### 3. Create a persistent filesystem (recommended)
+
+A filesystem is a persistent NFS volume that survives instance termination.
+Images and SfM output are uploaded **once** and reused across jobs — no
+re-uploading gigabytes of photos every run.
+
+```bash
+# Create and save as default
+bundle lambdalabs filesystems create --name bundle-recon3d
+
+# List filesystems in your account
+bundle lambdalabs filesystems list
+```
+
+The filesystem is automatically mounted at `/home/ubuntu/<name>/` on every
+instance that requests it. Cost: ~$0.20/GiB/month.
+
+### 4. Browse available GPU types
 
 ```bash
 bundle lambdalabs types
@@ -66,23 +89,27 @@ Output:
 └─────────────────────┴────────────────────────────────┴───────┴───────────┴───────────────┴──────┘
 ```
 
-### 4. Launch an instance
+### 5. Launch an instance
 
 ```bash
-# Launch and wait for active
-bundle lambdalabs instances launch --type gpu_1x_a10 --key my-key --name recon3d-job
+# Launch with a persistent filesystem mounted
+bundle lambdalabs instances launch \
+  --type gpu_1x_a10 \
+  --key my-key \
+  --name recon3d-job \
+  --filesystem bundle-recon3d
 
 # Launch without waiting
 bundle lambdalabs instances launch --type gpu_1x_a10 --key my-key --no-wait
 ```
 
-### 5. List active instances
+### 6. List active instances
 
 ```bash
 bundle lambdalabs instances list
 ```
 
-### 6. Terminate an instance
+### 7. Terminate an instance
 
 ```bash
 bundle lambdalabs instances terminate INSTANCE_ID
@@ -92,23 +119,42 @@ bundle lambdalabs instances terminate INSTANCE_ID
 
 ## Running recon3d on Lambda
 
+Gaussian splatting training requires CUDA. Use Lambda to train in the cloud,
+then visualize locally (Metal / CPU / CUDA — any platform).
+
 ### Full pipeline (SfM → Train on Lambda → Visualize locally)
 
 ```bash
-# Uses config from ~/.bundle/lambdalabs.json
-bundle recon3d run --workspace ./ws --lambda
+# First run: uploads images + SfM output to persistent filesystem
+bundle recon3d run \
+  --workspace ./ws \
+  --lambda \
+  --filesystem bundle-recon3d \
+  --auto-terminate
+
+# Subsequent runs: skips re-uploading unchanged files (--ignore-existing)
+bundle recon3d run \
+  --workspace ./ws \
+  --lambda \
+  --filesystem bundle-recon3d \
+  --auto-terminate
 
 # Attach to an already-running instance
-bundle recon3d run --workspace ./ws --lambda --instance-id abc123
-
-# Auto-terminate instance when done
-bundle recon3d run --workspace ./ws --lambda --auto-terminate
+bundle recon3d run \
+  --workspace ./ws \
+  --lambda \
+  --instance-id abc123 \
+  --filesystem bundle-recon3d
 ```
 
 ### Training only on Lambda
 
 ```bash
-bundle recon3d gaussians --workspace ./ws --lambda --instance-id abc123
+bundle recon3d gaussians \
+  --workspace ./ws \
+  --lambda \
+  --filesystem bundle-recon3d \
+  --auto-terminate
 ```
 
 ### Local preview after Lambda training (Metal / CPU / CUDA)
@@ -116,6 +162,26 @@ bundle recon3d gaussians --workspace ./ws --lambda --instance-id abc123
 ```bash
 bundle recon3d visualize --workspace ./ws --experiment default
 ```
+
+---
+
+## Persistent filesystem workflow
+
+```
+First job                        Subsequent jobs
+─────────────────────────────    ────────────────────────────────
+upload images → NFS              rsync --ignore-existing (fast)
+upload SfM sparse → NFS          rsync --ignore-existing (fast)
+run training on NFS data          run training on NFS data
+download results → local          download results → local
+terminate instance                terminate instance
+NFS persists  ✓                  NFS persists  ✓
+```
+
+The `filesystem_name` is resolved from (in priority order):
+1. `--filesystem` CLI flag / `LAMBDA_FILESYSTEM` env var
+2. `default_filesystem` in `~/.bundle/lambdalabs.json`
+3. No filesystem — workspace uploaded to ephemeral instance storage
 
 ---
 
@@ -134,11 +200,20 @@ async def main():
         for name, it in types.items():
             print(f"{name}: ${it.price_per_hour:.2f}/hr")
 
-        # Launch
+        # List filesystems
+        fss = await client.filesystems()
+        for fs in fss:
+            print(f"{fs.name} → {fs.path}")
+
+        # Create filesystem
+        fs = await client.create_filesystem("bundle-recon3d", region_name="us-east-1")
+
+        # Launch with filesystem mounted
         ids = await client.launch(
             instance_type_name="gpu_1x_a10",
             ssh_key_names=["my-key"],
             name="my-job",
+            file_system_names=["bundle-recon3d"],
         )
 
         # Wait for active
@@ -149,14 +224,17 @@ async def main():
         await client.terminate([instance.id])
 
     # --- High-level RemoteJob ---
-    job = RemoteJob(auto_terminate=True)          # reads ~/.bundle/lambdalabs.json
-    await job.launch(instance_type="gpu_1x_a10", ssh_key_name="my-key")
+    job = RemoteJob(
+        auto_terminate=True,
+        filesystem_name="bundle-recon3d",  # enables --ignore-existing on upload
+    )
+    await job.launch()                     # reads ~/.bundle/lambdalabs.json for defaults
     await job.wait()
-    await job.setup()                              # installs bundle on remote
+    await job.setup()                      # installs bundle on remote
     await job.upload(Path("./workspace"), Path("/home/ubuntu/job1"))
     await job.run("bundle recon3d gaussians --workspace /home/ubuntu/job1 --renderer 3dgut")
     await job.download(Path("/home/ubuntu/job1/runs"), Path("./workspace/runs"))
-    await job.terminate()                          # auto_terminate=True handles this too
+    # terminate() called automatically when auto_terminate=True
 
 asyncio.run(main())
 ```
@@ -172,16 +250,18 @@ asyncio.run(main())
   "api_key": "your_lambda_api_key",
   "default_ssh_key": "my-key",
   "default_region": "us-east-1",
-  "default_instance_type": "gpu_1x_a10"
+  "default_instance_type": "gpu_1x_a10",
+  "default_filesystem": "bundle-recon3d"
 }
 ```
 
 All fields can also be set via environment variables:
 
-| Env var              | Purpose                          |
-|----------------------|----------------------------------|
-| `LAMBDA_API_KEY`     | Lambda Labs API key              |
-| `LAMBDA_INSTANCE_ID` | Attach to existing instance ID   |
+| Env var              | Purpose                                        |
+|----------------------|------------------------------------------------|
+| `LAMBDA_API_KEY`     | Lambda Labs API key                            |
+| `LAMBDA_INSTANCE_ID` | Attach to an existing instance instead of launching |
+| `LAMBDA_FILESYSTEM`  | Persistent filesystem name for workspace storage |
 
 ---
 
@@ -192,7 +272,8 @@ bundle/lambdalabs/
 ├── __init__.py     # Public API exports
 ├── client.py       # Async httpx REST client (Lambda Labs API v1)
 ├── config.py       # LambdaLabsConfig — persisted at ~/.bundle/lambdalabs.json
-├── models.py       # Pydantic models: Instance, InstanceType, SshKey, etc.
+├── models.py       # Pydantic models: Instance, InstanceType, SshKey, Filesystem, etc.
 ├── runner.py       # RemoteJob — full job lifecycle management
-└── cli.py          # bundle lambdalabs CLI
+├── cli.py          # bundle lambdalabs CLI
+└── README.md       # This file
 ```

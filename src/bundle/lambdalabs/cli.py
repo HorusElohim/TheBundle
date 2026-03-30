@@ -42,20 +42,24 @@ async def lambdalabs():
 @click.option("--ssh-key", default="", help="Default SSH key name in your Lambda account.")
 @click.option("--region", default="us-east-1", help="Default region.")
 @click.option("--instance-type", default="gpu_1x_a10", help="Default instance type.")
+@click.option("--filesystem", default="", help="Default filesystem name (persistent NFS for datasets/results).")
 @tracer.Sync.decorator.call_raise
-async def setup(api_key: str, ssh_key: str, region: str, instance_type: str):
+async def setup(api_key: str, ssh_key: str, region: str, instance_type: str, filesystem: str):
     """Save API key and defaults to ~/.bundle/lambdalabs.json."""
     cfg = LambdaLabsConfig(
         api_key=api_key,
         default_ssh_key=ssh_key,
         default_region=region,
         default_instance_type=instance_type,
+        default_filesystem=filesystem,
     )
     cfg.save()
     log.info("Lambda Labs config saved to ~/.bundle/lambdalabs.json")
     log.info("  API key: %s...%s", api_key[:4], api_key[-4:])
     if ssh_key:
         log.info("  Default SSH key: %s", ssh_key)
+    if filesystem:
+        log.info("  Default filesystem: %s", filesystem)
 
 
 # ---------------------------------------------------------------------------
@@ -142,6 +146,7 @@ async def instances_list(api_key: str | None):
 @click.option("--key", "ssh_key_name", default=None, help="SSH key name in your Lambda account.")
 @click.option("--region", default=None, help="Region (e.g. us-east-1).")
 @click.option("--name", default=None, help="Instance name.")
+@click.option("--filesystem", default=None, help="Filesystem name to mount (persistent NFS).")
 @click.option("--wait/--no-wait", default=True, help="Wait until instance is active.")
 @click.option("--api-key", default=None, envvar="LAMBDA_API_KEY")
 @tracer.Sync.decorator.call_raise
@@ -150,6 +155,7 @@ async def instances_launch(
     ssh_key_name: str | None,
     region: str | None,
     name: str | None,
+    filesystem: str | None,
     wait: bool,
     api_key: str | None,
 ):
@@ -162,6 +168,7 @@ async def instances_launch(
     selected_type = instance_type or cfg.default_instance_type
     ssh_key = ssh_key_name or cfg.default_ssh_key
     reg = region or cfg.default_region
+    fs = filesystem or cfg.default_filesystem
 
     if not ssh_key:
         raise click.ClickException("No SSH key — specify --key or set default via: bundle lambdalabs setup --ssh-key NAME")
@@ -172,6 +179,7 @@ async def instances_launch(
             ssh_key_names=[ssh_key],
             region_name=reg,
             name=name,
+            file_system_names=[fs] if fs else [],
         )
         if not ids:
             raise click.ClickException("Launch failed — no instance IDs returned")
@@ -258,6 +266,70 @@ async def keys_add(name: str, pub_key_path: Path, api_key: str | None):
 
 
 # ---------------------------------------------------------------------------
+# bundle lambdalabs filesystems
+# ---------------------------------------------------------------------------
+
+
+@lambdalabs.group()
+@tracer.Sync.decorator.call_raise
+async def filesystems():
+    """Manage Lambda Labs persistent filesystems (NFS, survives instance termination)."""
+    pass
+
+
+@filesystems.command(name="list")
+@click.option("--api-key", default=None, envvar="LAMBDA_API_KEY")
+@tracer.Sync.decorator.call_raise
+async def filesystems_list(api_key: str | None):
+    """List all filesystems in your account."""
+    client, _ = _get_client(api_key)
+    async with client:
+        fss = await client.filesystems()
+
+    if not fss:
+        log.info("No filesystems found. Create one with: bundle lambdalabs filesystems create --name NAME")
+        return
+
+    table = Table(title="Lambda Labs Filesystems")
+    table.add_column("ID", style="cyan")
+    table.add_column("Name")
+    table.add_column("Region")
+    table.add_column("Mount path on instance")
+
+    for fs in fss:
+        region_name = fs.region.get("name", "—") if isinstance(fs.region, dict) else str(fs.region)
+        table.add_row(fs.id[:12] + "…", fs.name, region_name, str(fs.path))
+    console.print(table)
+
+
+@filesystems.command(name="create")
+@click.option("--name", required=True, help="Filesystem name.")
+@click.option("--region", default=None, help="Region (defaults to configured default).")
+@click.option("--set-default/--no-set-default", default=True, help="Save as default filesystem in config.")
+@click.option("--api-key", default=None, envvar="LAMBDA_API_KEY")
+@tracer.Sync.decorator.call_raise
+async def filesystems_create(name: str, region: str | None, set_default: bool, api_key: str | None):
+    """Create a new persistent filesystem."""
+    cfg = LambdaLabsConfig.load()
+    key = api_key or cfg.api_key
+    if not key:
+        raise click.ClickException("No API key — run: bundle lambdalabs setup --api-key KEY")
+    reg = region or cfg.default_region
+
+    async with LambdaClient(key) as client:
+        fs = await client.create_filesystem(name=name, region_name=reg)
+
+    log.info("Created filesystem: %s (id: %s)", fs.name, fs.id[:12])
+    log.info("  Mount path on instances: %s", fs.path)
+
+    if set_default:
+        cfg = LambdaLabsConfig.load()
+        updated = cfg.model_copy(update={"default_filesystem": fs.name})
+        updated.save()
+        log.info("  Saved as default filesystem in ~/.bundle/lambdalabs.json")
+
+
+# ---------------------------------------------------------------------------
 # bundle lambdalabs quickstart
 # ---------------------------------------------------------------------------
 
@@ -331,11 +403,25 @@ async def quickstart():
     choice = click.prompt("Select instance number", type=int, default=1)
     selected_type = type_list[choice - 1][0]
 
-    console.print("\n[bold]Step 5 — Saving config[/bold]")
+    console.print("\n[bold]Step 5 — Persistent filesystem (recommended)[/bold]")
+    console.print("""
+  A filesystem stores your datasets and results across jobs.
+  Images and SfM output are uploaded once and reused — no re-uploading.
+  The filesystem survives instance termination and costs ~$0.20/GiB/month.
+""")
+    fs_name = ""
+    if click.confirm("Create a persistent filesystem now?", default=True):
+        fs_name = click.prompt("Filesystem name", default="bundle-recon3d")
+        async with LambdaClient(api_key) as client:
+            fs = await client.create_filesystem(name=fs_name, region_name="us-east-1")
+        log.info("Filesystem created: %s — mounted at %s on instances", fs.name, fs.path)
+
+    console.print("\n[bold]Step 6 — Saving config[/bold]")
     cfg = LambdaLabsConfig(
         api_key=api_key,
         default_ssh_key=key_name,
         default_instance_type=selected_type,
+        default_filesystem=fs_name,
     )
     cfg.save()
     log.info("Config saved to ~/.bundle/lambdalabs.json")
