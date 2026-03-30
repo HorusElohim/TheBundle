@@ -52,7 +52,8 @@ class Pipeline(Entity):
         renderer: str = "3dgut",
         export_usdz: bool = True,
         use_lambda: bool = False,
-        lambda_config=None,
+        lambda_instance_id: str | None = None,
+        lambda_auto_terminate: bool = False,
         visualize: bool = True,
         vis_backend: str = "opensplat",
         vis_iters: int = 2_000,
@@ -63,11 +64,14 @@ class Pipeline(Entity):
         if use_lambda:
             from .stages.remote.lambda_runner import LambdaRunner
 
-            cfg = (
-                lambda_config
-                or __import__("bundle.recon3d.stages.remote.lambda_runner", fromlist=["LambdaConfig"]).LambdaConfig.from_env()
+            stages.append(
+                LambdaRunner(
+                    renderer=renderer if renderer != "auto" else "3dgut",
+                    export_usdz=export_usdz,
+                    instance_id=lambda_instance_id,
+                    auto_terminate=lambda_auto_terminate,
+                )
             )
-            stages.append(LambdaRunner(config=cfg, renderer=renderer, export_usdz=export_usdz))
         else:
             stages.append(create_gaussians_stage(renderer=renderer, export_usdz=export_usdz))
 

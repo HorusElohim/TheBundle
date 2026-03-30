@@ -1,4 +1,4 @@
-"""Lambda Labs remote runner — trains Gaussians on a remote GPU instance."""
+"""Lambda Labs remote runner — trains Gaussians via bundle.lambdalabs."""
 
 from __future__ import annotations
 
@@ -8,78 +8,42 @@ from pathlib import Path
 
 from bundle.core import logger
 from bundle.core.data import Data
-from bundle.core.entity import Entity
-from bundle.core.process import ProcessStream
+from bundle.lambdalabs import LambdaLabsConfig, RemoteJob
 
 from ..base import Stage
 from ..gaussians.base import GaussiansInput, GaussiansOutput
 
 log = logger.get_logger(__name__)
 
-
-class LambdaConfig(Entity):
-    """Connection config for a pre-existing Lambda Labs GPU instance."""
-
-    instance_ip: str
-    ssh_user: str = "ubuntu"
-    ssh_key_path: Path | None = None
-    remote_workspace_root: Path = Path("/home/ubuntu/lambda_jobs")
-    api_key: str = ""
-
-    @classmethod
-    def from_env(cls) -> LambdaConfig:
-        import os
-
-        ip = os.environ.get("LAMBDA_INSTANCE_IP", "")
-        if not ip:
-            raise RuntimeError("LAMBDA_INSTANCE_IP environment variable is required")
-        return cls(
-            instance_ip=ip,
-            api_key=os.environ.get("LAMBDA_API_KEY", ""),
-        )
-
-    @property
-    def ssh_target(self) -> str:
-        return f"{self.ssh_user}@{self.instance_ip}"
-
-    @property
-    def ssh_key_flag(self) -> str:
-        if self.ssh_key_path:
-            return f"-i {self.ssh_key_path}"
-        return ""
-
-    def ssh_cmd(self, remote_cmd: str) -> str:
-        key = f" {self.ssh_key_flag}" if self.ssh_key_flag else ""
-        return f"ssh{key} -o StrictHostKeyChecking=no {self.ssh_target} '{remote_cmd}'"
-
-    def rsync_up(self, local: Path, remote: Path) -> str:
-        key = f" {self.ssh_key_flag}" if self.ssh_key_flag else ""
-        return f"rsync -avz --progress -e 'ssh{key} -o StrictHostKeyChecking=no' {local}/ {self.ssh_target}:{remote}/"
-
-    def rsync_down(self, remote: Path, local: Path) -> str:
-        key = f" {self.ssh_key_flag}" if self.ssh_key_flag else ""
-        return f"rsync -avz --progress -e 'ssh{key} -o StrictHostKeyChecking=no' {self.ssh_target}:{remote}/ {local}/"
+_REMOTE_JOBS_ROOT = Path("/home/ubuntu/bundle_jobs")
 
 
 class LambdaRunner(Stage):
-    """Runs a Gaussians training stage on a remote Lambda Labs GPU instance.
+    """Runs Gaussian splatting training on a Lambda Labs GPU instance.
 
-    Lifecycle:
-        1. rsync local workspace → remote:/home/ubuntu/lambda_jobs/<job_id>/
-        2. SSH: bundle recon3d gaussians --workspace <remote_path> --renderer <renderer>
-        3. rsync remote runs/ → local runs/
-        4. Return a GaussiansOutput pointing at local paths.
+    Uses ``bundle.lambdalabs.RemoteJob`` for the full lifecycle:
+        1. Launch instance (or attach to existing via instance_id)
+        2. Wait until active
+        3. Install bundle on the remote
+        4. Upload local workspace
+        5. Run ``bundle recon3d gaussians`` remotely
+        6. Download results
+        7. Terminate instance (if auto_terminate=True)
 
-    Requires rsync and ssh on the local machine.
-    The remote instance must have the bundle package installed.
+    Set LAMBDA_API_KEY in env or configure via ``bundle lambdalabs setup``.
     """
 
     name: str = "gaussians.lambda"
-    config: LambdaConfig
     renderer: str = "3dgut"
     experiment_name: str = "default"
     config_name: str = "auto"
     export_usdz: bool = True
+    # If set, attach to this existing instance instead of launching a new one.
+    instance_id: str | None = None
+    # Terminate instance after job completes.
+    auto_terminate: bool = False
+    # SSH key path on local machine (defaults to ~/.ssh/id_rsa).
+    ssh_key_path: Path | None = None
 
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
@@ -89,22 +53,32 @@ class LambdaRunner(Stage):
         return await self._run(input)
 
     async def _run(self, input: GaussiansInput) -> GaussiansOutput:
-        job_id = f"job_{int(time.time())}"
-        remote_ws = self.config.remote_workspace_root / job_id
         local_ws = input.images_dir.parent
-        proc = ProcessStream()
+        job_id = f"job_{int(time.time())}"
+        remote_ws = _REMOTE_JOBS_ROOT / job_id
 
-        # 1. Create remote workspace
-        log.info("Lambda: creating remote workspace %s", remote_ws)
-        await proc(self.config.ssh_cmd(f"mkdir -p {remote_ws}"))
+        cfg = LambdaLabsConfig.load()
+        job = RemoteJob(
+            config=cfg,
+            ssh_key_path=self.ssh_key_path,
+            auto_terminate=self.auto_terminate,
+        )
 
-        # 2. rsync images + sfm output up
-        log.info("Lambda: uploading workspace → %s:%s", self.config.instance_ip, remote_ws)
-        await proc(self.config.rsync_up(local_ws, remote_ws))
+        # 1. Attach to existing or launch new instance
+        await job.launch(instance_id=self.instance_id)
 
-        # 3. Run training remotely
+        # 2. Wait for active + IP
+        await job.wait()
+
+        # 3. Install bundle on remote
+        await job.setup()
+
+        # 4. Upload workspace
+        await job.upload(local=local_ws, remote=remote_ws)
+
+        # 5. Run training remotely
         usdz_flag = "--export-usdz" if self.export_usdz else "--no-export-usdz"
-        remote_cmd = (
+        train_cmd = (
             f"bundle recon3d gaussians "
             f"--workspace {remote_ws} "
             f"--renderer {self.renderer} "
@@ -112,18 +86,16 @@ class LambdaRunner(Stage):
             f"--config {self.config_name} "
             f"{usdz_flag}"
         )
-        log.info("Lambda: running training — %s", remote_cmd)
-        await proc(self.config.ssh_cmd(remote_cmd))
+        await job.run(train_cmd)
 
-        # 4. rsync runs/ back
-        remote_runs = remote_ws / "runs"
-        local_runs = local_ws / "runs"
-        local_runs.mkdir(parents=True, exist_ok=True)
-        log.info("Lambda: downloading results ← %s", remote_runs)
-        await proc(self.config.rsync_down(remote_runs, local_runs))
+        # 6. Download results
+        await job.download(remote=remote_ws / "runs", local=local_ws / "runs")
 
-        # 5. Locate outputs locally
-        exp_dir = local_runs / self.experiment_name
+        # 7. Optionally terminate
+        if self.auto_terminate:
+            await job.terminate()
+
+        exp_dir = local_ws / "runs" / self.experiment_name
         return self._find_outputs(exp_dir)
 
     async def check_deps(self) -> bool:
