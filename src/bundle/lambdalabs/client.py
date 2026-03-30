@@ -9,7 +9,7 @@ import httpx
 
 from bundle.core import logger
 
-from .models import Instance, InstanceSpecs, InstanceType, LaunchRequest, SshKey
+from .models import Filesystem, Instance, InstanceSpecs, InstanceType, LaunchRequest, SshKey
 
 log = logger.get_logger(__name__)
 
@@ -92,6 +92,21 @@ class LambdaClient:
         data = self._check(resp)
         return self._parse_instance(data["data"])
 
+    async def filesystems(self) -> list[Filesystem]:
+        """Return all filesystems in the account."""
+        resp = await self._http.get("/filesystems")
+        data = self._check(resp)
+        return [self._parse_filesystem(f) for f in data.get("data", [])]
+
+    async def create_filesystem(self, name: str, region_name: str = "us-east-1") -> Filesystem:
+        """Create a persistent filesystem."""
+        resp = await self._http.post(
+            "/filesystems",
+            json={"name": name, "region": {"name": region_name}},
+        )
+        data = self._check(resp)
+        return self._parse_filesystem(data["data"])
+
     async def launch(
         self,
         instance_type_name: str,
@@ -99,6 +114,7 @@ class LambdaClient:
         region_name: str = "us-east-1",
         name: str | None = None,
         quantity: int = 1,
+        file_system_names: list[str] | None = None,
     ) -> list[str]:
         """Launch instances. Returns list of instance IDs."""
         req = LaunchRequest(
@@ -107,6 +123,7 @@ class LambdaClient:
             ssh_key_names=ssh_key_names,
             name=name,
             quantity=quantity,
+            file_system_names=file_system_names or [],
         )
         resp = await self._http.post(
             "/instance-operations/launch",
@@ -161,6 +178,15 @@ class LambdaClient:
             await asyncio.sleep(poll_interval)
             elapsed += poll_interval
         raise TimeoutError(f"Instance {instance_id} did not become active within {timeout}s")
+
+    @staticmethod
+    def _parse_filesystem(raw: dict) -> Filesystem:
+        return Filesystem(
+            id=raw["id"],
+            name=raw["name"],
+            region=raw.get("region", {}),
+            mount_point=raw.get("mount_point", ""),
+        )
 
     @staticmethod
     def _parse_instance(raw: dict) -> Instance:

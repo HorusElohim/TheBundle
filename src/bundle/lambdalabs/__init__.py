@@ -4,10 +4,11 @@ from __future__ import annotations
 
 from .client import LambdaApiError, LambdaClient
 from .config import LambdaLabsConfig
-from .models import Instance, InstanceStatus, InstanceType, SshKey
+from .models import Filesystem, Instance, InstanceStatus, InstanceType, SshKey
 from .runner import RemoteJob
 
 __all__ = [
+    "Filesystem",
     "Instance",
     "InstanceStatus",
     "InstanceType",

@@ -122,6 +122,12 @@ async def data_locate(scene: str, data_root: Path):
     help="Attach to an existing Lambda instance ID instead of launching a new one.",
 )
 @click.option("--auto-terminate/--no-auto-terminate", default=False, help="Terminate Lambda instance after training.")
+@click.option(
+    "--filesystem",
+    default=None,
+    envvar="LAMBDA_FILESYSTEM",
+    help="Lambda filesystem name for persistent workspace storage (skips re-uploading images/SfM).",
+)
 @click.option("--visualize/--no-visualize", default=True, help="Run local OpenSplat preview after training.")
 @click.option("--vis-iters", default=2_000, help="OpenSplat iterations for visualization preview.")
 @tracer.Sync.decorator.call_raise
@@ -133,6 +139,7 @@ async def run(
     use_lambda: bool,
     instance_id: str | None,
     auto_terminate: bool,
+    filesystem: str | None,
     visualize: bool,
     vis_iters: int,
 ):
@@ -148,6 +155,7 @@ async def run(
         use_lambda=use_lambda,
         lambda_instance_id=instance_id,
         lambda_auto_terminate=auto_terminate,
+        lambda_filesystem=filesystem,
         visualize=visualize,
         vis_iters=vis_iters,
     )
@@ -207,6 +215,12 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
     help="Attach to an existing Lambda instance ID instead of launching a new one.",
 )
 @click.option("--auto-terminate/--no-auto-terminate", default=False, help="Terminate Lambda instance after training.")
+@click.option(
+    "--filesystem",
+    default=None,
+    envvar="LAMBDA_FILESYSTEM",
+    help="Lambda filesystem name for persistent workspace storage.",
+)
 @tracer.Sync.decorator.call_raise
 async def gaussians(
     workspace: Path,
@@ -217,6 +231,7 @@ async def gaussians(
     use_lambda: bool,
     instance_id: str | None,
     auto_terminate: bool,
+    filesystem: str | None,
 ):
     """Run only the Gaussian splatting training stage (CUDA or Lambda)."""
     from .stages.sfm.base import SfmOutput
@@ -240,6 +255,7 @@ async def gaussians(
             export_usdz=export_usdz,
             instance_id=instance_id,
             auto_terminate=auto_terminate,
+            filesystem_name=filesystem,
         )
     else:
         from .stages.gaussians import create_gaussians_stage

@@ -54,6 +54,7 @@ class Pipeline(Entity):
         use_lambda: bool = False,
         lambda_instance_id: str | None = None,
         lambda_auto_terminate: bool = False,
+        lambda_filesystem: str | None = None,
         visualize: bool = True,
         vis_backend: str = "opensplat",
         vis_iters: int = 2_000,
@@ -70,6 +71,7 @@ class Pipeline(Entity):
                     export_usdz=export_usdz,
                     instance_id=lambda_instance_id,
                     auto_terminate=lambda_auto_terminate,
+                    filesystem_name=lambda_filesystem,
                 )
             )
         else:

@@ -26,13 +26,19 @@ class RemoteJob:
     """Manages a single remote training job on Lambda Labs.
 
     Lifecycle:
-        1. launch()  — start a GPU instance (or attach to an existing one)
-        2. wait()    — poll until active + has IP
-        3. setup()   — install bundle on the remote instance
-        4. upload()  — rsync local workspace → remote
-        5. run()     — execute a command via SSH
-        6. download()— rsync remote results → local
+        1. launch()   — start a GPU instance (or attach to an existing one)
+        2. wait()     — poll until active + has IP
+        3. setup()    — install bundle on the remote instance
+        4. upload()   — rsync local workspace → remote (skips unchanged files)
+        5. run()      — execute a command via SSH
+        6. download() — rsync remote results → local
         7. terminate()— shut down the instance (optional)
+
+    Filesystem mode (recommended):
+        Pass ``filesystem_name`` to mount a Lambda Labs persistent NFS volume.
+        The workspace lives at ``/home/ubuntu/<filesystem_name>/`` and survives
+        instance termination — images and SfM output are never re-uploaded.
+        Only the small ``runs/`` results are downloaded after each job.
     """
 
     def __init__(
@@ -42,6 +48,7 @@ class RemoteJob:
         ssh_key_path: Path | None = None,
         ssh_user: str = "ubuntu",
         auto_terminate: bool = False,
+        filesystem_name: str | None = None,
     ):
         cfg = config or LambdaLabsConfig.load()
         self._api_key = api_key or cfg.api_key
@@ -51,7 +58,14 @@ class RemoteJob:
         self.ssh_key_path = ssh_key_path or Path.home() / ".ssh" / "id_rsa"
         self.ssh_user = ssh_user
         self.auto_terminate = auto_terminate
+        # Filesystem name overrides config default; empty string means no filesystem.
+        self.filesystem_name: str = filesystem_name or cfg.default_filesystem
         self.instance: Instance | None = None
+
+    @property
+    def _filesystem_root(self) -> Path | None:
+        """Root path of the mounted filesystem on the remote instance, if any."""
+        return Path("/home/ubuntu") / self.filesystem_name if self.filesystem_name else None
 
     async def launch(
         self,
@@ -67,16 +81,27 @@ class RemoteJob:
                 log.info("Attaching to existing instance %s", instance_id)
                 self.instance = await client.get_instance(instance_id)
             else:
-                itype = instance_type or self.config.default_instance_type
+                selected_type = instance_type or self.config.default_instance_type
                 key = ssh_key_name or self.config.default_ssh_key
                 reg = region or self.config.default_region
                 job_name = name or f"bundle-job-{int(time.time())}"
-                log.info("Launching %s in %s (key: %s)", itype, reg, key)
+                fs_names = [self.filesystem_name] if self.filesystem_name else []
+                if fs_names:
+                    log.info(
+                        "Launching %s in %s (key: %s, filesystem: %s)",
+                        selected_type,
+                        reg,
+                        key,
+                        self.filesystem_name,
+                    )
+                else:
+                    log.info("Launching %s in %s (key: %s)", selected_type, reg, key)
                 ids = await client.launch(
-                    instance_type_name=itype,
+                    instance_type_name=selected_type,
                     ssh_key_names=[key],
                     region_name=reg,
                     name=job_name,
+                    file_system_names=fs_names,
                 )
                 if not ids:
                     raise RuntimeError("Launch returned no instance IDs")
@@ -99,13 +124,30 @@ class RemoteJob:
         await self._ssh(BUNDLE_INSTALL_CMD)
         log.info("Bundle installed on remote instance")
 
-    async def upload(self, local: Path, remote: Path) -> None:
-        """rsync local directory → remote instance."""
+    async def upload(self, local: Path, remote: Path, skip_existing: bool = False) -> None:
+        """rsync local directory → remote instance.
+
+        When ``skip_existing=True`` (set automatically in filesystem mode),
+        files already on the remote are not re-transferred — saving time and
+        bandwidth for large image datasets on subsequent runs.
+        """
         if not self.instance or not self.instance.ip:
             raise RuntimeError("Instance not ready — call wait() first")
-        log.info("Uploading %s → %s:%s", local, self.instance.ip, remote)
-        await self._ssh(f"mkdir -p {remote}")
-        cmd = self._rsync(f"{local}/", f"{self.ssh_user}@{self.instance.ip}:{remote}/")
+        use_fs = self._filesystem_root is not None
+        effective_remote = self._filesystem_root / remote.name if use_fs else remote
+        log.info(
+            "Uploading %s → %s:%s%s",
+            local,
+            self.instance.ip,
+            effective_remote,
+            " (skip existing)" if (skip_existing or use_fs) else "",
+        )
+        await self._ssh(f"mkdir -p {effective_remote}")
+        cmd = self._rsync(
+            f"{local}/",
+            f"{self.ssh_user}@{self.instance.ip}:{effective_remote}/",
+            skip_existing=skip_existing or use_fs,
+        )
         proc = ProcessStream()
         await proc(cmd)
 
@@ -113,9 +155,10 @@ class RemoteJob:
         """rsync remote directory → local."""
         if not self.instance or not self.instance.ip:
             raise RuntimeError("Instance not ready — call wait() first")
-        log.info("Downloading %s:%s → %s", self.instance.ip, remote, local)
+        effective_remote = self._filesystem_root / remote.name if self._filesystem_root else remote
+        log.info("Downloading %s:%s → %s", self.instance.ip, effective_remote, local)
         local.mkdir(parents=True, exist_ok=True)
-        cmd = self._rsync(f"{self.ssh_user}@{self.instance.ip}:{remote}/", f"{local}/")
+        cmd = self._rsync(f"{self.ssh_user}@{self.instance.ip}:{effective_remote}/", f"{local}/")
         proc = ProcessStream()
         await proc(cmd)
 
@@ -154,6 +197,9 @@ class RemoteJob:
         proc = ProcessStream()
         await proc(full)
 
-    def _rsync(self, src: str, dst: str) -> str:
+    def _rsync(self, src: str, dst: str, skip_existing: bool = False) -> str:
         opts = f"-e 'ssh {self._ssh_opts()}'"
-        return f"rsync -avz --progress {opts} {src} {dst}"
+        flags = "-avz --progress"
+        if skip_existing:
+            flags += " --ignore-existing"
+        return f"rsync {flags} {opts} {src} {dst}"
