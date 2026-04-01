@@ -210,4 +210,4 @@ src/bundle/pods/pods/recon3d/ppisp/workspace/data/
 .discord.env
 
 # Tracy CMake build directories (inside vendor tree)
-build-bundle-*/
+build-bundle-*/AGENT_GS3D_BLENDER_GUIDE.md
