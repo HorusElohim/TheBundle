@@ -13,6 +13,8 @@ from bundle.core.data import Data
 from bundle.core.entity import Entity
 
 from .stages import Stage
+from .stages.blender import BlenderStage
+from .stages.blender.base import BlenderInput, create_blender_stage
 from .stages.gaussians import GaussiansStage, create_gaussians_stage
 from .stages.gaussians.base import GaussiansInput, GaussiansOutput
 from .stages.sfm import SfmStage, create_sfm_stage
@@ -36,6 +38,7 @@ class Pipeline(Entity):
     stages: list[Stage] = []
 
     _last_sfm_output: SfmOutput | None = PrivateAttr(default=None)
+    _last_gaussians_output: GaussiansOutput | None = PrivateAttr(default=None)
 
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
@@ -58,8 +61,9 @@ class Pipeline(Entity):
         visualize: bool = True,
         vis_backend: str = "opensplat",
         vis_iters: int = 2_000,
+        blender: bool = False,
     ) -> Pipeline:
-        """Create the standard SfM -> Train -> Visualize pipeline."""
+        """Create the standard SfM -> Train -> [Visualize] -> [Blender] pipeline."""
         stages: list[Stage] = [create_sfm_stage(backend=sfm_backend)]
 
         if use_lambda:
@@ -79,6 +83,9 @@ class Pipeline(Entity):
 
         if visualize:
             stages.append(create_visualization_stage(backend=vis_backend, num_iters=vis_iters))
+
+        if blender:
+            stages.append(create_blender_stage())
 
         return cls(workspace=workspace, stages=stages)
 
@@ -121,10 +128,12 @@ class Pipeline(Entity):
         """Build the first input contract from the workspace layout."""
         if isinstance(stage, SfmStage):
             return SfmInput(images_dir=self.workspace.images_dir)
-        if isinstance(stage, (GaussiansStage,)):
+        if isinstance(stage, GaussiansStage):
             raise RuntimeError("GaussiansStage requires SfM output — it cannot be the first stage")
         if isinstance(stage, VisualizationStage):
             raise RuntimeError("VisualizationStage requires GaussiansOutput — it cannot be the first stage")
+        if isinstance(stage, BlenderStage):
+            raise RuntimeError("BlenderStage requires GaussiansOutput — it cannot be the first stage")
         # LambdaRunner
         raise RuntimeError(f"Unknown stage type as first stage: {type(stage)}")
 
@@ -137,12 +146,26 @@ class Pipeline(Entity):
                 images_dir=self.workspace.images_dir,
             )
         if isinstance(output, GaussiansOutput):
+            self._last_gaussians_output = output
+            if isinstance(next_stage, BlenderStage):
+                return BlenderInput(
+                    gaussians_output=output,
+                    blend_output=self.workspace.root / "blender" / "scene.blend",
+                )
             if self._last_sfm_output is None:
                 raise RuntimeError("No SfmOutput available to build VisualizationInput")
             return VisualizationInput(
                 gaussians_output=output,
                 images_dir=self.workspace.images_dir,
                 sfm_output=self._last_sfm_output,
+            )
+        # VisualizationOutput → next stage must be Blender
+        if isinstance(next_stage, BlenderStage):
+            if self._last_gaussians_output is None:
+                raise RuntimeError("No GaussiansOutput available to build BlenderInput")
+            return BlenderInput(
+                gaussians_output=self._last_gaussians_output,
+                blend_output=self.workspace.root / "blender" / "scene.blend",
             )
         return output
 

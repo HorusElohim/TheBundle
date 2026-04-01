@@ -130,6 +130,7 @@ async def data_locate(scene: str, data_root: Path):
 )
 @click.option("--visualize/--no-visualize", default=True, help="Run local OpenSplat preview after training.")
 @click.option("--vis-iters", default=2_000, help="OpenSplat iterations for visualization preview.")
+@click.option("--blender/--no-blender", default=False, help="Import final PLY into Blender and save a .blend file.")
 @tracer.Sync.decorator.call_raise
 async def run(
     workspace: Path,
@@ -142,8 +143,9 @@ async def run(
     filesystem: str | None,
     visualize: bool,
     vis_iters: int,
+    blender: bool,
 ):
-    """Run the full reconstruction pipeline: SfM -> Train (CUDA) -> Visualize."""
+    """Run the full reconstruction pipeline: SfM -> Train (CUDA) -> [Visualize] -> [Blender]."""
     from .pipeline import Pipeline
 
     ws = Workspace(root=workspace)
@@ -158,6 +160,7 @@ async def run(
         lambda_filesystem=filesystem,
         visualize=visualize,
         vis_iters=vis_iters,
+        blender=blender,
     )
     results = await pipeline.run()
     for name, output in results.items():
@@ -351,3 +354,46 @@ async def status(workspace: Path):
             info.get("completed_at", "?"),
             info.get("elapsed_seconds", 0),
         )
+
+
+# ---------------------------------------------------------------------------
+# bundle recon3d blender
+# ---------------------------------------------------------------------------
+
+
+@recon3d.command()
+@click.option("--workspace", type=click.Path(path_type=Path), required=True, help="Workspace root directory.")
+@click.option("--experiment", default="default", help="Training experiment name.")
+@click.option("--render/--no-render", default=False, help="Render the scene after import.")
+@click.option(
+    "--engine",
+    type=click.Choice(["EEVEE", "CYCLES"]),
+    default="EEVEE",
+    help="Render engine.",
+)
+@tracer.Sync.decorator.call_raise
+async def blender(workspace: Path, experiment: str, render: bool, engine: str):
+    """Import a trained 3DGS PLY into Blender and save a .blend file."""
+    from .stages.blender.base import BlenderInput, BlenderStage
+    from .stages.gaussians.base import GaussiansOutput
+
+    ws = Workspace(root=workspace)
+    exp_dir = ws.runs_dir / experiment
+    gauss_out = GaussiansOutput(
+        checkpoint_path=exp_dir / "checkpoint.pth",
+        ply_path=exp_dir / "model.ply",
+        renders_dir=exp_dir / "renders",
+    )
+
+    stage = BlenderStage()
+    if not await stage.check_deps():
+        raise click.ClickException("Blender not found — install it or set BUNDLE_BLENDER_EXECUTABLE.")
+
+    inp = BlenderInput(
+        gaussians_output=gauss_out,
+        blend_output=ws.root / "blender" / "scene.blend",
+        render=render,
+        engine=engine,
+    )
+    output = await stage.run(inp)
+    log.info("Blender output: %s", output)
