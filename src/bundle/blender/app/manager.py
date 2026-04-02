@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 import shutil
 from pathlib import Path
-from typing import TYPE_CHECKING
 
 from bundle.core import data, logger, tracer, utils
 from bundle.core.downloader import DownloaderTQDM
@@ -98,11 +97,11 @@ class BlenderAppManager(data.Data):
         return [p for p in self.install_root.iterdir() if p.is_dir()]
 
     def managed_environments(self) -> list:
-        from ..runtime import env as runtime_env
+        from ..runtime import resolve_environment_from_install
 
         environments: list = []
         for install_dir in sorted(self.installed_versions(), key=lambda path: path.name, reverse=True):
-            env = runtime_env.resolve_environment_from_install(install_dir)
+            env = resolve_environment_from_install(install_dir)
             if env:
                 environments.append(env)
         return environments
