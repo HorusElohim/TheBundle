@@ -99,7 +99,7 @@ class Pipeline(Entity):
         results: dict[str, Data] = {}
         current_input: Data | None = None
 
-        for stage in self.stages:
+        for i, stage in enumerate(self.stages):
             log.info("Running stage: %s", stage.name)
 
             if not await stage.check_deps():
@@ -114,7 +114,9 @@ class Pipeline(Entity):
 
             log.info("Stage '%s' completed in %.1fs", stage.name, elapsed)
             results[stage.name] = output
-            current_input = self._adapt(stage, output)
+
+            next_stage = self.stages[i + 1] if i + 1 < len(self.stages) else None
+            current_input = self._adapt(output, next_stage)
 
             self._update_manifest(stage.name, elapsed)
 
@@ -137,7 +139,7 @@ class Pipeline(Entity):
         # LambdaRunner
         raise RuntimeError(f"Unknown stage type as first stage: {type(stage)}")
 
-    def _adapt(self, _prev_stage: Stage, output: Data) -> Data:
+    def _adapt(self, output: Data, next_stage: Stage | None) -> Data:
         """Convert one stage's output into the next stage's input."""
         if isinstance(output, SfmOutput):
             self._last_sfm_output = output
