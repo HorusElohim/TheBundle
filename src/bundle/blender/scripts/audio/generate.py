@@ -35,26 +35,26 @@ log.parent = logger.get_logger("bundle")
 # --------------------------------------------------------------------------- #
 
 
-def load_config(
-    path: str | Path = r"C:\Dev\TheBundle\src\bundle\blender\scripts\audio\configuration.json",
-) -> AudioDriverConfig:
-    log.info(f"📂 Loading configuration from {path}")
+def load_config(path: str | Path | None = None) -> AudioDriverConfig:
+    if path is None:
+        path = Path(__file__).parent / "configuration.json"
+    log.info("Loading configuration from %s", path)
     cfg = asyncio.run(AudioDriverConfig.from_json(Path(path)))
-    log.info(f"✅ Loaded config: {cfg}")
+    log.info("Loaded config: %s", cfg)
     return cfg
 
 
 def ensure_target_mesh(name_hint: str | None) -> bpy.types.Object:
-    log.info(f"🔍 Ensuring target mesh (hint={name_hint})")
+    log.info("Ensuring target mesh (hint=%s)", name_hint)
     obj = bpy.context.active_object
     if name_hint:
         obj = bpy.data.objects.get(name_hint) or obj
     if not obj or obj.type != "MESH":
-        log.info("i No mesh found, creating plane")
+        log.info("No mesh found, creating plane")
         bpy.ops.mesh.primitive_plane_add(size=2.0)
         obj = bpy.context.active_object
         obj.name = name_hint or "AudioDrivenPlane"
-    log.info(f"✅ Target mesh: {obj.name}")
+    log.info("Target mesh: %s", obj.name)
     return obj
 
 
@@ -77,7 +77,7 @@ def add_audio_to_vse(audio_path: str):
     scene.sync_mode = "AUDIO_SYNC"
     scene.use_audio_scrub = True
     scene.use_audio = True
-    log.info(f"✅ Audio strip added to VSE: {audio_path}")
+    log.info("Audio strip added to VSE: %s", audio_path)
 
 
 # --------------------------------------------------------------------------- #
@@ -125,7 +125,7 @@ def build_audio_grid_group(name: str = "AudioGridRipple") -> bpy.types.NodeTree:
     n_pts.location = (-800, 0)
     n_pts.mode = "VERTICES"
 
-    # Position → distance from origin (XY)
+    # Position -> distance from origin (XY)
     n_pos = ng.nodes.new("GeometryNodeInputPosition")
     n_pos.location = (-1000, -250)
     n_sep = ng.nodes.new("ShaderNodeSeparateXYZ")
@@ -224,7 +224,7 @@ def build_audio_grid_group(name: str = "AudioGridRipple") -> bpy.types.NodeTree:
 
 
 def build_neon_shader(name: str = "NeonAudioMaterial") -> tuple[bpy.types.Material, bpy.types.ShaderNodeValue]:
-    log.info(f"🎨 Creating neon emission shader: {name}")
+    log.info("Creating neon emission shader: %s", name)
     mat = bpy.data.materials.new(name)
     mat.use_nodes = True
 
@@ -251,7 +251,7 @@ def build_neon_shader(name: str = "NeonAudioMaterial") -> tuple[bpy.types.Materi
     e3 = ramp.color_ramp.elements.new(0.92)
     e3.color = (1.00, 0.00, 0.60, 1.0)  # hot pink
 
-    # Driver target (we will drive this with Empty.z)
+    # Driver target (driven with Empty.z)
     val = nodes.new("ShaderNodeValue")
     val.location = (200, -100)
     val.name = "AudioDrive_Value"
@@ -270,7 +270,7 @@ def build_neon_shader(name: str = "NeonAudioMaterial") -> tuple[bpy.types.Materi
     links.new(emission.outputs["Emission"], out.inputs["Surface"])
     links.new(val.outputs["Value"], mul.inputs[0])
 
-    log.info(f"✅ Neon shader created: {name}")
+    log.info("Neon shader created: %s", name)
     return mat, val
 
 
@@ -294,7 +294,7 @@ def add_driver_to_material_value(
     targ.transform_type = "LOC_Z"
     targ.transform_space = "WORLD_SPACE"
 
-    log.info(f"🔗 Material driver added: {mat.name}.{path} <- {source_obj.name}.LOC_Z (x{scale})")
+    log.info("Material driver added: %s.%s <- %s.LOC_Z (x%s)", mat.name, path, source_obj.name, scale)
     return drv
 
 
@@ -309,11 +309,11 @@ def main():
         obj = ensure_target_mesh(cfg.object)
 
         # Geometry Nodes
-        log.info("🎛 Building Audio Grid GeometryNodes")
+        log.info("Building Audio Grid GeometryNodes")
         ng = build_audio_grid_group()
         mod = obj.modifiers.new("AudioDriver", type="NODES")
         mod.node_group = ng
-        log.info("✅ Geometry Nodes (grid instancer) attached")
+        log.info("Geometry Nodes (grid instancer) attached")
 
         # Build neon shader and assign it via Set Material in the GN tree
         mat, val_node = build_neon_shader()
@@ -321,25 +321,25 @@ def main():
         if set_mat_node is None:
             raise RuntimeError("SET_MAT node not found in GN tree")
         set_mat_node.inputs["Material"].default_value = mat
-        log.info("🎯 Material assigned via GN 'Set Material'")
+        log.info("Material assigned via GN Set Material")
 
         # Audio decode
         audio_file = Path(cfg.audio)
-        log.info(f"🎵 Loading audio: {audio_file}")
+        log.info("Loading audio: %s", audio_file)
         if not audio_file.exists():
             raise FileNotFoundError(f"Audio not found: {audio_file}")
         snd = aud.Sound.file(str(audio_file))
         rate, channels = snd.specs
-        data = np.asarray(snd.data(), dtype=np.float32).ravel()
-        log.info(f"✅ Audio loaded (rate={rate}, channels={channels}, samples={len(data)})")
+        audio_data = np.asarray(snd.data(), dtype=np.float32).ravel()
+        log.info("Audio loaded (rate=%s, channels=%s, samples=%s)", rate, channels, len(audio_data))
 
         fps = cfg.fps or bpy.context.scene.render.fps
-        total_frames = data.size // (rate * channels)
+        total_frames = audio_data.size // (rate * channels)
         n_frames = int(total_frames * fps) if cfg.frames == "auto" else int(cfg.frames)
-        log.info(f"🎬 Using {n_frames} frames @ {fps} fps")
+        log.info("Using %s frames @ %s fps", n_frames, fps)
 
         # Empty with baked audio
-        log.info("📌 Creating Empty for animation")
+        log.info("Creating Empty for animation")
         empty = bpy.data.objects.new("AudioEmpty", None)
         bpy.context.collection.objects.link(empty)
         empty.animation_data_create()
@@ -355,10 +355,10 @@ def main():
         )
         fcu.keyframe_points.clear()
 
-        log.info("📊 Baking audio amplitudes into keyframes")
+        log.info("Baking audio amplitudes into keyframes")
         for f in range(n_frames):
             i0, i1 = f * samples_per_frame * channels, (f + 1) * samples_per_frame * channels
-            frame = data[i0:i1]
+            frame = audio_data[i0:i1]
             if channels > 1:
                 # safe reshape
                 cut = (frame.size // channels) * channels
@@ -368,10 +368,10 @@ def main():
             amp = float(np.sqrt(np.mean(np.square(mono)))) if mono.size else 0.0
             fcu.keyframe_points.insert(frame=f + 1, value=amp)
         fcu.update()
-        log.info(f"✅ Baked {n_frames} frames into Empty.location.z")
+        log.info("Baked %s frames into Empty.location.z", n_frames)
 
         # Driver for GN input
-        log.info("⚙️ Connecting driver Empty.z → GN input")
+        log.info("Connecting driver Empty.z -> GN input")
         user_keys = [k for k in mod if not str(k).startswith("_")]
         if not user_keys:
             raise RuntimeError("No exposed GN inputs on modifier to drive")
@@ -393,11 +393,11 @@ def main():
 
         # Save
         bpy.ops.wm.save_as_mainfile(filepath=FILE_NAME)
-        log.info(f"💾 Saved Blender project as {FILE_NAME}")
-        log.info("✅ Phase 2 complete: ripple grid + neon material, both audio-driven!")
+        log.info("Saved Blender project as %s", FILE_NAME)
+        log.info("Complete: ripple grid + neon material, both audio-driven")
 
     except Exception:
-        log.error("💥 Script failed", exc_info=True)
+        log.error("Script failed", exc_info=True)
         traceback.print_exc()
 
 
