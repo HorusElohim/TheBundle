@@ -10,7 +10,8 @@ from pathlib import Path
 from bundle.core import logger, tracer
 from bundle.core.platform import platform_info
 
-from ..app.manager import BlenderAppManager, BlenderEnvironment
+from ..app.manager import BlenderAppManager
+from .environment import BlenderEnvironment
 
 log = logger.get_logger(__name__)
 
@@ -134,7 +135,11 @@ def _platform_candidates() -> list[Path]:
         env_vars = ["PROGRAMFILES", "PROGRAMFILES(X86)"]
         return [Path(os.environ[var]) / "Blender Foundation" for var in env_vars if os.environ.get(var)]
     if platform_info.is_darwin:
-        return [base / "Blender.app" for base in (Path("/Applications"), Path.home() / "Applications") if (base / "Blender.app").exists()]
+        return [
+            base / "Blender.app"
+            for base in (Path("/Applications"), Path.home() / "Applications")
+            if (base / "Blender.app").exists()
+        ]
     return [Path("/usr/local/share/blender")]
 
 
