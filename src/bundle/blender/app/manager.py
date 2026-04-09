@@ -10,21 +10,13 @@ from bundle.core import data, logger, tracer, utils
 from bundle.core.downloader import DownloaderTQDM
 from bundle.core.platform import platform_info
 
+from ..runtime.environment import BlenderEnvironment
+
 log = logger.get_logger(__name__)
 
 _BASE_URL = "https://download.blender.org"
 _INSTALL_ENV = "BUNDLE_BLENDER_HOME"
 _CACHE_ENV = "BUNDLE_BLENDER_CACHE"
-
-
-class BlenderEnvironment(data.Data):
-    blender_executable: Path
-    python_executable: Path
-    scripts_dir: Path
-
-    @property
-    def site_packages(self) -> Path:
-        return self.scripts_dir / "modules"
 
 
 def _default_install_root() -> Path:

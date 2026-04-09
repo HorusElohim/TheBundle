@@ -6,8 +6,9 @@ from pathlib import Path
 
 from bundle.core import tracer
 
-from .app import BlenderEnvironment, BlenderRuntime
+from .app import BlenderRuntime
 from .app import runtime as _runtime
+from .environment import BlenderEnvironment
 
 
 def runtime() -> BlenderRuntime:
