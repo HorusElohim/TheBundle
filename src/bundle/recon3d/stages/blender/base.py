@@ -148,10 +148,23 @@ if imported:
 
 # Optional render
 if {do_render} and {render_out}:
+    import math
     scene = bpy.context.scene
     scene.render.engine = {engine}
     scene.render.filepath = {render_out} + "/"
     scene.render.image_settings.file_format = "PNG"
+
+    # Add a camera if none exists (use_empty=True strips the default one).
+    if not any(o.type == "CAMERA" for o in scene.objects):
+        bpy.ops.object.camera_add(location=(3, -3, 2))
+        cam = bpy.context.object
+        cam.rotation_euler = (math.radians(60), 0, math.radians(45))
+        scene.camera = cam
+
+    # Add a sun light for CYCLES/EEVEE if none exists.
+    if not any(o.type == "LIGHT" for o in scene.objects):
+        bpy.ops.object.light_add(type="SUN", location=(5, 5, 5))
+
     bpy.ops.render.render(write_still=True)
 
 # Save .blend
