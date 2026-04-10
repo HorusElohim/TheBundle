@@ -175,3 +175,54 @@ async def animate(
     )
     seq = await gen.generate()
     log.info("Wrote %d frames → %s", seq.frame_count, seq.frames_dir)
+
+
+# ---------------------------------------------------------------------------
+# bundle gs3d blender
+# ---------------------------------------------------------------------------
+
+
+@gs3d.command()
+@click.argument("ply", type=click.Path(path_type=Path, exists=True))
+@click.option(
+    "--blend-output",
+    "-o",
+    type=click.Path(path_type=Path),
+    default=None,
+    help="Output .blend path (default: <ply_stem>.blend next to the PLY).",
+)
+@click.option("--render/--no-render", default=False, help="Render the scene after import.")
+@click.option(
+    "--engine",
+    type=click.Choice(["EEVEE", "CYCLES"]),
+    default="EEVEE",
+    show_default=True,
+    help="Render engine.",
+)
+@tracer.Sync.decorator.call_raise
+async def blender(ply: Path, blend_output: Path | None, render: bool, engine: str) -> None:
+    """Import a gs3d-generated PLY into Blender and save a .blend file."""
+    from bundle.recon3d.stages.blender.base import BlenderInput, BlenderStage
+
+    from .bridge import to_gaussians_output
+    from .data import GaussianCloud
+    from .ply import read_ply_header
+
+    if blend_output is None:
+        blend_output = ply.with_suffix(".blend")
+
+    meta: GaussianCloud = await read_ply_header(ply)
+    gaussians = to_gaussians_output(meta)
+
+    stage = BlenderStage()
+    if not await stage.check_deps():
+        raise click.ClickException("Blender not found — install it or set BUNDLE_BLENDER_EXECUTABLE.")
+
+    inp = BlenderInput(
+        gaussians_output=gaussians,
+        blend_output=blend_output,
+        render=render,
+        engine=engine,
+    )
+    output = await stage.run(inp)
+    log.info("Blender output: %s", output)
