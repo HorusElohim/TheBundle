@@ -151,18 +151,21 @@ class CubeGenerator(Generator):
         if not self.surface:
             positions = rng.uniform(-half, half, size=(n, 3)).astype(np.float32) + center
         else:
-            # Pick a random face per sample, then uniform on that face.
+            # Pick a random face per sample (0..5), then uniform on that face.
+            # axis = face // 2 ∈ {0,1,2}; sign = ±1 from face parity.
             faces = rng.integers(0, 6, size=n)
             uv = rng.uniform(-half, half, size=(n, 2)).astype(np.float32)
             positions = np.zeros((n, 3), dtype=np.float32)
-            for i in range(n):
-                f = faces[i]
-                axis = f // 2
-                sign = 1.0 if (f % 2 == 0) else -1.0
-                others = [a for a in range(3) if a != axis]
-                positions[i, axis] = sign * half
-                positions[i, others[0]] = uv[i, 0]
-                positions[i, others[1]] = uv[i, 1]
+            axis = faces // 2  # (N,) ∈ {0,1,2}
+            sign = (1 - 2 * (faces % 2)).astype(np.float32)  # ±1
+            # Map uv columns to the two non-axis coordinates via lookup table.
+            tangent = np.array([[1, 2], [0, 2], [0, 1]])  # tangent axes per face-axis
+            t0 = tangent[axis, 0]
+            t1 = tangent[axis, 1]
+            idx = np.arange(n)
+            positions[idx, axis] = sign * half
+            positions[idx, t0] = uv[:, 0]
+            positions[idx, t1] = uv[:, 1]
             positions += center
 
         cloud = GaussianCloudArrays.empty(n, sh_degree=self.sh_degree)

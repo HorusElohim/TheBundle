@@ -66,6 +66,7 @@ version_file = "src/bundle/_version.py"
 
 [project.optional-dependencies]
 test = ["pytest", "pytest-asyncio", "nest_asyncio"]
+gs3d = ["numpy", "trimesh"]
 dev = ["snakeviz"]
 pypi = ["build", "twine"]
 ble = ["bleak>=0.22.1", "pyyaml"]
