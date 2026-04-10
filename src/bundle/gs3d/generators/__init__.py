@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from .base import Generator
+from .mesh import MeshToGaussiansGenerator
 from .primitives import (
     CubeGenerator,
     RandomCloudGenerator,
@@ -15,6 +16,7 @@ _GENERATORS: dict[str, type[Generator]] = {
     "cube": CubeGenerator,
     "torus": TorusGenerator,
     "cloud": RandomCloudGenerator,
+    "mesh": MeshToGaussiansGenerator,
 }
 
 
@@ -34,6 +36,7 @@ def available_shapes() -> list[str]:
 __all__ = [
     "CubeGenerator",
     "Generator",
+    "MeshToGaussiansGenerator",
     "RandomCloudGenerator",
     "SphereGenerator",
     "TorusGenerator",
