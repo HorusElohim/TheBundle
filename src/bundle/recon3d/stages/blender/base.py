@@ -146,19 +146,72 @@ if imported:
         obj.name = "GaussianSplat"
     bpy.context.view_layer.objects.active = imported[0]
 
+    # ── Make vertices renderable ─────────────────────────────────────────
+    # PLY vertices import with no faces and no material.  Build a
+    # Geometry Nodes tree: MeshToPoints → SetMaterial → InstanceOnPoints
+    # (icosphere) → RealizeInstances → output.  The SetMaterial node
+    # assigns the emission material to the icosphere geometry *before*
+    # instancing so every splat renders lit.
+    obj = imported[0]
+
+    # Emission material.
+    mat = bpy.data.materials.new("GaussianSplatMat")
+    mat.use_nodes = True
+    mt = mat.node_tree
+    mt.nodes.clear()
+    emit    = mt.nodes.new("ShaderNodeEmission")
+    mat_out = mt.nodes.new("ShaderNodeOutputMaterial")
+    emit.inputs["Color"].default_value    = (0.85, 0.85, 0.85, 1.0)
+    emit.inputs["Strength"].default_value = 1.0
+    mt.links.new(emit.outputs["Emission"], mat_out.inputs["Surface"])
+
+    # Geometry Nodes tree.
+    mod = obj.modifiers.new("GS_Points", type="NODES")
+    ng  = bpy.data.node_groups.new("GS_Points", "GeometryNodeTree")
+    mod.node_group = ng
+    ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
+    ng.interface.new_socket("Geometry", in_out="INPUT",  socket_type="NodeSocketGeometry")
+
+    ns, lk = ng.nodes, ng.links
+    n_in  = ns.new("NodeGroupInput")
+    n_out = ns.new("NodeGroupOutput")
+    m2p   = ns.new("GeometryNodeMeshToPoints")
+    sph   = ns.new("GeometryNodeMeshIcoSphere")
+    sph.inputs["Radius"].default_value       = 0.008
+    sph.inputs["Subdivisions"].default_value = 1
+    set_mat = ns.new("GeometryNodeSetMaterial")
+    set_mat.inputs["Material"].default_value = mat
+    iop     = ns.new("GeometryNodeInstanceOnPoints")
+    realise = ns.new("GeometryNodeRealizeInstances")
+
+    lk.new(n_in.outputs[0],           m2p.inputs["Mesh"])
+    lk.new(sph.outputs["Mesh"],        set_mat.inputs["Geometry"])
+    lk.new(set_mat.outputs["Geometry"], iop.inputs["Instance"])
+    lk.new(m2p.outputs["Points"],      iop.inputs["Points"])
+    lk.new(iop.outputs["Instances"],   realise.inputs["Geometry"])
+    lk.new(realise.outputs["Geometry"], n_out.inputs[0])
+
 # Optional render
 if {do_render} and {render_out}:
     import math
     scene = bpy.context.scene
-    scene.render.engine = {engine}
+    # EEVEE requires a display/GPU context — fall back to CYCLES in headless mode.
+    if bpy.app.background and {engine} == "EEVEE":
+        scene.render.engine = "CYCLES"
+        scene.cycles.device = "CPU"
+    else:
+        scene.render.engine = "BLENDER_" + {engine}
     scene.render.filepath = {render_out} + "/"
     scene.render.image_settings.file_format = "PNG"
 
-    # Add a camera if none exists (use_empty=True strips the default one).
+    # Add a camera aimed at the world origin if none exists.
     if not any(o.type == "CAMERA" for o in scene.objects):
-        bpy.ops.object.camera_add(location=(3, -3, 2))
+        from mathutils import Vector
+        loc = Vector((3.0, -3.0, 2.0))
+        bpy.ops.object.camera_add(location=loc)
         cam = bpy.context.object
-        cam.rotation_euler = (math.radians(60), 0, math.radians(45))
+        direction = Vector((0, 0, 0)) - loc
+        cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
         scene.camera = cam
 
     # Add a sun light for CYCLES/EEVEE if none exists.
