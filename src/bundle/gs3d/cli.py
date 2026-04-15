@@ -202,7 +202,8 @@ async def animate(
 @tracer.Sync.decorator.call_raise
 async def blender(ply: Path, blend_output: Path | None, render: bool, engine: str) -> None:
     """Import a gs3d-generated PLY into Blender and save a .blend file."""
-    from bundle.recon3d.stages.blender.base import BlenderInput, BlenderStage
+    from bundle.recon3d.pipeline import Pipeline
+    from bundle.recon3d.workspace import Workspace
 
     from .bridge import to_gaussians_output
     from .data import GaussianCloud
@@ -214,15 +215,16 @@ async def blender(ply: Path, blend_output: Path | None, render: bool, engine: st
     meta: GaussianCloud = await read_ply_header(ply)
     gaussians = to_gaussians_output(meta)
 
-    stage = BlenderStage()
-    if not await stage.check_deps():
-        raise click.ClickException("Blender not found — install it or set BUNDLE_BLENDER_EXECUTABLE.")
-
-    inp = BlenderInput(
+    workspace = Workspace(root=blend_output.parent)
+    pipeline = Pipeline.from_gaussians(
         gaussians_output=gaussians,
+        workspace=workspace,
         blend_output=blend_output,
         render=render,
         engine=engine,
     )
-    output = await stage.run(inp)
-    log.info("Blender output: %s", output)
+    results = await pipeline.run()
+    output = results["blender"]
+    log.info("Blender output: %s", output.blend_path)
+    if output.render_dir is not None:
+        log.info("Renders: %s", output.render_dir)
