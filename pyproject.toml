@@ -60,6 +60,7 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 "bundle.pods" = ["pods/**/*", "pods/**/.gitkeep"]
+"bundle.recon3d.stages.blender.scripts" = ["*.py"]
 
 [tool.setuptools_scm]
 version_file = "src/bundle/_version.py"

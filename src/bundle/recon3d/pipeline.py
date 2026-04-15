@@ -39,6 +39,7 @@ class Pipeline(Entity):
 
     _last_sfm_output: SfmOutput | None = PrivateAttr(default=None)
     _last_gaussians_output: GaussiansOutput | None = PrivateAttr(default=None)
+    _seed_input: Data | None = PrivateAttr(default=None)
 
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
@@ -46,6 +47,43 @@ class Pipeline(Entity):
     # ------------------------------------------------------------------
     # Factory
     # ------------------------------------------------------------------
+
+    @classmethod
+    def from_gaussians(
+        cls,
+        gaussians_output: GaussiansOutput,
+        workspace: Workspace,
+        blender: bool = True,
+        visualize: bool = False,
+    ) -> Pipeline:
+        """Create a pipeline that starts from an existing GaussiansOutput.
+
+        Skips SfM and training — useful for synthetic clouds produced by
+        ``bundle.gs3d`` or for re-running downstream stages on an existing PLY.
+
+        Args:
+            gaussians_output: The reconstructed or synthesised PLY to process.
+            workspace: Workspace that provides output directory layout.
+            blender: Include the Blender import/render stage.
+            visualize: Not supported for synthetic input (requires SfM camera
+                poses).  Raises ``NotImplementedError`` if ``True``.
+        """
+        if visualize:
+            raise NotImplementedError(
+                "VisualizationStage requires SfM camera poses which are not available "
+                "for synthetic Gaussians.  Use blender=True to view in Blender instead."
+            )
+        if not blender:
+            raise ValueError("from_gaussians() needs at least one output stage — pass blender=True.")
+
+        stages: list[Stage] = [create_blender_stage()]
+        seed = BlenderInput(
+            gaussians_output=gaussians_output,
+            blend_output=workspace.root / "blender" / "scene.blend",
+        )
+        pipeline = cls(workspace=workspace, stages=stages)
+        pipeline._seed_input = seed
+        return pipeline
 
     @classmethod
     def default(
@@ -106,7 +144,7 @@ class Pipeline(Entity):
                 raise RuntimeError(f"Stage '{stage.name}' dependencies not met — run check_deps() for details")
 
             if current_input is None:
-                current_input = self._initial_input_for(stage)
+                current_input = self._seed_input if self._seed_input is not None else self._initial_input_for(stage)
 
             t0 = time.monotonic()
             output = await stage.run(current_input)
