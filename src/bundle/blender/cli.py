@@ -94,7 +94,14 @@ async def blender() -> None:
 
 @blender.command("download")
 @tracer.Sync.decorator.call_raise
-@click.option("--version", "version", default=None, help="Blender version to download (e.g. 4.5.0).")
+@click.option(
+    "-v",
+    "--version",
+    "version",
+    default="latest",
+    show_default=True,
+    help="Blender version to download. Use 'latest' to fetch the newest release from download.blender.org, or pass an explicit version (e.g. 5.1.0).",
+)
 @click.option("--channel", type=click.Choice(["release", "lts"], case_sensitive=False), default="release", show_default=True)
 @click.option(
     "--dest",
@@ -104,12 +111,15 @@ async def blender() -> None:
 )
 @click.option("--arch", type=click.Choice(["auto", "x64", "arm64"], case_sensitive=False), default="auto", show_default=True)
 @click.option("--force", is_flag=True, default=False, help="Re-download and overwrite existing archives/installations.")
-async def download(version: str | None, channel: str, dest: str | None, arch: str, force: bool) -> None:
+async def download(version: str, channel: str, dest: str | None, arch: str, force: bool) -> None:
     if dest is not None:
         manager = BlenderAppManager(install_root=Path(dest))
     else:
         manager = BlenderAppManager()
-    chosen_version = version or manager.default_version
+    if version.lower() == "latest":
+        chosen_version = await manager.resolve_latest_version(channel=channel.lower())
+    else:
+        chosen_version = version
     chosen_arch = None if arch.lower() == "auto" else arch.lower()
 
     install_dir = await manager.ensure_install(

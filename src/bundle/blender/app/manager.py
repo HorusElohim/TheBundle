@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 from pathlib import Path
+
+import aiohttp
 
 from bundle.core import data, logger, tracer, utils
 from bundle.core.downloader import DownloaderTQDM
@@ -17,6 +20,9 @@ log = logger.get_logger(__name__)
 _BASE_URL = "https://download.blender.org"
 _INSTALL_ENV = "BUNDLE_BLENDER_HOME"
 _CACHE_ENV = "BUNDLE_BLENDER_CACHE"
+
+_SERIES_RE = re.compile(r'href="Blender(\d+)\.(\d+)/"', re.IGNORECASE)
+_VERSION_RE = re.compile(r"blender-(\d+)\.(\d+)\.(\d+)-", re.IGNORECASE)
 
 
 def _default_install_root() -> Path:
@@ -82,6 +88,51 @@ class BlenderAppManager(data.Data):
     def default_version(self) -> str:
         versions = sorted(self.installed_versions(), key=lambda path: path.name)
         return versions[-1].name if versions else "4.5.0"
+
+    @staticmethod
+    def _pick_latest_series(index_html: str) -> tuple[int, int]:
+        series = {(int(m.group(1)), int(m.group(2))) for m in _SERIES_RE.finditer(index_html)}
+        if not series:
+            raise RuntimeError("No Blender series found in release index")
+        return max(series)
+
+    @staticmethod
+    def _pick_latest_patch(series_html: str, major: int, minor: int) -> str:
+        patches = {
+            (int(m.group(1)), int(m.group(2)), int(m.group(3)))
+            for m in _VERSION_RE.finditer(series_html)
+            if (int(m.group(1)), int(m.group(2))) == (major, minor)
+        }
+        if not patches:
+            raise RuntimeError(f"No Blender {major}.{minor}.x archives found in series listing")
+        latest = max(patches)
+        return f"{latest[0]}.{latest[1]}.{latest[2]}"
+
+    @tracer.Async.decorator.call_raise
+    async def resolve_latest_version(self, channel: str = "release") -> str:
+        """Query the Blender download index for the newest stable version of ``channel``.
+
+        Fetches the release listing, picks the highest ``BlenderX.Y`` series, then selects
+        the highest ``X.Y.Z`` archive present in that series.
+        """
+        if channel != "release":
+            raise ValueError(f"resolve_latest_version only supports channel='release', got {channel!r}")
+        index_url = f"{self.base_url}/release/"
+        log.info("Resolving latest Blender version from %s", index_url)
+        async with aiohttp.ClientSession() as session:
+            async with session.get(index_url) as response:
+                response.raise_for_status()
+                index_html = await response.text()
+            major, minor = self._pick_latest_series(index_html)
+
+            series_url = f"{self.base_url}/release/Blender{major}.{minor}/"
+            async with session.get(series_url) as response:
+                response.raise_for_status()
+                series_html = await response.text()
+
+        version = self._pick_latest_patch(series_html, major, minor)
+        log.info("Latest Blender version resolved: %s", version)
+        return version
 
     def installed_versions(self) -> list[Path]:
         if not self.install_root.exists():
