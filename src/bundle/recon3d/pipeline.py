@@ -36,10 +36,16 @@ class Pipeline(Entity):
     name: str = "recon3d-pipeline"
     workspace: Workspace
     stages: list[Stage] = []
+    seed_input: Data | None = None
+    """Optional pre-built input for the first stage.
+
+    Set by factories like :meth:`from_gaussians` that skip the usual
+    SfM/image bootstrap.  Pydantic validates the value at construction
+    time, so callers don't need to reach into private state.
+    """
 
     _last_sfm_output: SfmOutput | None = PrivateAttr(default=None)
     _last_gaussians_output: GaussiansOutput | None = PrivateAttr(default=None)
-    _seed_input: Data | None = PrivateAttr(default=None)
 
     model_config = Data.model_config.copy()
     model_config["arbitrary_types_allowed"] = True
@@ -81,9 +87,7 @@ class Pipeline(Entity):
             gaussians_output=gaussians_output,
             blend_output=workspace.root / "blender" / "scene.blend",
         )
-        pipeline = cls(workspace=workspace, stages=stages)
-        pipeline._seed_input = seed
-        return pipeline
+        return cls(workspace=workspace, stages=stages, seed_input=seed)
 
     @classmethod
     def default(
@@ -144,7 +148,7 @@ class Pipeline(Entity):
                 raise RuntimeError(f"Stage '{stage.name}' dependencies not met — run check_deps() for details")
 
             if current_input is None:
-                current_input = self._seed_input if self._seed_input is not None else self._initial_input_for(stage)
+                current_input = self.seed_input if self.seed_input is not None else self._initial_input_for(stage)
 
             t0 = time.monotonic()
             output = await stage.run(current_input)
