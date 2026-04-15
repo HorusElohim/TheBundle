@@ -3,10 +3,28 @@
 Takes a GaussiansOutput (PLY path) and produces a ``.blend`` file via a
 headless Blender run.  The stage is optional: it only participates in the
 pipeline when Blender is discoverable on the host.
+
+Blender-side logic lives in ``scripts/`` as standalone ``.py`` files loaded
+via ``--python``.  Parameters are passed as a JSON sidecar; no string
+interpolation on the host side.
+
+Extending
+---------
+Subclass ``BlenderStage``, set ``script_name`` to a script in ``scripts/``,
+and override ``_build_params`` to supply the script's expected keys::
+
+    class BlenderTurntableStage(BlenderStage):
+        name: str = "blender_turntable"
+        script_name: str = "render_turntable"
+
+        def _build_params(self, inp, render_dir):
+            return {"blend_path": str(inp.blend_path), "frames": inp.frames, ...}
 """
 
 from __future__ import annotations
 
+import importlib.resources as pkg_resources
+import json
 import tempfile
 from pathlib import Path
 from typing import Literal
@@ -56,11 +74,34 @@ class BlenderOutput(Data):
 class BlenderStage(Stage):
     """Imports a 3DGS PLY into Blender headless and saves a ``.blend`` file.
 
-    The stage writes a temporary Python script, executes it via
-    ``bundle.blender.runtime.BlenderSession``, then cleans up.
+    Subclasses override ``script_name`` and ``_build_params`` to drive a
+    different Blender script without touching the run machinery.
     """
 
     name: str = "blender"
+    script_name: str = "ply_to_blend"
+
+    # -- Extensibility hooks ------------------------------------------------
+
+    def _build_params(self, inp: BlenderInput, render_dir: Path | None) -> dict:
+        """Return the JSON-serializable params dict for the Blender script."""
+        return {
+            "ply_path": str(inp.gaussians_output.ply_path),
+            "blend_out": str(inp.blend_output),
+            "render_out": str(render_dir) if render_dir else None,
+            "engine": inp.engine,
+            "do_render": inp.render,
+        }
+
+    def _load_script(self) -> str:
+        """Read the Blender-side script from the shipped ``scripts/`` package."""
+        return (
+            pkg_resources.files("bundle.recon3d.stages.blender.scripts")
+            .joinpath(f"{self.script_name}.py")
+            .read_text(encoding="utf-8")
+        )
+
+    # -- Deps / run ---------------------------------------------------------
 
     async def check_deps(self) -> bool:
         """Return True if a usable Blender installation is discoverable."""
@@ -91,14 +132,20 @@ class BlenderStage(Stage):
         if render_dir is not None:
             render_dir.mkdir(parents=True, exist_ok=True)
 
-        script_src = _build_import_script(inp, render_dir)
+        params = self._build_params(inp, render_dir)
+        script_text = self._load_script()
 
         with tempfile.TemporaryDirectory() as tmp:
-            script_path = Path(tmp) / "recon3d_blender_import.py"
-            script_path.write_text(script_src, encoding="utf-8")
+            tmp_path = Path(tmp)
+            script_path = tmp_path / f"{self.script_name}.py"
+            params_path = tmp_path / "params.json"
+
+            script_path.write_text(script_text, encoding="utf-8")
+            params_path.write_text(json.dumps(params), encoding="utf-8")
 
             log.info(
-                "Importing PLY %s → %s (render=%s)",
+                "Running Blender script %r: %s → %s (render=%s)",
+                self.script_name,
                 inp.gaussians_output.ply_path,
                 inp.blend_output,
                 inp.render,
@@ -106,7 +153,7 @@ class BlenderStage(Stage):
 
             req = BlenderLaunchRequest(
                 executable=str(env.blender_executable),
-                args=["--background", "--python", str(script_path)],
+                args=["--background", "--python", str(script_path), "--", str(params_path)],
             )
             await BlenderSession(req).run()
 
@@ -115,115 +162,6 @@ class BlenderStage(Stage):
             raise RuntimeError(f"Blender ran but did not produce the expected .blend file: {inp.blend_output}")
         log.info("Blender stage complete: %s", inp.blend_output)
         return output
-
-
-# ---------------------------------------------------------------------------
-# Script builder
-# ---------------------------------------------------------------------------
-
-
-def _build_import_script(inp: BlenderInput, render_dir: Path | None) -> str:
-    """Generate a Blender Python script that imports the PLY and saves the scene."""
-    # Use repr() for all path strings — safe against quotes, backslashes, and spaces.
-    ply_path = repr(str(inp.gaussians_output.ply_path))
-    blend_out = repr(str(inp.blend_output))
-    render_out = repr(str(render_dir)) if render_dir else "None"
-    engine = repr(inp.engine)
-    do_render = repr(inp.render)
-
-    return f"""\
-import bpy
-
-# Clear the default scene
-bpy.ops.wm.read_factory_settings(use_empty=True)
-
-# Import the PLY point cloud
-bpy.ops.wm.ply_import(filepath={ply_path})
-
-imported = bpy.context.selected_objects[:]
-if imported:
-    for obj in imported:
-        obj.name = "GaussianSplat"
-    bpy.context.view_layer.objects.active = imported[0]
-
-    # ── Make vertices renderable ─────────────────────────────────────────
-    # PLY vertices import with no faces and no material.  Build a
-    # Geometry Nodes tree: MeshToPoints → SetMaterial → InstanceOnPoints
-    # (icosphere) → RealizeInstances → output.  The SetMaterial node
-    # assigns the emission material to the icosphere geometry *before*
-    # instancing so every splat renders lit.
-    obj = imported[0]
-
-    # Emission material.
-    mat = bpy.data.materials.new("GaussianSplatMat")
-    mat.use_nodes = True
-    mt = mat.node_tree
-    mt.nodes.clear()
-    emit    = mt.nodes.new("ShaderNodeEmission")
-    mat_out = mt.nodes.new("ShaderNodeOutputMaterial")
-    emit.inputs["Color"].default_value    = (0.85, 0.85, 0.85, 1.0)
-    emit.inputs["Strength"].default_value = 1.0
-    mt.links.new(emit.outputs["Emission"], mat_out.inputs["Surface"])
-
-    # Geometry Nodes tree.
-    mod = obj.modifiers.new("GS_Points", type="NODES")
-    ng  = bpy.data.node_groups.new("GS_Points", "GeometryNodeTree")
-    mod.node_group = ng
-    ng.interface.new_socket("Geometry", in_out="OUTPUT", socket_type="NodeSocketGeometry")
-    ng.interface.new_socket("Geometry", in_out="INPUT",  socket_type="NodeSocketGeometry")
-
-    ns, lk = ng.nodes, ng.links
-    n_in  = ns.new("NodeGroupInput")
-    n_out = ns.new("NodeGroupOutput")
-    m2p   = ns.new("GeometryNodeMeshToPoints")
-    sph   = ns.new("GeometryNodeMeshIcoSphere")
-    sph.inputs["Radius"].default_value       = 0.008
-    sph.inputs["Subdivisions"].default_value = 1
-    set_mat = ns.new("GeometryNodeSetMaterial")
-    set_mat.inputs["Material"].default_value = mat
-    iop     = ns.new("GeometryNodeInstanceOnPoints")
-    realise = ns.new("GeometryNodeRealizeInstances")
-
-    lk.new(n_in.outputs[0],           m2p.inputs["Mesh"])
-    lk.new(sph.outputs["Mesh"],        set_mat.inputs["Geometry"])
-    lk.new(set_mat.outputs["Geometry"], iop.inputs["Instance"])
-    lk.new(m2p.outputs["Points"],      iop.inputs["Points"])
-    lk.new(iop.outputs["Instances"],   realise.inputs["Geometry"])
-    lk.new(realise.outputs["Geometry"], n_out.inputs[0])
-
-# Optional render
-if {do_render} and {render_out}:
-    import math
-    scene = bpy.context.scene
-    # EEVEE requires a display/GPU context — fall back to CYCLES in headless mode.
-    if bpy.app.background and {engine} == "EEVEE":
-        scene.render.engine = "CYCLES"
-        scene.cycles.device = "CPU"
-    else:
-        scene.render.engine = "BLENDER_" + {engine}
-    scene.render.filepath = {render_out} + "/"
-    scene.render.image_settings.file_format = "PNG"
-
-    # Add a camera aimed at the world origin if none exists.
-    if not any(o.type == "CAMERA" for o in scene.objects):
-        from mathutils import Vector
-        loc = Vector((3.0, -3.0, 2.0))
-        bpy.ops.object.camera_add(location=loc)
-        cam = bpy.context.object
-        direction = Vector((0, 0, 0)) - loc
-        cam.rotation_euler = direction.to_track_quat("-Z", "Y").to_euler()
-        scene.camera = cam
-
-    # Add a sun light for CYCLES/EEVEE if none exists.
-    if not any(o.type == "LIGHT" for o in scene.objects):
-        bpy.ops.object.light_add(type="SUN", location=(5, 5, 5))
-
-    bpy.ops.render.render(write_still=True)
-
-# Save .blend
-bpy.ops.wm.save_as_mainfile(filepath={blend_out})
-print("recon3d-blender: saved", {blend_out})
-"""
 
 
 # ---------------------------------------------------------------------------

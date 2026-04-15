@@ -1,7 +1,10 @@
 """PLY file reading and validation.
 
-Provides utilities for loading PLY point cloud files (e.g. Gaussian splat exports)
-and validating their structure before USD conversion.
+Provides utilities for loading PLY point cloud files (e.g. Gaussian splat
+exports) and validating their structure before USD conversion.
+
+Implementation delegates to ``bundle.gs3d.ply.read_ply_header`` — a
+header-only parse that avoids loading the vertex payload.
 """
 
 from __future__ import annotations
@@ -24,12 +27,22 @@ class PlyInfo(Data):
 
 
 async def read_ply_info(path: Path) -> PlyInfo:
-    """Read PLY header and return metadata without loading full vertex data.
+    """Read PLY header and return metadata without loading the vertex payload.
 
-    Implementation pending — will parse the PLY ASCII/binary header to extract
-    vertex count and available properties.
+    Delegates to :func:`bundle.gs3d.ply.read_ply_header` which parses the
+    standard 3DGS binary PLY header.
+
+    Raises:
+        FileNotFoundError: if ``path`` does not exist.
+        ValueError: if the file is not a valid PLY.
     """
-    if not path.exists():
-        raise FileNotFoundError(f"PLY file not found: {path}")
+    from bundle.gs3d.ply import property_names, read_ply_header
 
-    raise NotImplementedError("PLY reader implementation pending")
+    cloud = await read_ply_header(path)
+    props = property_names(cloud.sh_degree)
+    return PlyInfo(
+        path=cloud.path,
+        vertex_count=cloud.num_gaussians,
+        has_colors="f_dc_0" in props,
+        has_normals="nx" in props,
+    )
