@@ -27,13 +27,16 @@ import importlib.resources as pkg_resources
 import json
 import tempfile
 from pathlib import Path
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from bundle.core import logger
-from bundle.core.data import Data
+from bundle.core.data import Data, PrivateAttr
 
 from ..base import Stage
 from ..gaussians.base import GaussiansOutput
+
+if TYPE_CHECKING:
+    from bundle.blender.runtime import BlenderEnvironment
 
 log = logger.get_logger(__name__)
 
@@ -81,6 +84,11 @@ class BlenderStage(Stage):
     name: str = "blender"
     script_name: str = "ply_to_blend"
 
+    # Cached Blender environment — discovered lazily by ``_get_environment``
+    # and reused across ``check_deps`` / ``_run`` to avoid redundant filesystem
+    # probing.
+    _env_cache: "BlenderEnvironment | None" = PrivateAttr(default=None)
+
     # -- Extensibility hooks ------------------------------------------------
 
     def _build_params(self, inp: BlenderInput, render_dir: Path | None) -> dict:
@@ -103,12 +111,22 @@ class BlenderStage(Stage):
 
     # -- Deps / run ---------------------------------------------------------
 
+    async def _get_environment(self) -> "BlenderEnvironment":
+        """Discover the Blender environment once and cache it on the stage.
+
+        ``check_deps`` and ``_run`` both need the environment; sharing the
+        cached result avoids re-probing the filesystem on the second call.
+        """
+        if self._env_cache is None:
+            from bundle.blender.runtime import discover_default_environment
+
+            self._env_cache = await discover_default_environment()
+        return self._env_cache
+
     async def check_deps(self) -> bool:
         """Return True if a usable Blender installation is discoverable."""
         try:
-            from bundle.blender.runtime import discover_default_environment
-
-            await discover_default_environment()
+            await self._get_environment()
             return True
         except Exception:
             log.warning("Blender not found — skipping blender stage")
@@ -119,10 +137,9 @@ class BlenderStage(Stage):
         return await self._run(input)
 
     async def _run(self, inp: BlenderInput) -> BlenderOutput:
-        from bundle.blender.runtime import discover_default_environment
         from bundle.blender.runtime.session import BlenderLaunchRequest, BlenderSession
 
-        env = await discover_default_environment()
+        env = await self._get_environment()
 
         inp.blend_output.parent.mkdir(parents=True, exist_ok=True)
 
