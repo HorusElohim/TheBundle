@@ -96,12 +96,18 @@ if imported:
 if do_render and render_out:
     scene = bpy.context.scene
 
-    # EEVEE requires a display/GPU context — fall back to CYCLES in headless mode.
+    # Blender engine enum: EEVEE -> "BLENDER_EEVEE", CYCLES -> "CYCLES".
+    # EEVEE also needs a display/GPU context; fall back to CYCLES headless.
     if bpy.app.background and engine == "EEVEE":
-        scene.render.engine = "CYCLES"
+        engine_id = "CYCLES"
+    elif engine == "CYCLES":
+        engine_id = "CYCLES"
+    else:  # EEVEE with a display available
+        engine_id = "BLENDER_EEVEE"
+
+    scene.render.engine = engine_id
+    if engine_id == "CYCLES":
         scene.cycles.device = "CPU"
-    else:
-        scene.render.engine = "BLENDER_" + engine
 
     scene.render.filepath = render_out + "/"
     scene.render.image_settings.file_format = "PNG"
