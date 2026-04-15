@@ -61,6 +61,9 @@ class Pipeline(Entity):
         workspace: Workspace,
         blender: bool = True,
         visualize: bool = False,
+        blend_output: Path | None = None,
+        render: bool = False,
+        engine: str = "EEVEE",
     ) -> Pipeline:
         """Create a pipeline that starts from an existing GaussiansOutput.
 
@@ -73,6 +76,10 @@ class Pipeline(Entity):
             blender: Include the Blender import/render stage.
             visualize: Not supported for synthetic input (requires SfM camera
                 poses).  Raises ``NotImplementedError`` if ``True``.
+            blend_output: Override for the ``.blend`` destination.  Defaults to
+                ``workspace.root/blender/scene.blend``.
+            render: Render the scene after importing the PLY.
+            engine: Render engine passed through to the Blender stage.
         """
         if visualize:
             raise NotImplementedError(
@@ -85,7 +92,9 @@ class Pipeline(Entity):
         stages: list[Stage] = [create_blender_stage()]
         seed = BlenderInput(
             gaussians_output=gaussians_output,
-            blend_output=workspace.root / "blender" / "scene.blend",
+            blend_output=blend_output if blend_output is not None else workspace.root / "blender" / "scene.blend",
+            render=render,
+            engine=engine,
         )
         return cls(workspace=workspace, stages=stages, seed_input=seed)
 
@@ -137,7 +146,13 @@ class Pipeline(Entity):
 
     async def run(self) -> dict[str, Data]:
         """Execute all stages in order, returning a map of stage_name -> output."""
-        self.workspace.ensure_dirs()
+        if self.seed_input is None:
+            # Full pipeline from images → create the canonical workspace layout.
+            self.workspace.ensure_dirs()
+        else:
+            # Seeded pipeline (e.g. from_gaussians) — only the root is needed so
+            # we don't pollute the user's directory with empty images/, sfm/…
+            self.workspace.root.mkdir(parents=True, exist_ok=True)
         results: dict[str, Data] = {}
         current_input: Data | None = None
 
