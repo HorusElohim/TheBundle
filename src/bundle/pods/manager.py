@@ -331,7 +331,7 @@ class PodManager(Entity):
             compose_file = cpu_compose
         if not compose_file.exists():
             raise click.ClickException(f"docker-compose.yml not found for pod at '{cwd}'.")
-        ansi_flag = " --ansi always" if sys.platform != "win32" else ""
+        ansi_flag = " --progress plain" if sys.platform != "win32" else ""
         cmd = f'{self._compose_cmd}{ansi_flag} -f "{compose_file}" {subcommand}'
         if pod.service:
             cmd = f"{cmd} {pod.service}"
