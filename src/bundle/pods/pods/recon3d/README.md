@@ -221,6 +221,7 @@ already pre-computed. Fetch the others with `bundle recon3d data fetch
 | [`sfm/colmap`](sfm/colmap/README.md)       | Structure-from-Motion (COLMAP)  | CUDA (or `Dockerfile.cpu`) | `thebundle/bases/nvidia` | Default SfM |
 | [`sfm/pycusfm`](sfm/pycusfm/README.md)     | Structure-from-Motion (pyCuSFM) | CUDA         | `thebundle/bases/torch` | Faster CUDA-native alternative |
 | [`gaussians/3dgrut`](gaussians/3dgrut/README.md) | 3DGS training + USDZ export | CUDA     | `thebundle/bases/torch` | NVIDIA 3dgrut ([3DGUT / 3DGRT](#24-3dgut-vs-3dgrt)) |
+| [`gaussians/fastergs`](gaussians/fastergs/README.md) | Faster-GS 3DGS training (experimental) | CUDA | `thebundle/bases/torch` | [Faster-GS](https://github.com/nerficg-project/faster-gaussian-splatting) — ~3–5× speedup |
 | `gaussians/opensplat`                      | 3DGS training (cross-platform)  | CUDA / Metal / CPU | — | Lightweight fallback |
 | [`ppisp`](ppisp/README.md)                 | Image preprocessing (white-balance, etc.) | — | — | Optional step before SfM |
 
