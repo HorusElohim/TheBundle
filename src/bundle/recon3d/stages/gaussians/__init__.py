@@ -5,11 +5,13 @@ from __future__ import annotations
 from bundle.core.platform import platform_info
 
 from .base import GaussiansStage
+from .fastergs import FasterGsGaussians
 from .threedgrut import ThreeDGrutGaussians
 
 _RENDERERS: dict[str, type[GaussiansStage]] = {
     "3dgut": ThreeDGrutGaussians,
     "3dgrt": ThreeDGrutGaussians,  # same tool, different Hydra config
+    "fastergs": FasterGsGaussians,
 }
 
 
@@ -41,4 +43,4 @@ def create_gaussians_stage(
     return cls(renderer=renderer, **kwargs)
 
 
-__all__ = ["GaussiansStage", "ThreeDGrutGaussians", "create_gaussians_stage"]
+__all__ = ["GaussiansStage", "ThreeDGrutGaussians", "FasterGsGaussians", "create_gaussians_stage"]

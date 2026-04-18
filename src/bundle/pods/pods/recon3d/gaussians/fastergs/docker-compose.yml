@@ -1,0 +1,27 @@
+services:
+  fastergs:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        BASE_TAG: latest
+        NERFICG_REF: main
+        FASTERGS_REF: main
+    image: thebundle/recon3d/gaussians/fastergs:latest
+    container_name: thebundle.recon3d.gaussians.fastergs
+    restart: unless-stopped
+    gpus: all
+    tty: true
+    stdin_open: true
+    shm_size: "16gb"
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility,graphics
+      - NERFICG_DIR=/opt/nerficg
+      - RECON3D_DATA_ROOT=/workspace/data
+    volumes:
+      - ../../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+      - ../../data:/workspace/data
+    command: ["sleep", "infinity"]

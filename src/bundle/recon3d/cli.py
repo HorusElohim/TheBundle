@@ -109,7 +109,7 @@ async def data_locate(scene: str, data_root: Path):
 @click.option("--sfm-backend", type=click.Choice(["colmap", "pycusfm"]), default="colmap", help="SfM backend.")
 @click.option(
     "--renderer",
-    type=click.Choice(["auto", "3dgut", "3dgrt"]),
+    type=click.Choice(["auto", "3dgut", "3dgrt", "fastergs"]),
     default="auto",
     help="Gaussian training renderer (CUDA required).",
 )
@@ -205,7 +205,7 @@ async def sfm(workspace: Path, backend: str, use_gpu: bool, matcher: str):
 @click.option("--experiment", default="default", help="Experiment name for output directory.")
 @click.option(
     "--renderer",
-    type=click.Choice(["auto", "3dgut", "3dgrt"]),
+    type=click.Choice(["auto", "3dgut", "3dgrt", "fastergs"]),
     default="auto",
     help="Gaussian training renderer (CUDA required).",
 )
