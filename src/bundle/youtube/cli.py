@@ -66,6 +66,19 @@ def _select_stream(options: list[YoutubeStreamOption], label: str, best: bool) -
     return options[choice - 1].itag
 
 
+async def _handle_existing(db: Database, track, want_mp3: bool) -> None:
+    """Track already in the database: extract MP3 from the existing MP4 if requested and missing."""
+    existing = db.tracks[track.identifier]
+    mp4_path = existing.path.with_suffix(".mp4")
+    mp3_path = existing.path.with_suffix(".mp3")
+    if want_mp3 and mp4_path.exists() and not mp3_path.exists():
+        log.info(f"🎶 Extracting MP3 from existing MP4 - {track.filename}")
+        existing_mp4 = await media.MP4.load(mp4_path)
+        db.add(await existing_mp4.extract_mp3())
+    else:
+        log.info(f"??? Already present - {track.filename}")
+
+
 @click.group()
 @tracer.Sync.decorator.call_raise
 async def youtube():
@@ -121,6 +134,11 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
         log.error("Unable to resolve metadata for %s", url)
         return 0
 
+    # Single video already present: handle (incl. MP3 extraction) without resolving stream URLs.
+    if not dry_run and db.has(probe_track.identifier) and not await pytube.is_playlist(url):
+        await _handle_existing(db, probe_track, mp3 or mp3_only)
+        return 0
+
     if not mp3_only:
         selected_video_itag = _select_stream(probe_track.video_streams, "video", best)
     if mp3_only:
@@ -146,7 +164,7 @@ async def download(url, directory, dry_run, mp3, mp3_only, best):
             log.error("Selected video quality is unavailable for %s", url)
             continue
         if db.has(resolved_track.identifier):
-            log.info(f"??? Already present - {resolved_track.filename}")
+            await _handle_existing(db, resolved_track, mp3 or mp3_only)
             continue
         # Download MP4
         if not mp3_only:
