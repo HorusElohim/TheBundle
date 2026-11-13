@@ -21,10 +21,14 @@ class MarvelRivalsError(RuntimeError):
     """A player lookup failed without exposing provider internals."""
 
 
-class MatchStats(data.Data):
-    """Shared combat statistics for ranked matches and individual heroes."""
+class MarvelData(data.Data):
+    """API model with stable, canonical Data serialization."""
 
-    model_config = data.configuration(extra="ignore")
+    model_config = data.configuration(extra="ignore") | {"validate_by_name": True}
+
+
+class MatchStats(MarvelData):
+    """Shared combat statistics for ranked matches and individual heroes."""
 
     matches: int = Field(0, validation_alias=AliasChoices("total_matches", "matches"))
     wins: int = Field(0, validation_alias=AliasChoices("total_wins", "wins"))
@@ -49,10 +53,8 @@ class HeroStats(MatchStats):
     play_time: int = 0
 
 
-class PlayerStats(data.Data):
+class PlayerStats(MarvelData):
     """Player overview with aliases for the API's nested response shape."""
-
-    model_config = data.configuration(extra="ignore")
 
     uid: int
     name: str = Field(validation_alias=AliasChoices("name", AliasPath("player", "name"), AliasPath("player", "nickname")))
@@ -85,10 +87,8 @@ class PlayerStats(data.Data):
                 raise MarvelRivalsError("The player API returned an unexpected response.")
 
 
-class Champion(data.Data):
+class Champion(MarvelData):
     """A playable hero from the public roster."""
-
-    model_config = data.configuration(extra="ignore")
 
     id: str | int
     name: str
@@ -117,10 +117,8 @@ class ChampionStats(MatchStats):
     total_damage_taken: int = 0
 
 
-class Patch(data.Data):
+class Patch(MarvelData):
     """A dated game or balance update."""
-
-    model_config = data.configuration(extra="ignore")
 
     title: str = Field(validation_alias=AliasChoices("patchTitle", "title"))
     date: str = Field(validation_alias=AliasChoices("patchDate", "date"))
