@@ -118,7 +118,7 @@ def test_unexpected_response_is_rejected() -> None:
     [
         (401, "credentials"),
         (403, "credentials"),
-        (404, "No Marvel Rivals player"),
+        (404, "resource not found"),
         (429, "rate limit"),
         (502, "HTTP 502"),
     ],
@@ -134,6 +134,8 @@ async def test_api_status_errors(status: int, message: str) -> None:
             return None
 
     class Session:
+        closed = False
+
         def get(self, *_args, **_kwargs):
             response = Response()
             response.status = status
@@ -158,3 +160,113 @@ async def test_invalid_uid_and_season() -> None:
             await client.player("75978910", season=100)
     finally:
         await client.close()
+
+
+@pytest.mark.asyncio
+async def test_champion_list_and_role_names() -> None:
+    from unittest.mock import AsyncMock
+
+    from bundle.marvel_rivals.client import MarvelRivalsClient
+
+    client = MarvelRivalsClient("test-key")
+    client._get = AsyncMock(
+        return_value={
+            "heroes": [
+                {"id": 1032, "name": "Doctor Strange", "role": "Tank"},
+                {"id": 1001, "name": "Iron Man", "role": "DPS"},
+                {"id": 1043, "name": "Luna Snow", "role": "Support"},
+            ]
+        }
+    )
+    heroes = await client.champions()
+    assert [hero.name for hero in heroes] == ["Doctor Strange", "Iron Man", "Luna Snow"]
+    assert [hero.category for hero in heroes] == ["Vanguard", "Duelist", "Strategist"]
+    client._get.assert_awaited_once_with("heroes")
+
+
+@pytest.mark.asyncio
+async def test_champion_lookup_by_name_or_id() -> None:
+    from unittest.mock import AsyncMock
+
+    from bundle.marvel_rivals.client import MarvelRivalsClient
+
+    payload = {
+        "hero_id": 1032,
+        "hero_name": "Doctor Strange",
+        "matches": 10,
+        "wins": 6,
+        "k": 30,
+        "d": 15,
+        "a": 8,
+        "total_hero_damage": 10000,
+    }
+    client = MarvelRivalsClient("test-key")
+    client._get = AsyncMock(return_value=payload)
+    by_name = await client.champion_stats("Doctor Strange")
+    assert (by_name.name, by_name.id, by_name.win_rate) == ("Doctor Strange", 1032, 60)
+    assert (by_name.kills, by_name.deaths, by_name.assists) == (30, 15, 8)
+    client._get.assert_awaited_with("heroes/hero/Doctor%20Strange/stats")
+
+    await client.champion_stats("1032")
+    client._get.assert_awaited_with("heroes/hero/1032/stats")
+
+
+@pytest.mark.asyncio
+async def test_updates_merge_and_order() -> None:
+    from unittest.mock import AsyncMock
+
+    from bundle.marvel_rivals.client import MarvelRivalsClient
+
+    async def get(path: str, *, params: dict[str, int] | None = None) -> dict:
+        entries = {
+            "patch-notes": [
+                {"patchTitle": "New hero", "patchDate": "2026-11-13", "previewText": "New playable hero."},
+                {"patchTitle": "Gameplay", "patchDate": "2026-11-10"},
+            ],
+            "balances": [
+                {"patchTitle": "Hero balance", "patchDate": "2026-11-12"},
+            ],
+        }
+        return {"formatted_patches": entries[path]}
+
+    client = MarvelRivalsClient("test-key")
+    client._get = AsyncMock(side_effect=get)
+    updates = await client.updates(limit=3)
+    assert [patch.title for patch in updates] == ["New hero", "Hero balance", "Gameplay"]
+    assert updates[0].summary == "New playable hero."
+    assert (await client.balances())[0].kind == "Patch"
+
+
+@pytest.mark.asyncio
+async def test_malformed_champion_and_patch_payloads() -> None:
+    from unittest.mock import AsyncMock
+
+    from bundle.marvel_rivals.client import MarvelRivalsClient
+
+    client = MarvelRivalsClient("test-key")
+    client._get = AsyncMock(return_value={"unexpected": []})
+    with pytest.raises(MarvelRivalsError, match="catalogue"):
+        await client.champions()
+    with pytest.raises(MarvelRivalsError, match="Patch notes"):
+        await client.balances()
+
+
+@pytest.mark.asyncio
+async def test_empty_api_key_fails_without_creating_session() -> None:
+    from bundle.marvel_rivals.client import MarvelRivalsClient
+
+    client = MarvelRivalsClient("")
+    assert client.session is None
+    with pytest.raises(MarvelRivalsError, match="MARVEL_RIVALS_API_KEY"):
+        await client.champions()
+    assert client.session is None
+
+
+def test_discord_command_structure() -> None:
+    pytest.importorskip("discord")
+    from bundle.discord.cogs.marvel_rivals import MarvelRivalsCog
+
+    root = MarvelRivalsCog.mr
+    assert {"stats", "meta", "updates", "champions", "c"} <= {command.name for command in root.commands}
+    c_group = root.get_command("c")
+    assert {"list", "stats"} <= {command.name for command in c_group.commands}
