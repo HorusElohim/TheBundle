@@ -56,7 +56,7 @@ class NestedModel(TestEntity):
 
 
 class RecursiveModel(TestEntity):
-    children: None | list[RecursiveModel] = None
+    children: list[RecursiveModel] | None = None
     model_config = core.data.configuration(json_encoders=JSON_ENCODERS)
 
 
@@ -65,7 +65,7 @@ class TestComplexEntity(TestEntity):
     int_field: int = core.data.Field(default=1)
     float_field: float = core.data.Field(default=1.0)
     bool_field: bool = core.data.Field(default=False)
-    optional_field: None | str = core.data.Field(default=None)
+    optional_field: str | None = core.data.Field(default=None)
     list_field: list[int] = core.data.Field(default_factory=list)
     set_field: set[str] = core.data.Field(default_factory=set)
     dict_field: dict[str, int] = core.data.Field(default_factory=dict)
@@ -73,7 +73,7 @@ class TestComplexEntity(TestEntity):
     union_field: int | str = core.data.Field(default=0)
     nested_model: NestedModel = core.data.Field(default_factory=NestedModel)
     nested_model_list: list[NestedModel] = core.data.Field(default_factory=list)
-    optional_nested_model: None | NestedModel = core.data.Field(default=None)
+    optional_nested_model: NestedModel | None = core.data.Field(default=None)
     recursive_model: RecursiveModel = core.data.Field(default_factory=RecursiveModel)
     dynamic_default_field: str = core.data.Field(default_factory=lambda: "Dynamic")
     file_path: Path = core.data.Field(default_factory=Path)

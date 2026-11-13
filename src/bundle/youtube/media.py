@@ -118,7 +118,7 @@ async def download_audio(youtube_track: YoutubeTrackData, destination_folder: Pa
 
 
 @tracer.Async.decorator.call_raise
-async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: None | bytes = None) -> MP3:
+async def extract_mp3_from_path(source_path: Path, track: TrackData, thumbnail: bytes | None = None) -> MP3:
     mp3_path = source_path.with_suffix(".mp3")
     (
         ffmpeg.input(str(source_path))
@@ -142,7 +142,7 @@ class MP3(MP3TrackData):
         return cls(path=path, author=track.author, title=track.title, duration=track.duration)
 
     @tracer.Async.decorator.call_raise
-    async def save(self, thumbnail: None | bytes = None) -> None:
+    async def save(self, thumbnail: bytes | None = None) -> None:
         mp3 = MutagenMP3(self.path, ID3=ID3)
         # Add ID3 tag if it doesn't exist
         try:
@@ -185,7 +185,7 @@ class MP4(MP4TrackData):
         return cls(path=path, author=track.author, title=track.title, duration=track.duration)
 
     @tracer.Async.decorator.call_raise
-    async def save(self, thumbnail: None | bytes = None) -> None:
+    async def save(self, thumbnail: bytes | None = None) -> None:
         mp4 = MutagenMP4(self.path)
         # Set metadata
         mp4["\xa9nam"] = self.title  # Title
