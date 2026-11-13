@@ -36,10 +36,11 @@ COG_META: dict[str, tuple[str, str]] = {
     "music": ("\U0001f3b5", "Music"),
     "youtube": ("\U0001f3ac", "YouTube"),
     "core": ("\U0001f527", "Utilities"),
+    "marvel_rivals": ("\U0001f3ae", "Marvel Rivals"),
 }
 
 # Cog display order (unlisted cogs appear at the end)
-COG_ORDER = ["music", "youtube", "core"]
+COG_ORDER = ["music", "youtube", "marvel_rivals", "core"]
 
 
 class BundleHelpCommand(commands.HelpCommand):

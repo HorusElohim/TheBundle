@@ -31,6 +31,7 @@ from bundle.core import data, logger, tracer
 from .cogs.core import CoreCog
 from .cogs.greet import GreetCog
 from .cogs.lifecycle import LifecycleCog
+from .cogs.marvel_rivals import MarvelRivalsCog
 from .cogs.music import MusicCog
 from .cogs.youtube import YoutubeCog
 from .embeds import EmbedFactory
@@ -55,6 +56,7 @@ class BotConfig(data.Data):
     token: str
     bot_name: str = DEFAULT_BOT_NAME
     command_prefix: str = "!"
+    marvel_rivals_api_key: str | None = None
     intents_message_content: bool = True
     intents_members: bool = True
 
@@ -149,6 +151,7 @@ class Bot(commands.Bot):
             CoreCog(self),
             GreetCog(self),
             LifecycleCog(self),
+            MarvelRivalsCog(self),
             YoutubeCog(self),
             MusicCog(self),
         ):

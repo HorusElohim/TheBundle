@@ -66,5 +66,10 @@ async def start(bot_name: str | None, token: str | None, prefix: str):
         log.error("No bot token provided. Use --token or set DISCORD_BOT_TOKEN env var.")
         raise click.Abort()
 
-    config = BotConfig(token=token, bot_name=bot_name, command_prefix=prefix)
+    config = BotConfig(
+        token=token,
+        bot_name=bot_name,
+        command_prefix=prefix,
+        marvel_rivals_api_key=os.environ.get("MARVEL_RIVALS_API_KEY"),
+    )
     await run_bot(config)
