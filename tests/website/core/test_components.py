@@ -22,6 +22,15 @@ from fastapi import APIRouter
 from bundle.website.builtin import components
 
 
+def _paths(router: APIRouter) -> set[str]:
+    """Resolve routes across eager and lazy FastAPI router inclusion."""
+    return {
+        path
+        for route in router.routes
+        for path in (_paths(route.original_router) if hasattr(route, "original_router") else {route.path})
+    }
+
+
 def test_websocket_component_defaults():
     default = components.WebSocketHeartbeatComponent()
     assert default.slug == "ws-heartbeat"
@@ -50,7 +59,7 @@ def test_component_context_accepts_component_instance():
 def test_attach_routes_is_page_scoped():
     router = APIRouter()
     components.attach_routes(router, components.WebSocketHeartbeatComponent())
-    paths = {route.path for route in router.routes}
+    paths = _paths(router)
     assert "/ws/heartbeat" in paths
     assert "/ws/toast" not in paths
     assert "/ws/ecc" not in paths
@@ -63,7 +72,7 @@ def test_attach_routes_supports_multiple_ecc_instances():
         components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-1")),
         components.WebSocketECCComponent(params=components.WebSocketComponentParams(endpoint="/ws/ecc-2")),
     )
-    paths = {route.path for route in router.routes}
+    paths = _paths(router)
     assert "/ws/ecc-1" in paths
     assert "/ws/ecc-2" in paths
 
