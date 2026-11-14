@@ -19,15 +19,11 @@
 
 """CLI for the Discord bot module."""
 
-import os
-
 import rich_click as click
 
-from bundle.core import logger, tracer
+from bundle.core import tracer
 
-from .bot import BotConfig, run_bot
-
-log = logger.get_logger(__name__)
+from .bot import DEFAULT_BOT_NAME, BotConfig, run_bot
 
 
 @click.group(name="discord")
@@ -41,14 +37,15 @@ def discord():
     "--name",
     "bot_name",
     envvar="DISCORD_BOT_NAME",
-    default=None,
+    default=DEFAULT_BOT_NAME,
+    show_default=True,
     help="Bot name used for logs and the dedicated guild channel (or set DISCORD_BOT_NAME).",
 )
 @click.option(
     "--token",
     envvar="DISCORD_BOT_TOKEN",
-    default=None,
-    help="Bot token (or set DISCORD_BOT_TOKEN env var).",
+    required=True,
+    help="Bot token (or set DISCORD_BOT_TOKEN).",
 )
 @click.option(
     "--prefix",
@@ -56,20 +53,19 @@ def discord():
     default="!",
     help="Command prefix (or set DISCORD_BOT_PREFIX).",
 )
+@click.option(
+    "--marvel-rivals-api-key",
+    envvar="MARVEL_RIVALS_API_KEY",
+    default=None,
+    help="marvelrivalsapi.com key enabling the /mr commands (or set MARVEL_RIVALS_API_KEY).",
+)
 @tracer.Sync.decorator.call_raise
-async def start(bot_name: str | None, token: str | None, prefix: str):
+async def start(bot_name: str, token: str, prefix: str, marvel_rivals_api_key: str | None):
     """Start the Discord bot."""
-    bot_name = (bot_name or os.environ.get("DISCORD_BOT_NAME") or "Bundle Bot").strip() or "Bundle Bot"
-    if not token:
-        token = os.environ.get("DISCORD_BOT_TOKEN")
-    if not token:
-        log.error("No bot token provided. Use --token or set DISCORD_BOT_TOKEN env var.")
-        raise click.Abort()
-
     config = BotConfig(
         token=token,
-        bot_name=bot_name,
+        bot_name=bot_name.strip() or DEFAULT_BOT_NAME,
         command_prefix=prefix,
-        marvel_rivals_api_key=os.environ.get("MARVEL_RIVALS_API_KEY"),
+        marvel_rivals_api_key=marvel_rivals_api_key,
     )
     await run_bot(config)
