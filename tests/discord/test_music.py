@@ -15,6 +15,7 @@ import discord
 import pytest
 from discord.opus import OPUS_SILENCE
 
+from bundle.discord.cogs import music as music_module
 from bundle.discord.cogs.music import MAX_CONSECUTIVE_FAILURES, MusicCog
 from bundle.discord.cogs.music import player as player_module
 from bundle.discord.cogs.music.player import GuildPlayer, TrackProducedNoAudio
@@ -204,3 +205,21 @@ async def test_repeated_unplayable_tracks_stop_playback_instead_of_draining_the_
     assert cog._get_session(GUILD_ID) is None, "the session is stopped"
     assert guild.voice_client.disconnected
     assert "could not be played" in channel.sent[-1].description
+
+
+@pytest.mark.asyncio
+async def test_resolution_finishing_after_the_session_ended_does_not_crash(monkeypatch) -> None:
+    guild = Guild()
+    cog = MusicCog(Bot(guild))
+    cog._ensure_session(GUILD_ID, TextChannel())
+
+    async def resolve(url, **_):
+        cog._clear_session(GUILD_ID)  # e.g. /stop while a playlist is still resolving
+        return
+        yield
+
+    monkeypatch.setattr(music_module.ytdlp, "resolve", resolve)
+
+    await cog._resolve_and_queue("https://yt/mix", guild, is_first_play=True)
+
+    assert cog._get_session(GUILD_ID) is None

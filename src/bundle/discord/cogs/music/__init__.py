@@ -354,8 +354,8 @@ class MusicCog(commands.Cog, name="music"):
                         await vc.disconnect()
                     self._clear_session(guild.id)
 
-            elif gs.queue.current:
-                await gs.embed.refresh(status=vc_status(guild.voice_client))
+                elif gs.queue.current:
+                    await gs.embed.refresh(status=vc_status(guild.voice_client))
 
     # ---- commands ----
 
