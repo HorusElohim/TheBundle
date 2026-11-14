@@ -100,3 +100,13 @@ async def test_player_streams_the_audio_only_track(built_sources) -> None:
     assert await GuildPlayer(ignore_track_end).play(VoiceClient(), track, GUILD_ID)
 
     assert built_sources[0][0] == "https://audio"
+
+
+@pytest.mark.asyncio
+async def test_player_builds_the_source_off_the_event_loop(built_sources) -> None:
+    track = YoutubeTrackData(title="t", audio_url="https://audio")
+
+    await GuildPlayer(ignore_track_end).play(VoiceClient(), track, GUILD_ID)
+
+    _, on_loop_thread = built_sources[0]
+    assert not on_loop_thread, "make_source blocks up to 10 s pre-filling; it must not freeze the bot"
