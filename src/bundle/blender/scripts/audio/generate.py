@@ -18,9 +18,9 @@ FILE_NAME = "audio_scene6.blend"
 
 class AudioDriverConfig(data.Data):
     audio: Path = data.Field(default_factory=Path)
-    object: None | str = None
+    object: str | None = None
     frames: str = "auto"
-    fps: None | int = None
+    fps: int | None = None
     amp_scale: float = 5.0
     normalize: float = 0.98
     smooth: int = 0

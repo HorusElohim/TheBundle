@@ -87,7 +87,7 @@ class BlenderStage(Stage):
     # Cached Blender environment — discovered lazily by ``_get_environment``
     # and reused across ``check_deps`` / ``_run`` to avoid redundant filesystem
     # probing.
-    _env_cache: "BlenderEnvironment | None" = PrivateAttr(default=None)
+    _env_cache: BlenderEnvironment | None = PrivateAttr(default=None)
 
     # -- Extensibility hooks ------------------------------------------------
 
@@ -111,7 +111,7 @@ class BlenderStage(Stage):
 
     # -- Deps / run ---------------------------------------------------------
 
-    async def _get_environment(self) -> "BlenderEnvironment":
+    async def _get_environment(self) -> BlenderEnvironment:
         """Discover the Blender environment once and cache it on the stage.
 
         ``check_deps`` and ``_run`` both need the environment; sharing the

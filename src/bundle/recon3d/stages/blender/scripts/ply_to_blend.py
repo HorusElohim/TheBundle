@@ -98,9 +98,7 @@ if do_render and render_out:
 
     # Blender engine enum: EEVEE -> "BLENDER_EEVEE", CYCLES -> "CYCLES".
     # EEVEE also needs a display/GPU context; fall back to CYCLES headless.
-    if bpy.app.background and engine == "EEVEE":
-        engine_id = "CYCLES"
-    elif engine == "CYCLES":
+    if (bpy.app.background and engine == "EEVEE") or engine == "CYCLES":
         engine_id = "CYCLES"
     else:  # EEVEE with a display available
         engine_id = "BLENDER_EEVEE"

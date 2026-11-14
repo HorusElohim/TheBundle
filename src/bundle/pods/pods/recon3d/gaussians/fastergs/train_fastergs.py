@@ -14,7 +14,7 @@ The NeRFICG native flow is:
     2. Edit ``GLOBAL.DATASET_TYPE``, ``DATASET.PATH``, ``TRAINING.OUTPUT_DIR``.
     3. ``scripts/train.py -c <config>.yaml`` runs the training loop.
 
-This wrapper automates steps 1–3 so the stage stays as a single subprocess call.
+This wrapper automates steps 1-3 so the stage stays as a single subprocess call.
 """
 
 from __future__ import annotations
@@ -62,9 +62,12 @@ def main() -> int:
     create_cmd = [
         sys.executable,
         str(NERFICG_DIR / "scripts" / "create_config.py"),
-        "-m", args.method,
-        "-d", "Colmap",
-        "-o", config_name,
+        "-m",
+        args.method,
+        "-d",
+        "Colmap",
+        "-o",
+        config_name,
     ]
     print(f"[fastergs] creating config: {' '.join(create_cmd)}", flush=True)
     subprocess.run(create_cmd, check=True, cwd=str(NERFICG_DIR))
@@ -78,7 +81,8 @@ def main() -> int:
     train_cmd = [
         sys.executable,
         str(NERFICG_DIR / "scripts" / "train.py"),
-        "-c", f"configs/{config_name}.yaml",
+        "-c",
+        f"configs/{config_name}.yaml",
     ]
     print(f"[fastergs] training: {' '.join(train_cmd)}", flush=True)
     result = subprocess.run(train_cmd, cwd=str(NERFICG_DIR))

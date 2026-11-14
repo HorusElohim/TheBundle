@@ -43,4 +43,4 @@ def create_gaussians_stage(
     return cls(renderer=renderer, **kwargs)
 
 
-__all__ = ["GaussiansStage", "ThreeDGrutGaussians", "FasterGsGaussians", "create_gaussians_stage"]
+__all__ = ["FasterGsGaussians", "GaussiansStage", "ThreeDGrutGaussians", "create_gaussians_stage"]

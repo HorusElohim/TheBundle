@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pytest
@@ -63,7 +64,7 @@ def test_pick_latest_patch() -> None:
 
 
 def test_pick_latest_patch_missing_series() -> None:
-    with pytest.raises(RuntimeError, match="No Blender 9.9.x archives"):
+    with pytest.raises(RuntimeError, match=re.escape("No Blender 9.9.x archives")):
         BlenderAppManager._pick_latest_patch("blender-5.1.0-linux-x64.tar.xz", 9, 9)
 
 

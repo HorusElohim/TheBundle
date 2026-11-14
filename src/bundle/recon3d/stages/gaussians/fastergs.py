@@ -19,7 +19,7 @@ log = logger.get_logger(__name__)
 class FasterGsGaussians(GaussiansStage):
     """Faster-GS training stage (CVPR 2026).
 
-    Targets 3–5× speedup over vanilla 3DGS with comparable quality. The
+    Targets 3-5x speedup over vanilla 3DGS with comparable quality. The
     upstream package lives inside the NeRFICG framework; the pod's
     ``train_fastergs.py`` wrapper handles config generation and patching so
     this stage can invoke a single command.
@@ -34,12 +34,7 @@ class FasterGsGaussians(GaussiansStage):
         out_dir = input.images_dir.parent / "runs"
         out_dir.mkdir(parents=True, exist_ok=True)
 
-        cmd = (
-            f"python {self.wrapper_script}"
-            f" --path {scene_root}"
-            f" --out-dir {out_dir}"
-            f" --experiment {self.experiment_name}"
-        )
+        cmd = f"python {self.wrapper_script} --path {scene_root} --out-dir {out_dir} --experiment {self.experiment_name}"
 
         log.info("Faster-GS: training scene=%s -> %s/%s", scene_root, out_dir, self.experiment_name)
         await ProcessStream()(cmd)
@@ -70,7 +65,7 @@ class FasterGsGaussians(GaussiansStage):
 
     async def check_deps(self) -> bool:
         try:
-            import fastergs  # noqa: F401
+            import fastergs
 
             return True
         except ImportError:
