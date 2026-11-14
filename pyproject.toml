@@ -72,7 +72,7 @@ dev = ["snakeviz", "ruff==0.17.5"]
 pypi = ["build", "twine"]
 ble = ["bleak>=0.22.1", "pyyaml"]
 discord = ["discord.py[voice]>=2.3"]
-youtube = ["pytubefix", "mutagen", "ffmpeg-python"]
+youtube = ["pytubefix", "yt-dlp", "mutagen", "ffmpeg-python"]
 report = ["latex", "matplotlib", "h5py", "numpy"]
 web = [
     "fastapi",
@@ -91,6 +91,7 @@ website = [
     "bleak>=0.22.1",
     "pyyaml",
     "pytubefix",
+    "yt-dlp",
     "mutagen",
     "ffmpeg-python",
     "python-multipart",
@@ -109,6 +110,7 @@ all = [
     "bleak>=0.22.1",
     "pyyaml",
     "pytubefix",
+    "yt-dlp",
     "mutagen",
     "ffmpeg-python",
     "fastapi",
