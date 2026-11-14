@@ -1,0 +1,28 @@
+services:
+  ppisp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_TAG: latest
+    image: thebundle/recon3d/ppisp:latest
+    container_name: thebundle.recon3d.ppisp
+    restart: unless-stopped
+    gpus: all
+    tty: true
+    stdin_open: true
+    environment:
+      - PPISP_SOURCE=/opt/ppisp-src
+      - PPISP_INSTALL_MODE=${PPISP_INSTALL_MODE:-editable}
+      - BUNDLE_SOURCE=/opt/thebundle
+      - INSTALL_BUNDLE=${INSTALL_BUNDLE:-1}
+      - TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST:-}
+      - NVIDIA_VISIBLE_DEVICES=all
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      - RECON3D_DATA_ROOT=/workspace/data
+    volumes:
+      - ../../../../../../tmp/ppisp:/opt/ppisp-src
+      - ../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+      - ../data:/workspace/data
+    command: ["sleep", "infinity"]

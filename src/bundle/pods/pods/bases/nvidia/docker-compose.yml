@@ -1,0 +1,10 @@
+services:
+  nvidia:
+    build:
+      context: ..
+      dockerfile: nvidia/Dockerfile
+      network: host
+      args:
+        BASE_TAG: latest
+    image: thebundle/bases/nvidia:latest
+    container_name: thebundle.bases.nvidia

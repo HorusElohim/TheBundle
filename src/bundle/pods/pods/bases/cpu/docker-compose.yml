@@ -1,0 +1,10 @@
+services:
+  cpu:
+    build:
+      context: ..
+      dockerfile: cpu/Dockerfile
+      network: host
+      args:
+        BUNDLE_VERSION: ${BUNDLE_VERSION:-latest}
+    image: thebundle/bases/cpu:latest
+    container_name: thebundle.bases.cpu

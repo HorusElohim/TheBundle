@@ -1,0 +1,18 @@
+services:
+  discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_TAG: latest
+    image: thebundle/services/discord-bot:latest
+    container_name: thebundle.services.discord-bot
+    restart: unless-stopped
+    init: true
+    tty: true
+    cap_add:
+      - SYS_NICE
+    network_mode: "host"
+    env_file:
+      - path: .discord.env
+        required: true

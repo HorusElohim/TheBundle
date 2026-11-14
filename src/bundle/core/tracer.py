@@ -84,10 +84,12 @@ class Sync:
                 result = cast(R, func(*args, **kwargs))
             log.callable_success(func, args, kwargs, result, stacklevel, log_level)
         except Exception as exception:
-            if isinstance(exception, asyncio.CancelledError):
-                log.callable_exception(func, args, kwargs, exception, stacklevel, exc_log_level)
-            else:
-                log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
+            # Skip logging for ClickException — it's a user-facing signal, not an unexpected error
+            if type(exception).__name__ != "ClickException":
+                if isinstance(exception, asyncio.CancelledError):
+                    log.callable_exception(func, args, kwargs, exception, stacklevel, exc_log_level)
+                else:
+                    log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
             return None, exception
 
         return result, None
@@ -209,7 +211,9 @@ class Async:
             log.callable_exception(func, args, kwargs, cancel_exception, stacklevel, exc_log_level)
             return None, cancel_exception
         except Exception as exception:
-            log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
+            # Skip logging for ClickException — it's a user-facing signal, not an unexpected error
+            if type(exception).__name__ != "ClickException":
+                log.callable_cancel(func, args, kwargs, exception, stacklevel, exc_log_level)
             return None, exception
 
     @staticmethod

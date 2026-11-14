@@ -1,0 +1,13 @@
+services:
+  bundle-test-report:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        BASE_TAG: latest
+    image: thebundle/tools/bundle-test-report:latest
+    container_name: thebundle.tools.bundle-test-report
+    tty: true
+    volumes:
+      - ../../../../../../references:/data/references:ro
+      - ../../../../../../performances:/data/performances

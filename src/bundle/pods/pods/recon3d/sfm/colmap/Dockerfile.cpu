@@ -1,0 +1,42 @@
+ARG BASE_TAG=latest
+FROM thebundle/bases/cpu:${BASE_TAG}
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    cmake \
+    ninja-build \
+    libboost-program-options-dev \
+    libboost-filesystem-dev \
+    libboost-graph-dev \
+    libboost-system-dev \
+    libeigen3-dev \
+    libflann-dev \
+    libfreeimage-dev \
+    libmetis-dev \
+    libgoogle-glog-dev \
+    libgflags-dev \
+    libsqlite3-dev \
+    libglew-dev \
+    qtbase5-dev \
+    libqt5opengl5-dev \
+    libcgal-dev \
+    libceres-dev \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG COLMAP_VERSION=3.11.1
+RUN git clone --depth 1 --branch ${COLMAP_VERSION} https://github.com/colmap/colmap.git /tmp/colmap \
+    && mkdir /tmp/colmap/build && cd /tmp/colmap/build \
+    && cmake .. -GNinja \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/usr/local \
+        -DCUDA_ENABLED=OFF \
+    && ninja -j"$(nproc)" \
+    && ninja install \
+    && rm -rf /tmp/colmap
+
+WORKDIR /workspace
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

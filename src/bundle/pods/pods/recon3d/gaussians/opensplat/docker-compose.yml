@@ -1,0 +1,21 @@
+services:
+  opensplat:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      network: host
+      args:
+        BASE_TAG: latest
+        OPENSPLAT_VERSION: "1.4.1"
+    image: thebundle/recon3d/gaussians/opensplat:latest
+    container_name: thebundle.recon3d.gaussians.opensplat
+    restart: unless-stopped
+    tty: true
+    stdin_open: true
+    environment:
+      - RECON3D_DATA_ROOT=/workspace/data
+    volumes:
+      - ../../../../../../../:/opt/thebundle
+      - ./workspace:/workspace
+      - ../../data:/workspace/data
+    command: ["sleep", "infinity"]
