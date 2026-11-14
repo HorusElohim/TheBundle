@@ -67,6 +67,17 @@ def test_buffer_underrun_plays_silence_instead_of_ending_the_track() -> None:
     assert drain(audio)[-1] == b"", "the track ends once ffmpeg really finishes"
 
 
+@pytest.mark.parametrize("frames", [[], [FRAME]])
+def test_container_headers_are_not_playable_audio(frames) -> None:
+    audio = BufferedOpusAudio(ScriptedSource([b"OpusHead\x01", b"OpusTags\x00", *frames]))
+    assert audio.wait_ready()
+    try:
+        assert drain(audio) == [*frames, b""], "Ogg headers must not be sent as voice packets"
+        assert audio.produced_audio == bool(frames), "header-only output is an unplayable track"
+    finally:
+        audio.cleanup()
+
+
 class VoiceClient:
     """Records what the player hands to Discord."""
 
