@@ -266,7 +266,7 @@ class Browser(entity.Entity):
             One column: field name, CSS selector, parser type, and optional base_url for URL parsing.
             """
 
-            class Type(Enum):  # noqa: F811
+            class Type(Enum):
                 TEXT = "text"
                 INT = "int"
                 URL = "url"

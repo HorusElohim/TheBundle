@@ -224,11 +224,11 @@ class Platform(Entity):
     env: dict = data.Field(default_factory=lambda: dict(os.environ), frozen=True)
     is_64bits: bool = data.Field(default=sys.maxsize > 2**32, frozen=True)
     pid: int = data.Field(default=os.getpid(), frozen=True)
-    uid: None | int = data.Field(default=(os.getuid() if hasattr(os, "getuid") else None), frozen=True)
-    gid: None | int = data.Field(default=(os.getgid() if hasattr(os, "getgid") else None), frozen=True)
+    uid: int | None = data.Field(default=(os.getuid() if hasattr(os, "getuid") else None), frozen=True)
+    gid: int | None = data.Field(default=(os.getgid() if hasattr(os, "getgid") else None), frozen=True)
 
     # Platform-specific attributes
-    darwin: None | Darwin = data.Field(default_factory=Darwin.resolve, frozen=True)
+    darwin: Darwin | None = data.Field(default_factory=Darwin.resolve, frozen=True)
 
     @property
     def platform_string(self) -> str:
