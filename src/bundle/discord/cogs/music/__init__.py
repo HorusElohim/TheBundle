@@ -30,7 +30,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bundle.core import logger, tracer
-from bundle.youtube import pytube
+from bundle.youtube import ytdlp
 from bundle.youtube.track import YoutubeResolveOptions
 
 from .controls import PlayerControls, QueuePaginator
@@ -46,6 +46,7 @@ log = logger.get_logger(__name__)
 ALONE_TIMEOUT = 30  # seconds before auto-disconnect when alone in VC
 PAUSE_TIMEOUT = 300  # seconds before auto-disconnect when paused (5 min)
 MAX_CONSECUTIVE_FAILURES = 3  # unplayable tracks in a row before playback stops
+PLAYLIST_LIMIT = 50  # tracks queued from one playlist; a YouTube Mix lists hundreds
 
 
 @dataclass
@@ -308,7 +309,7 @@ class MusicCog(commands.Cog, name="music"):
         added = 0
 
         try:
-            async for track in pytube.resolve(url, options=YoutubeResolveOptions(best=True)):
+            async for track in ytdlp.resolve(url, options=YoutubeResolveOptions(best=True), limit=PLAYLIST_LIMIT):
                 gs = self._get_session(guild.id)
                 if not gs:
                     return
