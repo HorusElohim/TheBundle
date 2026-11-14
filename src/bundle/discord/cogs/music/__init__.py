@@ -84,6 +84,7 @@ class MusicCog(commands.Cog, name="music"):
     def _clear_session(self, guild_id: int) -> None:
         gs = self._sessions.pop(guild_id, None)
         if gs:
+            log.info("Music session ended in guild %s", guild_id)
             for task in gs.resolve_tasks:
                 task.cancel()
             if gs.alone_task and not gs.alone_task.done():
@@ -126,6 +127,7 @@ class MusicCog(commands.Cog, name="music"):
             await self._play_current(guild)
             return
 
+        log.info("Playing '%s' in guild %s (%d/%d)", track.title, guild.id, gs.queue.index + 1, len(gs.queue))
         self._cancel_pause_timer(guild.id)
         view = PlayerControls(self, guild.id)
         gs.embed.view = view
