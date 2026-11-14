@@ -11,12 +11,15 @@ from __future__ import annotations
 
 import threading
 
+import discord
 import pytest
 from discord.opus import OPUS_SILENCE
 
+from bundle.discord.cogs.music import MAX_CONSECUTIVE_FAILURES, MusicCog
 from bundle.discord.cogs.music import player as player_module
-from bundle.discord.cogs.music.player import GuildPlayer
+from bundle.discord.cogs.music.player import GuildPlayer, TrackProducedNoAudio
 from bundle.discord.cogs.music.source import BufferedOpusAudio
+from bundle.discord.embeds import EmbedFactory
 from bundle.youtube.track import YoutubeTrackData
 
 FRAME = b"opus-frame"
@@ -110,3 +113,94 @@ async def test_player_builds_the_source_off_the_event_loop(built_sources) -> Non
 
     _, on_loop_thread = built_sources[0]
     assert not on_loop_thread, "make_source blocks up to 10 s pre-filling; it must not freeze the bot"
+
+
+async def play_to_the_end(monkeypatch: pytest.MonkeyPatch, frames: list[bytes]) -> tuple[GuildPlayer, list[Exception | None]]:
+    """Play one track whose ffmpeg output is `frames`, then fire Discord's after-callback."""
+    ended_with: list[Exception | None] = []
+
+    async def on_track_end(guild_id: int, error: Exception | None) -> None:
+        ended_with.append(error)
+
+    player = GuildPlayer(on_track_end)
+    voice = VoiceClient()
+    monkeypatch.setattr(player_module, "make_source", lambda url: BufferedOpusAudio(ScriptedSource(frames)))
+    await player.play(voice, YoutubeTrackData(title="t", audio_url="https://audio"), GUILD_ID)
+    drain(voice.source)
+    await player._after_track(GUILD_ID, None)
+    return player, ended_with
+
+
+@pytest.mark.asyncio
+async def test_a_track_that_produced_no_audio_ends_as_a_failure(monkeypatch) -> None:
+    player, ended_with = await play_to_the_end(monkeypatch, [])
+
+    assert isinstance(ended_with[0], TrackProducedNoAudio)
+    assert player.consecutive_failures == 1
+
+
+@pytest.mark.asyncio
+async def test_a_track_that_played_resets_the_failure_count(monkeypatch) -> None:
+    player, ended_with = await play_to_the_end(monkeypatch, [FRAME])
+
+    assert ended_with == [None]
+    assert player.consecutive_failures == 0
+
+
+class TextChannel:
+    def __init__(self) -> None:
+        self.sent: list[discord.Embed] = []
+
+    async def send(self, *, embed: discord.Embed, **_) -> None:
+        self.sent.append(embed)
+
+
+class ConnectedVoice(VoiceClient):
+    def __init__(self) -> None:
+        super().__init__()
+        self.disconnected = False
+
+    def is_playing(self) -> bool:
+        return False
+
+    def is_paused(self) -> bool:
+        return False
+
+    def is_connected(self) -> bool:
+        return not self.disconnected
+
+    async def disconnect(self) -> None:
+        self.disconnected = True
+
+
+class Guild:
+    def __init__(self) -> None:
+        self.id = GUILD_ID
+        self.voice_client = ConnectedVoice()
+
+
+class Bot:
+    def __init__(self, guild: Guild) -> None:
+        self.guild = guild
+        self.embeds = EmbedFactory("Oltre")
+
+    def get_guild(self, guild_id: int) -> Guild | None:
+        return self.guild if guild_id == self.guild.id else None
+
+
+@pytest.mark.asyncio
+async def test_repeated_unplayable_tracks_stop_playback_instead_of_draining_the_queue(monkeypatch) -> None:
+    monkeypatch.setattr(player_module, "make_source", lambda url: BufferedOpusAudio(ScriptedSource([])))
+    guild, channel = Guild(), TextChannel()
+    cog = MusicCog(Bot(guild))
+    session = cog._ensure_session(GUILD_ID, channel)
+    for n in range(50):
+        session.queue.enqueue(YoutubeTrackData(title=f"mix track {n}", audio_url=f"https://audio/{n}"))
+    session.queue.advance()
+    session.player.consecutive_failures = MAX_CONSECUTIVE_FAILURES
+
+    await cog._on_track_end(GUILD_ID, TrackProducedNoAudio("no audio"))
+
+    assert cog._get_session(GUILD_ID) is None, "the session is stopped"
+    assert guild.voice_client.disconnected
+    assert "could not be played" in channel.sent[-1].description
