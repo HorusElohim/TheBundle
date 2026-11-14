@@ -63,6 +63,7 @@ import queue
 import threading
 
 import discord
+from discord.opus import OPUS_SILENCE
 
 from bundle.core import logger
 
@@ -107,8 +108,14 @@ class BufferedOpusAudio(discord.AudioSource):
         self._buf: queue.Queue[bytes] = queue.Queue(maxsize=JITTER_BUFFER_SIZE)
         self._ended = threading.Event()
         self._ready = threading.Event()
+        self._frames = 0
         self._reader = threading.Thread(target=self._fill, daemon=True)
         self._reader.start()
+
+    @property
+    def produced_audio(self) -> bool:
+        """True once FFmpeg delivered at least one frame; False means the stream never opened."""
+        return self._frames > 0
 
     def _fill(self) -> None:
         """Background reader thread.
@@ -122,7 +129,6 @@ class BufferedOpusAudio(discord.AudioSource):
         any caller waiting in ``wait_ready()``.
         """
         try:
-            frames = 0
             while not self._ended.is_set():
                 data = self._source.read()
                 if not data:
@@ -134,8 +140,8 @@ class BufferedOpusAudio(discord.AudioSource):
                         break
                     except queue.Full:
                         continue
-                frames += 1
-                if not self._ready.is_set() and frames >= PREFILL_FRAMES:
+                self._frames += 1
+                if not self._ready.is_set() and self._frames >= PREFILL_FRAMES:
                     self._ready.set()
         except Exception as exc:
             log.debug("Jitter buffer reader stopped: %s", exc)
@@ -151,15 +157,17 @@ class BufferedOpusAudio(discord.AudioSource):
         """Return the next Opus frame from the buffer.
 
         Called by discord.py's AudioPlayer every ~20 ms.  Returns an empty
-        ``bytes`` when the stream has ended and the buffer is drained, which
-        signals the AudioPlayer to stop and fire the ``after`` callback.
+        ``bytes`` only when the stream has ended and the buffer is drained,
+        which signals the AudioPlayer to stop and fire the ``after`` callback.
+        A buffer underrun while FFmpeg is still running plays silence, because
+        an empty frame would end the track on a momentary network stall.
         """
         if self._ended.is_set() and self._buf.empty():
             return b""
         try:
             return self._buf.get(timeout=0.5)
         except queue.Empty:
-            return b""
+            return OPUS_SILENCE
 
     def is_opus(self) -> bool:
         """Tell discord.py that frames are already Opus-encoded."""

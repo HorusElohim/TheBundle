@@ -30,7 +30,7 @@ from discord import app_commands
 from discord.ext import commands
 
 from bundle.core import logger, tracer
-from bundle.youtube import pytube
+from bundle.youtube import ytdlp
 from bundle.youtube.track import YoutubeResolveOptions
 
 from .controls import PlayerControls, QueuePaginator
@@ -45,6 +45,8 @@ log = logger.get_logger(__name__)
 
 ALONE_TIMEOUT = 30  # seconds before auto-disconnect when alone in VC
 PAUSE_TIMEOUT = 300  # seconds before auto-disconnect when paused (5 min)
+MAX_CONSECUTIVE_FAILURES = 3  # unplayable tracks in a row before playback stops
+PLAYLIST_LIMIT = 50  # tracks queued from one playlist; a YouTube Mix lists hundreds
 
 
 @dataclass
@@ -119,7 +121,7 @@ class MusicCog(commands.Cog, name="music"):
             log.warning("Voice client missing for guild %s", guild.id)
             return
 
-        if not gs.player.play(vc, track, guild.id):
+        if not await gs.player.play(vc, track, guild.id):
             gs.queue.advance()
             await self._play_current(guild)
             return
@@ -132,12 +134,25 @@ class MusicCog(commands.Cog, name="music"):
 
     async def _on_track_end(self, guild_id: int, error: Exception | None) -> None:
         gs = self._get_session(guild_id)
-        if not gs:
+        guild = self.bot.get_guild(guild_id)
+        if not gs or not guild:
+            return
+        if gs.player.consecutive_failures >= MAX_CONSECUTIVE_FAILURES:
+            await self._stop_after_repeated_failures(guild, gs, error)
             return
         gs.queue.advance()
-        guild = self.bot.get_guild(guild_id)
-        if guild:
-            await self._play_current(guild)
+        await self._play_current(guild)
+
+    async def _stop_after_repeated_failures(self, guild: discord.Guild, gs: GuildSession, error: Exception | None) -> None:
+        """Several tracks in a row produced no audio: the cause is systemic, so stop instead of draining the queue."""
+        log.error("Stopping playback in guild %s after %d failed tracks: %s", guild.id, gs.player.consecutive_failures, error)
+        await gs.embed.text_channel.send(
+            embed=self.bot.embeds.error(
+                title="Music",
+                description=f"Stopped: the last {gs.player.consecutive_failures} tracks could not be played ({error}).",
+            )
+        )
+        await self._stop_guild(guild)
 
     # ---- skip / prev ----
 
@@ -294,7 +309,7 @@ class MusicCog(commands.Cog, name="music"):
         added = 0
 
         try:
-            async for track in pytube.resolve(url, options=YoutubeResolveOptions(best=True)):
+            async for track in ytdlp.resolve(url, options=YoutubeResolveOptions(best=True), limit=PLAYLIST_LIMIT):
                 gs = self._get_session(guild.id)
                 if not gs:
                     return

@@ -49,7 +49,12 @@ def _has_video_id(url: str) -> bool:
     return bool(query.get("v"))
 
 
+# Resolution order. MWEB comes first because its stream URLs serve the whole file
+# (open-ended Range or none), which is what ffmpeg streaming and the downloader send.
+# ANDROID_VR URLs only accept small ranged chunks (403 on ``bytes=0-``), and
+# IOS/WEB URLs answer with SABR protocol payloads instead of media.
 CLIENT_PROFILES: tuple[dict[str, object], ...] = (
+    {"client": "MWEB"},
     {"client": "ANDROID_VR"},
     {"client": "ANDROID"},
     {"client": "IOS"},
