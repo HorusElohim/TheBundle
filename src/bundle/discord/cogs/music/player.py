@@ -73,7 +73,8 @@ class GuildPlayer:
         """Start FFmpeg playback.  Returns False if no stream URL available.
 
         Streams the audio-only track: a voice channel needs nothing else, and the
-        best video stream can be gigabytes.
+        best video stream can be gigabytes. The source is built in a worker thread
+        because it blocks until its jitter buffer has pre-filled.
         """
         stream_url = track.audio_url or track.video_url
         if not stream_url:
@@ -81,7 +82,7 @@ class GuildPlayer:
             return False
 
         loop = asyncio.get_running_loop()
-        source = make_source(stream_url)
+        source = await asyncio.to_thread(make_source, stream_url)
         self._reset_timing()
         vc.play(
             source,
