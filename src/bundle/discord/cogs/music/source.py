@@ -133,6 +133,9 @@ class BufferedOpusAudio(discord.AudioSource):
                 data = self._source.read()
                 if not data:
                     break
+                # FFmpegOpusAudio yields Ogg metadata before the actual Opus packets.
+                if data.startswith((b"OpusHead", b"OpusTags")):
+                    continue
                 # Retry put in short bursts so we notice _ended promptly
                 while not self._ended.is_set():
                     try:
