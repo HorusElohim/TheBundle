@@ -108,8 +108,14 @@ class BufferedOpusAudio(discord.AudioSource):
         self._buf: queue.Queue[bytes] = queue.Queue(maxsize=JITTER_BUFFER_SIZE)
         self._ended = threading.Event()
         self._ready = threading.Event()
+        self._frames = 0
         self._reader = threading.Thread(target=self._fill, daemon=True)
         self._reader.start()
+
+    @property
+    def produced_audio(self) -> bool:
+        """True once FFmpeg delivered at least one frame; False means the stream never opened."""
+        return self._frames > 0
 
     def _fill(self) -> None:
         """Background reader thread.
@@ -123,7 +129,6 @@ class BufferedOpusAudio(discord.AudioSource):
         any caller waiting in ``wait_ready()``.
         """
         try:
-            frames = 0
             while not self._ended.is_set():
                 data = self._source.read()
                 if not data:
@@ -135,8 +140,8 @@ class BufferedOpusAudio(discord.AudioSource):
                         break
                     except queue.Full:
                         continue
-                frames += 1
-                if not self._ready.is_set() and frames >= PREFILL_FRAMES:
+                self._frames += 1
+                if not self._ready.is_set() and self._frames >= PREFILL_FRAMES:
                     self._ready.set()
         except Exception as exc:
             log.debug("Jitter buffer reader stopped: %s", exc)
