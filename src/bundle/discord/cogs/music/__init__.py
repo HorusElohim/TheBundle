@@ -119,7 +119,7 @@ class MusicCog(commands.Cog, name="music"):
             log.warning("Voice client missing for guild %s", guild.id)
             return
 
-        if not gs.player.play(vc, track, guild.id):
+        if not await gs.player.play(vc, track, guild.id):
             gs.queue.advance()
             await self._play_current(guild)
             return
