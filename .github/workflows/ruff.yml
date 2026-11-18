@@ -3,11 +3,22 @@ name: ruff 🧹
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
   push:
     branches: [main]
+  workflow_dispatch:
+
+# Unrelated label events must not cancel useful CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'pull_request' && github.event.label.name && github.event.label.name != 'skip-ci' && github.run_id || 'ci' }}
+  cancel-in-progress: true
 
 jobs:
   ruff:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (!contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+       (!github.event.label.name || github.event.label.name == 'skip-ci'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

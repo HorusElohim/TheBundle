@@ -3,9 +3,23 @@ name: auto reference update 🔄
 on:
   pull_request:
     branches: [ main ]
+    types: [opened, synchronize, reopened, ready_for_review, labeled, unlabeled]
+
+# Reference-update commits must not cancel their parent workflow.
+# Unrelated label events must not cancel useful CI.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}-${{ github.event_name == 'pull_request' && github.event.label.name && github.event.label.name != 'skip-ci' && github.run_id || 'ci' }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action == 'labeled' && github.event.label.name == 'skip-ci' }}
+
+env:
+  PR_HEAD_REF: ${{ github.event.pull_request.head.ref }}
 
 jobs:
   check_commit_message:
+    if: >-
+      github.event_name != 'pull_request' ||
+      (!contains(github.event.pull_request.labels.*.name, 'skip-ci') &&
+       (!github.event.label.name || github.event.label.name == 'skip-ci'))
     runs-on: ubuntu-latest
     outputs:
       should_generate_ref: ${{ steps.check.outputs.should_generate_ref }}
@@ -79,8 +93,8 @@ jobs:
       - name: Pull changes
         run: |
           git fetch origin
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git pull origin ${{ github.event.pull_request.head.ref }}
+          git checkout "$PR_HEAD_REF"
+          git pull origin "$PR_HEAD_REF"
 
       - uses: ./.github/actions/commit-reference-push
         with:
@@ -105,8 +119,8 @@ jobs:
       - name: Pull changes
         run: |
           git fetch origin
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git pull origin ${{ github.event.pull_request.head.ref }}
+          git checkout "$PR_HEAD_REF"
+          git pull origin "$PR_HEAD_REF"
 
       - uses: ./.github/actions/commit-reference-push
         with:
@@ -131,8 +145,8 @@ jobs:
       - name: Pull changes
         run: |
           git fetch origin
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git pull origin ${{ github.event.pull_request.head.ref }}
+          git checkout "$PR_HEAD_REF"
+          git pull origin "$PR_HEAD_REF"
 
       - uses: ./.github/actions/commit-reference-push
         with:
@@ -151,8 +165,8 @@ jobs:
       - name: Pull changes
         run: |
           git fetch origin
-          git checkout ${{ github.event.pull_request.head.ref }}
-          git pull origin ${{ github.event.pull_request.head.ref }}
+          git checkout "$PR_HEAD_REF"
+          git pull origin "$PR_HEAD_REF"
 
       - uses: ./.github/actions/commit-reference-drop
         with:
