@@ -27,7 +27,38 @@ from . import data
 
 from .data import Data
 from .entity import Entity
-from .platform import Platform, platform_info
+from .platform import Platform, get_platform_info
 from .process import Process, ProcessStream, ProcessResult, ProcessError
+
 from .downloader import Downloader, DownloaderTQDM
 from .sockets import Socket
+
+__all__ = [
+    "Data",
+    "Downloader",
+    "DownloaderTQDM",
+    "Entity",
+    "Platform",
+    "Process",
+    "ProcessError",
+    "ProcessResult",
+    "ProcessStream",
+    "Socket",
+    "data",
+    "downloader",
+    "entity",
+    "get_platform_info",
+    "logger",
+    "platform",
+    "platform_info",
+    "process",
+    "sockets",
+    "tracer",
+    "utils",
+]
+
+
+def __getattr__(name: str) -> Platform:
+    if name == "platform_info":
+        return get_platform_info()
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

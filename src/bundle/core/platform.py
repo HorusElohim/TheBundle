@@ -25,6 +25,7 @@ import platform
 import shutil
 import sys
 import sysconfig
+from functools import cache
 from pathlib import Path
 
 from . import data, tracer
@@ -290,5 +291,13 @@ class Platform(Entity):
         return self.gpu_backend == "metal"
 
 
-# Singleton instance constructed at import
-platform_info = Platform(name="CurrentPlatform")
+@cache
+def get_platform_info() -> Platform:
+    """Resolve and cache host information only when explicitly requested."""
+    return Platform(name="CurrentPlatform")
+
+
+def __getattr__(name: str) -> Platform:
+    if name != "platform_info":
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+    return get_platform_info()
