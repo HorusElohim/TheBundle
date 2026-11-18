@@ -20,14 +20,28 @@
 from __future__ import annotations
 
 import asyncio
+import shlex
 import sys
-from typing import Optional
+from collections.abc import Sequence
+from os import PathLike, fspath
+from typing import Any
 
 from . import logger, tracer
 from .data import Data, PrivateAttr
 from .entity import Entity
 
 log = logger.get_logger(__name__)
+Command = str | Sequence[str | PathLike[str]]
+
+
+def parse_args(command: Command) -> tuple[str, ...]:
+    """Normalize literal arguments without splitting or rewriting shell strings."""
+    arguments = (command,) if isinstance(command, str) else tuple(fspath(argument) for argument in command)
+    if not arguments:
+        raise ValueError("Expected a nonempty argument sequence")
+    if any(not isinstance(argument, str) for argument in arguments):
+        raise TypeError("Arguments must be strings or text paths")
+    return arguments
 
 
 class ProcessResult(Data):
@@ -42,7 +56,7 @@ class ProcessResult(Data):
 class ProcessError(Exception):
     """Custom exception for process execution errors."""
 
-    def __init__(self, process: Process | ProcessStream, result: ProcessResult):
+    def __init__(self, process: Process, result: ProcessResult):
         self.result = result
         parts = [
             f"\n\n{'--' * 10} Process Execution Error {'--' * 10}\n",
@@ -57,17 +71,18 @@ class ProcessError(Exception):
 
 
 class Process(Entity):
-    """Asynchronously executes shell commands and captures their output."""
+    """Capture output from a shell string or a literal argument sequence."""
 
     _process: asyncio.subprocess.Process | None = PrivateAttr(default=None)
 
     @tracer.Async.decorator.call_raise
-    async def __call__(self, command: str, **kwargs) -> ProcessResult:
+    async def __call__(self, command: Command, **kwargs) -> ProcessResult:
         """
-        Executes a shell command asynchronously and captures the output.
+        Execute asynchronously and capture output. Strings use a shell;
+        argument sequences execute directly, without shell expansion.
 
         Args:
-            command (str): The shell command to execute.
+            command: A shell string or a nonempty sequence of executable/arguments.
             **kwargs: Additional keyword arguments for subprocess.
 
         Returns:
@@ -75,37 +90,32 @@ class Process(Entity):
 
         Raises:
             ProcessError: If the command execution fails.
+            OSError: If an argument-vector executable cannot be started.
         """
         return await self._internal_call_(command, **kwargs)
 
-    async def _internal_call_(self, command: str, **kwargs) -> ProcessResult:
+    async def _start_process(self, command: Command, **kwargs) -> asyncio.subprocess.Process:
+        arguments = parse_args(command)
+        options: dict[str, Any] = dict(stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE, **kwargs)
+        if isinstance(command, str):
+            return await tracer.Async.call_raise(asyncio.create_subprocess_shell, arguments[0], **options)
+        return await tracer.Async.call_raise(asyncio.create_subprocess_exec, *arguments, **options)
 
-        self._process = await tracer.Async.call_raise(
-            asyncio.create_subprocess_shell,
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            **kwargs,
-        )
-
+    async def _internal_call_(self, command: Command, **kwargs) -> ProcessResult:
+        self._process = await self._start_process(command, **kwargs)
         stdout, stderr = await self._process.communicate()
+        return self._result(command, stdout.decode("utf-8", errors="replace"), stderr.decode("utf-8", errors="replace"))
 
-        returncode = -1 if self._process.returncode is None else self._process.returncode
-
-        stdout_decoded = stdout.decode("utf-8", errors="replace") if stdout else ""
-        stderr_decoded = stderr.decode("utf-8", errors="replace") if stderr else ""
-
-        # Create the ProcessResult before checking the return code
+    def _result(self, command: Command, stdout: str, stderr: str) -> ProcessResult:
+        assert self._process is not None
         result = ProcessResult(
-            command=command,
-            returncode=returncode,
-            stdout=stdout_decoded,
-            stderr=stderr_decoded,
+            command=command if isinstance(command, str) else shlex.join(parse_args(command)),
+            returncode=-1 if self._process.returncode is None else self._process.returncode,
+            stdout=stdout,
+            stderr=stderr,
         )
-
-        if returncode != 0:
+        if result.returncode != 0:
             raise ProcessError(self, result)
-
         return result
 
 
@@ -113,12 +123,12 @@ class ProcessStream(Process):
     """Executes a command asynchronously and streams output line by line."""
 
     @tracer.Async.decorator.call_raise
-    async def __call__(self, command: str, **kwargs) -> ProcessResult:
+    async def __call__(self, command: Command, **kwargs) -> ProcessResult:
         """
-        Executes the command and streams output line by line.
+        Execute a shell string or literal arguments and stream output line by line.
 
         Args:
-            command (str): The shell command to execute.
+            command: A shell string or a nonempty sequence of executable/arguments.
             **kwargs: Additional keyword arguments for subprocess.
 
         Returns:
@@ -126,6 +136,7 @@ class ProcessStream(Process):
 
         Raises:
             ProcessError: If the command execution fails.
+            OSError: If an argument-vector executable cannot be started.
         """
         stdout_lines = []
         stderr_lines = []
@@ -138,14 +149,8 @@ class ProcessStream(Process):
             log_level=logger.Level.VERBOSE,
         )
 
-    async def _internal_call_(self, command: str, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
-        self._process = await tracer.Async.call_raise(
-            asyncio.create_subprocess_shell,
-            command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-            **kwargs,
-        )
+    async def _internal_call_(self, command: Command, stdout_lines: list, stderr_lines: list, **kwargs) -> ProcessResult:  # type: ignore
+        self._process = await self._start_process(command, **kwargs)
 
         assert self._process
         assert self._process.stdout
@@ -160,20 +165,7 @@ class ProcessStream(Process):
         # Wait for the process to complete and streams to be read
         await asyncio.gather(*tasks)
         await self._process.wait()
-
-        assert self._process.returncode is not None
-
-        returncode = self._process.returncode
-
-        stdout = "".join(stdout_lines)
-        stderr = "".join(stderr_lines)
-
-        result = ProcessResult(command=command, returncode=returncode, stdout=stdout, stderr=stderr)
-
-        if returncode != 0:
-            raise ProcessError(self, result)
-
-        return result
+        return self._result(command, "".join(stdout_lines), "".join(stderr_lines))
 
     async def _read_stream(self, stream: asyncio.StreamReader, handler, accumulator):
         """
