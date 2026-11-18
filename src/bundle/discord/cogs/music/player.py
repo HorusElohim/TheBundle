@@ -31,9 +31,13 @@ import discord
 from bundle.core import logger
 from bundle.youtube.track import YoutubeTrackData
 
-from .source import make_source
+from .source import BufferedOpusAudio, make_source
 
 log = logger.get_logger(__name__)
+
+
+class TrackProducedNoAudio(RuntimeError):
+    """The stream ended before FFmpeg delivered a single frame (unreachable or rejected URL)."""
 
 
 class GuildPlayer:
@@ -53,6 +57,10 @@ class GuildPlayer:
         # Skip coordination
         self._skip_pending: bool = False
 
+        # Failure tracking: a broken stream must not count as a finished track
+        self._source: BufferedOpusAudio | None = None
+        self.consecutive_failures: int = 0
+
     # ---- timing ----
 
     def elapsed_secs(self) -> int:
@@ -69,17 +77,22 @@ class GuildPlayer:
 
     # ---- playback ----
 
-    def play(self, vc: discord.VoiceClient, track: YoutubeTrackData, guild_id: int) -> bool:
-        """Start FFmpeg playback.  Returns False if no stream URL available."""
-        stream_url = track.video_url or track.audio_url
+    async def play(self, vc: discord.VoiceClient, track: YoutubeTrackData, guild_id: int) -> bool:
+        """Start FFmpeg playback.  Returns False if no stream URL available.
+
+        Streams the audio-only track: a voice channel needs nothing else, and the
+        best video stream can be gigabytes. The source is built in a worker thread
+        because it blocks until its jitter buffer has pre-filled.
+        """
+        stream_url = track.audio_url or track.video_url
         if not stream_url:
             log.warning("No stream URL for track '%s'", track.title)
             return False
 
-        self._reset_timing()
-
         loop = asyncio.get_running_loop()
-        source = make_source(stream_url)
+        source = await asyncio.to_thread(make_source, stream_url)
+        self._source = source
+        self._reset_timing()
         vc.play(
             source,
             after=lambda err: asyncio.run_coroutine_threadsafe(self._after_track(guild_id, err), loop),
@@ -114,6 +127,9 @@ class GuildPlayer:
     # ---- internal ----
 
     async def _after_track(self, guild_id: int, error: Exception | None) -> None:
+        if error is None and self._source is not None and not self._source.produced_audio:
+            error = TrackProducedNoAudio("the stream ended before any audio was received")
+        self.consecutive_failures = self.consecutive_failures + 1 if error else 0
         if error:
             log.error("Playback error in guild %s: %s", guild_id, error)
         if self._skip_pending:
