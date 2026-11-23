@@ -27,6 +27,8 @@ import pytest
 
 from bundle.core import tracer
 
+pytestmark = pytest.mark.filterwarnings(r"error:.*asyncio\.iscoroutinefunction.*:DeprecationWarning")
+
 # --- Helper functions for testing ---
 
 

@@ -17,6 +17,7 @@
 # specific language governing permissions and limitations
 # under the License.
 import asyncio
+import inspect
 import sys
 from collections.abc import Awaitable, Callable, Coroutine
 from functools import wraps
@@ -78,7 +79,7 @@ class Sync:
         exc_log_level = exc_log_level or DEFAULT_LOG_EXC_LEVEL
 
         try:
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 result = asyncio.run(cast(Coroutine[Any, Any, R], func(*args, **kwargs)))
             else:
                 result = cast(R, func(*args, **kwargs))
@@ -201,7 +202,7 @@ class Async:
         exc_log_level = exc_log_level if exc_log_level else DEFAULT_LOG_EXC_LEVEL
 
         try:
-            if asyncio.iscoroutinefunction(func):
+            if inspect.iscoroutinefunction(func):
                 result = await func(*args, **kwargs)
             else:
                 result = await asyncio.to_thread(func, *args, **kwargs)
